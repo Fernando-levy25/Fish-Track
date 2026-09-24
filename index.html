@@ -9,10 +9,10 @@
     <link rel="stylesheet" href="css/layout.css">
 </head>
 <body>
-    <header class="cabeçalho">
-        <div class="cabeçalho_marca">
-            <span class="cabeçalho_logo">🐟</span>
-            <span class="cabeçalho_titulo">fish track</span>
+    <header class="cabecalho">
+        <div class="cabecalho_marca">
+            <span class="cabecalho_logo">🐟</span>
+            <span class="cabecalho_titulo">fish track</span>
         </div>
         <nav class="menu">
             <a class="menu_link menu_link_ativo" href="index.html">Dashboard</a>
@@ -20,5 +20,47 @@
             <a class="menu_link" href="registro.html">Novo Registro</a>
         </nav>
     </header>
+
+    <main class="pagina">
+        <section class="pagina_secao" aria-labelledby="titulo_visao_geral">
+            <h1 id="titulo_visao_geral" class="pagina_titulo">Visão geral do produto</h1>
+
+            <div class="grade_resumo">
+                <article class="cartao_metrica">
+                    <p class="cartao-metrica_rotulo">tanques cadastrados</p>
+                    <p class="cartao-metrica_valor" id="metrica-total-tanques">-</p>
+                </article>
+
+                <article class="cartao-metrica">
+                    <p class="cartao-metrica_rotulo">biomassa total</p>
+                    <p class="cartao-metrica_valor" id="metrica-biomassa-total">-</p>
+                </article>
+
+                <article class="cartao-metrica">
+                    <p class="cartao-metrica_rotulo">tanques com alerta</p>
+                    <p class="cartao-metrica_valor" id="metrica-tanque-alerta">-</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="pagina_secao" aria-labelledby="titulo-alertas">
+            <div class="secao_cabecalho">
+                <h2 id="titulo-alertas" class="pagina_subtitulo">Alertas</h2>
+                <a class="link-secao" href="tanques.html">Ver todos os Tanques</a>
+            </div>
+
+            <ul class="lista-alertas" id="lista-alertas">
+                <li class="lista-alertas_vazio">Nenhum alerta no momento.</li>
+            </ul>
+        </section>
+
+        <section class="pagina_secao" aria-labelledby="titulo-tanques">
+            <div class="secao_cabecalho">
+                <h2 id="titulo-tanques" class="pagina_subtitulo">Tanques</h2>
+                <a class="botao botao-primario" href="tanques.html">Novo tanque</a>
+            </div>
+
+        </section>
+    </main>
 </body>
 </html>
