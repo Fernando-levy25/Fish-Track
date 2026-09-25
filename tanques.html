@@ -61,28 +61,28 @@
 
             <div class="campo-grade">
               <div class="campo">
-                <label class="campo__rotulo" for="campo-volume">Volume (m³)</label>
-                <input class="campo__input" id="campo-volume" name="volume" type="number" min="0" step="0.01" required>
-                <p class="campo__erro" id="erro-volume"></p>
+                <label class="campo_rotulo" for="campo-volume">Volume (m³)</label>
+                <input class="campo_input" id="campo-volume" name="volume" type="number" min="0" step="0.01" required>
+                <p class="campo_erro" id="erro-volume"></p>
               </div>
 
               <div class="campo">
-                <label class="campo__rotulo" for="campo-capacidade">Capacidade (kg)</label>
-                <input class="campo__input" id="campo-capacidade" name="capacidade" type="number" min="0" step="0.01" required>
-                <p class="campo__erro" id="erro-capacidade"></p>
+                <label class="campo_rotulo" for="campo-capacidade">Capacidade (kg)</label>
+                <input class="campo_input" id="campo-capacidade" name="capacidade" type="number" min="0" step="0.01" required>
+                <p class="campo_erro" id="erro-capacidade"></p>
               </div>
             </div>
         
             <div class="campo-grade">
               <div class="campo">
-                <label class="campo__rotulo" for="campo-quantidade-inicial">Quantidade inicial</label>
-                <input class="campo__input" id="campo-quantidade-inicial" name="quantidadeInicial" type="number" min="0" step="1" required>
-                <p class="campo__erro" id="erro-quantidade-inicial"></p>
+                <label class="campo_rotulo" for="campo-quantidade-inicial">Quantidade inicial</label>
+                <input class="campo_input" id="campo-quantidade-inicial" name="quantidadeInicial" type="number" min="0" step="1" required>
+                <p class="campo_erro" id="erro-quantidade-inicial"></p>
               </div>
         
              <div class="campo">
-              <label class="campo__rotulo" for="campo-status">Status</label>
-              <select class="campo__select" id="campo-status" name="status" required>
+              <label class="campo_rotulo" for="campo-status">Status</label>
+              <select class="campo_select" id="campo-status" name="status" required>
                 <option value="ativo">Ativo</option>
                 <option value="vazio">Vazio</option>
                 <option value="manutencao">Em manutenção</option>
@@ -90,24 +90,24 @@
             </div>
           </div>
  
-          <div class="formulario__acoes">
+          <div class="formulario_acoes">
             <button class="botao botao--secundario" id="botao-cancelar-tanque" type="button">
              Cancelar
             </button>
-          <button class="botao botao--primario" type="submit">
+          <button class="botao botao-primario" type="submit">
             Salvar
             </button>
            </div>
         </form>
     </dialog>
 
-    <dialog class="dialog dialog--confirmacao" id="dialog-confirmacao">
-    <p class="dialog--confirmacao__mensagem" id="mensagem-confirmacao"></p>
-    <div class="formulario__acoes">
-      <button class="botao botao--secundario" id="botao-cancelar-confirmacao" type="button">
+    <dialog class="dialog dialog-confirmacao" id="dialog-confirmacao">
+    <p class="dialog--confirmacao_mensagem" id="mensagem-confirmacao"></p>
+    <div class="formulario_acoes">
+      <button class="botao botao-secundario" id="botao-cancelar-confirmacao" type="button">
         Cancelar
       </button>
-      <button class="botao botao--perigo" id="botao-confirmar-exclusao" type="button">
+      <button class="botao botao-perigo" id="botao-confirmar-exclusao" type="button">
         Excluir
       </button>
     </div>
@@ -115,29 +115,29 @@
  
   <template id="template-cartao-tanque">
     <article class="cartao-tanque">
-      <div class="cartao-tanque__cabecalho">
-        <h3 class="cartao-tanque__nome" data-campo="nome"></h3>
+      <div class="cartao-tanque_cabecalho">
+        <h3 class="cartao-tanque_nome" data-campo="nome"></h3>
         <span class="selo-alerta" data-campo="selo-alerta"></span>
       </div>
  
-      <p class="cartao-tanque__especie" data-campo="especie"></p>
+      <p class="cartao-tanque_especie" data-campo="especie"></p>
  
-      <dl class="cartao-tanque__metricas">
-        <div class="cartao-tanque__metrica">
+      <dl class="cartao-tanque_metricas">
+        <div class="cartao-tanque_metrica">
           <dt>Quantidade</dt>
           <dd data-campo="quantidade"></dd>
         </div>
-        <div class="cartao-tanque__metrica">
+        <div class="cartao-tanque_metrica">
           <dt>Biomassa</dt>
           <dd data-campo="biomassa"></dd>
         </div>
-        <div class="cartao-tanque__metrica">
+        <div class="cartao-tanque_metrica">
           <dt>Capacidade utilizada</dt>
           <dd data-campo="capacidade-utilizada"></dd>
         </div>
       </dl>
  
-      <div class="cartao-tanque__acoes">
+      <div class="cartao-tanque_acoes">
         <a class="link-secao" data-campo="link-detalhes" href="#">Ver detalhes</a>
         <button class="botao-icone" data-acao="editar" type="button" aria-label="Editar tanque">✎</button>
         <button class="botao-icone" data-acao="excluir" type="button" aria-label="Excluir tanque">🗑</button>
