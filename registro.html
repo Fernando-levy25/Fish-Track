@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Fish Track - Novo Registro</title>
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/layout.css">
 </head>
 <body>
     <header class="cabecalho">
@@ -16,5 +19,43 @@
             <a class="menu_link" href="tanques.html">Tanques</a>
             <a class="menu_link" href="registro.html">Novo Registro</a>
         </nav>
+    </header>
+
+    <main class="pagina">
+        <p class="aviso-vazio" id="aviso-sem-tanques" hidden>
+            Nenhum tanque cadastrado ainda.
+            <a class="link-secao" href="tanques.html">Cadastrar o primeiro tanque</a>
+        </p>
+
+        <section class="pagina_secao" id="secao-formulario-registro">
+            <h1 class="pagina_secao" id="titulo-pagina-registro">Novo Registro</h1>
+
+            <form class="formulario formulario-pagina" id="formulario-registro" novalidate>
+                <input type="hidden"campo-registro-id" name="id">
+
+                <div class="campo">
+                    <label class="campo_rotulo" for="campo-tanque">Tanque</label>
+                    <select class="campo_select" name="tanqueId" id="campo-tanque" required>
+                        <option value="" disabled selected>Selecione um tanque</option>
+                    </select>
+                    <p class="campo_erro" id="erro-tanque"></p>
+                </div>
+
+                <div class="campo-grade">
+                    <div class="campo">
+                        <label class="campo_rotulo" for="campo-data">Data</label>
+                        <input class="campo_input" id="campo-data" name="data" type="date" required>
+                        <p class="campo_erro" id="erro-data"></p>
+                    </div>
+
+                    <div class="campo">
+                        <label class="campo_rotulo" for="campo-quantidade">Quantidade</label>
+                        <input class="campo_input" id="campo-quantidade" name="quantidade" type="number" min="0" step="1" required>
+                        <p class="campo_erro" id="campo-quantidade"></p>
+                    </div>
+                </div>
+            </form>
+        </section>
+    </main>
 </body>
 </html>
