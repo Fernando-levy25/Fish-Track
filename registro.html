@@ -54,8 +54,54 @@
                         <p class="campo_erro" id="campo-quantidade"></p>
                     </div>
                 </div>
+
+                <div class="campo-grade">
+                    <div class="campo">
+                        <label for="campo-peso-medio">Peso médio (g)</label>
+                        <input class="campo_input" id="campo-peso-medio" name="pesoMedio" type="number" min="0.01" step="0.01" required>
+                        <p class="campo_erro" id="erro-peso-medio"></p>
+                    </div>
+
+                    <div class="campo">
+                        <label class="campo_rotulo" for="campo-racao">Ração fornecida (kg)</label>
+                        <input class="campo_erro" id="campo-racao" name="racao" type="number" min="0" step="0.01" required>
+                        <p class="campo+erro" id="erroracao"></p> 
+                    </div>
+                </div>
+
+                <div class="campo-grade">
+                    <div class="campo">
+                        <label class="campo_rotulo" for="campo-mortalidade">Mortalidade</label>
+                        <input class="campo_input" id="campo-mortalidade" type="number" min="0" step="1" required> 
+                        <p class="campo_erro" id="erro-mortalidade"></p>
+                    </div>
+
+                    <div class="campo">
+                        <label class="campo_rotulo" for="campo-natalidade">Natalidade (opcional)</label>
+                        <input class="campo_erro" id="campo-natalidade" type="number" min="0" step="1" placeholder="0">
+                        <p class="campo_erro" id="erro-natalidade"></p>
+                    </div>
+                </div>
+
+                <div class="campo">
+                    <label class="campo_rotulo" for="campo-observacoes">Observaçôes</label>
+                    <textarea class="campo_input campo_input-area" id="campo-observacoes" name="observacoes" rows="3"></textarea>
+                </div>
+
+                <p class="formulario_erro-geral" id="erro-geral-registro" hidden></p>
+
+                <div class="formulario_acoes">
+                    <a class="botao botao-secundario" id="link-cancelar-registro" href="tanques.html">
+                        Cancelar
+                    </a>
+                    <button class="botao botao-primario" type="submit">
+                        Salvar registro
+                    </button>
+                </div>
             </form>
         </section>
     </main>
+
+    <script type="module" src="js/pages/registro.js"></script>
 </body>
 </html>
