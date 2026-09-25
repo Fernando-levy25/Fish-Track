@@ -3,12 +3,182 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fish Track - Detalhes do tanque</title>
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/layout.css">
-    <title>Document</title>
 </head>
 <body>
-    
+    <header class="cabecalho">
+        <div class="cabecalho_marca">
+            <span class="cabecalho_logo">🐟</span>
+            <span class="cabecalho_titulo">fish track</span>
+        </div>
+        <nav class="menu">
+            <a class="menu_link menu_link_ativo" href="index.html">Dashboard</a>
+            <a class="menu_link" href="tanques.html">Tanques</a>
+            <a class="menu_link" href="registro.html">Novo Registro</a>
+        </nav>
+    </header>
+
+    <main class="pagina" id="pagina-tanque">
+        <p class="aviso-vazio" id="aviso-tanque-nao-encontrado" hidden>
+            tanque não encontrado. <a class="link-secao" href="tanques.html"></a>
+        </p>
+
+        <div id="conteudo-tanque" hidden>
+            <section class="pagina_secao" aria-labelledby="titulo-tanque">
+                <div class="secao_cabecalho">
+                    <div class="cabecalho-tanque">
+                        <h1 class="pagina_titulo" id="titulo-tanque">-</h1>
+                        <span class="selo-alerta" id="selo-status-tanque" data-campo="status"></span>
+                    </div>
+                    <div class="secao_acoes">
+                        <button class="botao botao-secundario" id="botao-editar-tanque" type="button">
+                            Editar
+                        </button>
+                        <button class="botao botao-perigo" id="botao-excluir-tanque" type="button">
+                            Excluir
+                        </button>
+                    </div>
+                </div>
+                <p class="cabecalho-tanque_especie" id="especie-tanque">-</p>
+            </section>
+
+            <section class="pagina_secao" aria-labelledby="titulo-indicadores">
+                <h2 id="titulo-indicadores" class="pagina_subtitulo">Indicadores</h2>
+
+                <dl class="grade-indicadores" id="grade-indicadores">
+                    <div class="cartao-indicador">
+                        <dt>Quantidade atual</dt>
+                        <dd data-indicador="quantidadeAtual">sem dados</dd>
+                    </div>
+                    <div class="cartao-indicador">
+                        <dt>Peso médio</dt>
+                        <dd data-indicador="pesoMedio">sem dados</dd>
+                    </div>
+                    <div class="cartao-indicador">
+                        <dt>Biomassa</dt>
+                        <dd data-indicador="biomassa">sem dados</dd>
+                    </div>
+                    <div class="cartao-indicador">
+                        <dt>ganho de peso diário</dt>
+                        <dd data-indicador="ganhoPesoDiario">sem dados</dd>
+                    </div>
+                    <div class="cartao-indicador">
+                        <dt>Ração total</dt>
+                        <dd data-indicador="racaoTotal">sem dados</dd>
+                    </div>
+                    <div class="cartao-indicador">
+                        <dt>Taxa  de arraçoamento</dt>
+                        <dd data-indicador="taxaArrossamento">sem dados</dd>
+                    </div>
+                    <div class="cartao-indicador">
+                        <dt>Conversão alimentar (TCA) acumulada</dt>
+                        <dd data-indicador="tcaAcumulada">sem dados</dd>
+                    </div>
+                    <div class="cartao-indicador">
+                        <dt>Conversão alimentar (TCA) no período</dt>
+                        <dd data-indicador="tcaPeriodo">sem dados</dd>
+                    </div>
+                    <div class="cartao-indicador">
+                        <dt>Mortalidade acumulada</dt>
+                        <dd data-indicador="mortalidadeAcumulada">sem dados</dd>
+                    </div>
+                    <div class="cartao-indicador">
+                        <dt>Mortalidade no período</dt>
+                        <dd data-indicador="mortalidadePeriodo">sem dados</dd>
+                    </div>
+                    <div class="cartao-indicador">
+                        <dt>Sobrevivência</dt>
+                        <dd data-indicador="sobrevivencia">sem dados</dd>
+                    </div>
+                    <div class="cartao-indicador">
+                        <dt>Natalidade</dt>
+                        <dd data-indicador="natalidade">sem dados</dd>
+                    </div>
+                    <div class="cartao-indicador">
+                        <dt>Capacidade utilizada</dt>
+                        <dd data-indicador="capacidadeUtilizada">sem dados</dd>
+                    </div>
+                    <div class="cartao-indicador">
+                        <dt>Densidade</dt>
+                        <dd data-indicador="densidade">sem dados</dd>
+                    </div>
+                </dl>
+            </section>
+
+            <section class="pagina_secao" aria-labelledby="titulo-graficos">
+                <h2 id="titulo-graficos" class="pagina_subtitulo">Evolução</h2>
+
+                <div class="grade-graficos">
+                    <div class="cartao-grafico">
+                        <h3 class="cartao-grafico_titulo">Peso médio</h3>
+                        <canvas id="grafico-peso-medio"></canvas>
+                        <p class="cartao-grafico_vazio" id="aviso-grafico-peso-medio">
+                            Sem dados suficientes para exibir o gráfico.
+                        </p>
+                    </div>
+                    <div class="cartao-grafico">
+                        <h3 class="cartao-grafico-titulo">Biomassa</h3>
+                        <canvas id="grafico-biomassa"></canvas>
+                        <p class="cartao-grafico_vazio" id="aviso-grafico-biomassa">
+                            Sem dados suficientes para exibir o gráfico.
+                        </p>
+                    </div>
+                    <div class="cartao-grafico">
+                        <h3 class="cartao-grafico-titulo">Mortalidade</h3>
+                        <canvas id="grafico-mortalidade"></canvas>
+                        <p class="cartao-grafico_vazio" id="aviso-grafico-mortalidade">
+                            Sem dados suficientes para exibir o gráfico.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="pagina_secao" aria-labelledby="titulo-alertas-tanque">
+                <h2 id="titulo-alertas-tanque" class="pagina_subtitulo">Alertas</h2>
+                <ul class="lista_alertas" id="lista-alertas-tanque">
+                    <li class="lista-alertas_vazio">Nenhum alerta para este tanque</li>
+                </ul>
+            </section>
+
+            <section class="pagina_secao" aria-labelledby="titulo-registros">
+                <div class="secao_cabecalho">
+                    <h2 id="titulo-registros" class="pagina_subtitulo">Registros</h2>
+                    <a class="botao botao-primario" id="link-novo-registro" href="registro.html">
+                        Novo registro
+                    </a>
+                </div>
+
+                <table class="tabela-registros">
+                    <thead>
+                        <tr>
+                            <th scope="col">Data</th>
+                            <th scope="col">Quantidade</th>
+                            <th scope="col">Peso médio</th>
+                            <th scope="col">Ração</th>
+                            <th scope="col">Mortalidade</th>
+                            <th scope="col">Natalidade</th>
+                            <th scope="col">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpo-tabela-registros">
+                    </tbody>
+                </table>
+
+                <p class="tabela-registros_vazio" id="aviso-tabela-registros">
+                        Nenhum registro encontrado. <a class="link-secao" id="link-primeiro-registro" href="registro.html">Fazer o primeiro registro</a>
+                    </p>
+            </section>
+
+            <section class="pagina_secao pagina_secao-pendente" aria-labelledby="titulo-calendario">
+                <h2 id="titulo-calendario" class="pagina_subtitulo">Calendário</h2>
+                <p class="aviso-pendente">
+                    Funcionalidade em definição (R20) - ainda não disponivel nesta versão.
+                </p>
+            </section>
+        </div>
+    </main>
 </body>
 </html>
