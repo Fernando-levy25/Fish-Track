@@ -4,8 +4,147 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fish Track - Tanques</title>
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/layout.css">
 </head>
 <body>
-    
+    <header class="cabecalho">
+        <div class="cabecalho_marca">
+            <span class="cabecalho_logo">🐟</span>
+            <span class="cabecalho_titulo">fish track</span>
+        </div>
+        <nav class="menu">
+            <a class="menu_link menu_link_ativo" href="index.html">Dashboard</a>
+            <a class="menu_link" href="tanques.html">Tanques</a>
+            <a class="menu_link" href="registro.html">Novo Registro</a>
+        </nav>
+    </header>
+
+    <main class="pagina">
+        <section class="pagina_secao" aria-labelledby="titulo-tanques">
+            <div class="secao_cabecalho">
+                <h1 id="titulo-tanques" class="pagina_titulo">Tanques</h1>
+                <button class="botao botao-primario" id="botao-novo-tanque" type="button">
+                    Novo tanque
+                </button>
+            </div>
+
+            <div class="grade-tanques" id="grade-tanques">
+                <p class="grade-tanques_vazio">Nenhum tanque cadastrado ainda.</p>
+            </div>
+        </section>
+    </main>
+
+    <dialog class="dialog" id="dialog-tanque">
+        <form class="formulario" id="formulario-tanque" novalidate>
+            <div class="formulario_cabecalho">
+                <h2 class="formulario_titulo" id="titulo-formulario-tanque">Novo tanque</h2>
+                <button class="botao-fechar" id="botao-fechar-dialog" type="button" aria-label="Fechar">
+                    $times;
+                </button>
+            </div>
+
+            <input type="hidden" id="campo-tanque-id" name="id">
+
+            <div class="campo">
+                <label class="campo_rotulo" for="campo-nome">Nome</label>
+                <input class="campo_input" id="campo-nome" name="nome" type="text" required>
+                <p class="campo_erro" id="erro-especie"></p>
+            </div>
+
+            <div class="campo">
+                <label class="campo_rotulo" for="campo-especie">Espécie</label>
+                <input class="campo_input" id="campo-especie" name="especie" type="text" required>
+                <p class="campo_erro" id="erro-especie"></p>
+            </div>
+
+            <div class="campo-grade">
+              <div class="campo">
+                <label class="campo__rotulo" for="campo-volume">Volume (m³)</label>
+                <input class="campo__input" id="campo-volume" name="volume" type="number" min="0" step="0.01" required>
+                <p class="campo__erro" id="erro-volume"></p>
+              </div>
+
+              <div class="campo">
+                <label class="campo__rotulo" for="campo-capacidade">Capacidade (kg)</label>
+                <input class="campo__input" id="campo-capacidade" name="capacidade" type="number" min="0" step="0.01" required>
+                <p class="campo__erro" id="erro-capacidade"></p>
+              </div>
+            </div>
+        
+            <div class="campo-grade">
+              <div class="campo">
+                <label class="campo__rotulo" for="campo-quantidade-inicial">Quantidade inicial</label>
+                <input class="campo__input" id="campo-quantidade-inicial" name="quantidadeInicial" type="number" min="0" step="1" required>
+                <p class="campo__erro" id="erro-quantidade-inicial"></p>
+              </div>
+        
+             <div class="campo">
+              <label class="campo__rotulo" for="campo-status">Status</label>
+              <select class="campo__select" id="campo-status" name="status" required>
+                <option value="ativo">Ativo</option>
+                <option value="vazio">Vazio</option>
+                <option value="manutencao">Em manutenção</option>
+              </select>
+            </div>
+          </div>
+ 
+          <div class="formulario__acoes">
+            <button class="botao botao--secundario" id="botao-cancelar-tanque" type="button">
+             Cancelar
+            </button>
+          <button class="botao botao--primario" type="submit">
+            Salvar
+            </button>
+           </div>
+        </form>
+    </dialog>
+
+    <dialog class="dialog dialog--confirmacao" id="dialog-confirmacao">
+    <p class="dialog--confirmacao__mensagem" id="mensagem-confirmacao"></p>
+    <div class="formulario__acoes">
+      <button class="botao botao--secundario" id="botao-cancelar-confirmacao" type="button">
+        Cancelar
+      </button>
+      <button class="botao botao--perigo" id="botao-confirmar-exclusao" type="button">
+        Excluir
+      </button>
+    </div>
+  </dialog>
+ 
+  <template id="template-cartao-tanque">
+    <article class="cartao-tanque">
+      <div class="cartao-tanque__cabecalho">
+        <h3 class="cartao-tanque__nome" data-campo="nome"></h3>
+        <span class="selo-alerta" data-campo="selo-alerta"></span>
+      </div>
+ 
+      <p class="cartao-tanque__especie" data-campo="especie"></p>
+ 
+      <dl class="cartao-tanque__metricas">
+        <div class="cartao-tanque__metrica">
+          <dt>Quantidade</dt>
+          <dd data-campo="quantidade"></dd>
+        </div>
+        <div class="cartao-tanque__metrica">
+          <dt>Biomassa</dt>
+          <dd data-campo="biomassa"></dd>
+        </div>
+        <div class="cartao-tanque__metrica">
+          <dt>Capacidade utilizada</dt>
+          <dd data-campo="capacidade-utilizada"></dd>
+        </div>
+      </dl>
+ 
+      <div class="cartao-tanque__acoes">
+        <a class="link-secao" data-campo="link-detalhes" href="#">Ver detalhes</a>
+        <button class="botao-icone" data-acao="editar" type="button" aria-label="Editar tanque">✎</button>
+        <button class="botao-icone" data-acao="excluir" type="button" aria-label="Excluir tanque">🗑</button>
+      </div>
+    </article>
+  </template>
+ 
+  <script type="module" src="js/pages/tanques.js"></script>
 </body>
 </html>
