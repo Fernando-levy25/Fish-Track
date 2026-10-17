@@ -31,6 +31,10 @@ body {
     text-decoration: none;
 }
 
+.cabecalho__titulo {
+    font-family: var(--fonte-titulo);
+}
+
 .cabecalho__logo {
     font-size: 1.25rem;
     line-height: 1;
@@ -151,7 +155,7 @@ body {
 /* As opções do "Mais" surgem com um deslize curto: de baixo no celular, onde
    o painel abre acima da barra, e de cima no menu lateral. */
 .menu__mais[open] .menu__submenu {
-    animation: menu-surgir 180ms ease-out;
+    animation: menu-surgir var(--duracao-media) var(--curva-saida);
 }
 
 @keyframes menu-surgir {
@@ -161,11 +165,6 @@ body {
     }
 }
 
-@media (prefers-reduced-motion: reduce) {
-    .menu__mais[open] .menu__submenu {
-        animation: none;
-    }
-}
 
 /* ---------- Página e seções ---------- */
 
@@ -220,6 +219,29 @@ body {
     display: flex;
     flex-wrap: wrap;
     gap: var(--espaco-3);
+}
+
+/* ---------- Entrada do conteúdo ---------- */
+
+/* Seção 9.2: os blocos sobem 12 px e aparecem em sequência. Só "backwards":
+   depois de entrar, o elemento volta a obedecer às próprias transformações
+   (como o cartão que sobe ao passar o mouse). */
+:is(.pagina, .grade-indicadores, .grade-tanques, .grade-graficos, .lista-alertas, .grupos-alertas) > * {
+    animation: entrar var(--duracao-lenta) var(--curva-saida) backwards;
+    animation-delay: calc(var(--ordem, 0) * var(--atraso-passo));
+}
+
+:is(.pagina, .grade-indicadores, .grade-tanques, .grade-graficos, .lista-alertas, .grupos-alertas) > :nth-child(2) { --ordem: 1; }
+:is(.pagina, .grade-indicadores, .grade-tanques, .grade-graficos, .lista-alertas, .grupos-alertas) > :nth-child(3) { --ordem: 2; }
+:is(.pagina, .grade-indicadores, .grade-tanques, .grade-graficos, .lista-alertas, .grupos-alertas) > :nth-child(4) { --ordem: 3; }
+:is(.pagina, .grade-indicadores, .grade-tanques, .grade-graficos, .lista-alertas, .grupos-alertas) > :nth-child(5) { --ordem: 4; }
+:is(.pagina, .grade-indicadores, .grade-tanques, .grade-graficos, .lista-alertas, .grupos-alertas) > :nth-child(n + 6) { --ordem: 5; }
+
+@keyframes entrar {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
 }
 
 /* ---------- Grades ---------- */
@@ -282,12 +304,13 @@ body {
         height: 100dvh;
         padding: var(--espaco-5) var(--espaco-4);
         border-bottom: 0;
-        border-right: 1px solid var(--cor-borda);
+        background: var(--cor-menu-fundo);
         overflow-y: auto;
     }
 
     .cabecalho__marca {
         padding: 0 var(--espaco-3);
+        color: var(--cor-menu-texto);
     }
 
     .menu {
@@ -309,19 +332,30 @@ body {
         min-height: var(--altura-toque);
         padding: 0 var(--espaco-3);
         border-radius: var(--raio);
-        color: var(--cor-texto);
+        color: var(--cor-menu-texto-suave);
         font-size: var(--texto-3);
     }
 
-    .menu__link:hover {
-        background: var(--cor-neutra-suave);
+    .menu__link:hover,
+    .menu__submenu .menu__link:hover {
+        background: var(--cor-menu-hover);
+        color: var(--cor-menu-texto);
     }
 
     .menu__link[aria-current="page"],
+    .menu__submenu .menu__link[aria-current="page"],
     .menu__mais:not([open]):has([aria-current="page"]) > .menu__link {
-        background: var(--cor-primaria-suave);
-        color: var(--cor-primaria-escura);
+        background: rgb(95 208 180 / 0.14);
+        color: var(--cor-menu-destaque);
         box-shadow: none;
+    }
+
+    .menu__mais[open] > summary {
+        color: var(--cor-menu-texto);
+    }
+
+    .menu__submenu .menu__link {
+        color: var(--cor-menu-texto-suave);
     }
 
     /* A ação principal fica no topo do menu, como botão. Repete as cores
@@ -331,14 +365,14 @@ body {
         align-self: stretch;
         justify-content: center;
         margin: 0 0 var(--espaco-3);
-        background: var(--cor-primaria);
-        color: var(--cor-texto-invertido);
+        background: var(--cor-menu-destaque);
+        color: var(--cor-menu-fundo);
     }
 
     .menu__link--destaque:hover,
     .menu__link--destaque[aria-current="page"] {
-        background: var(--cor-primaria-escura);
-        color: var(--cor-texto-invertido);
+        background: #7ddcc4;
+        color: var(--cor-menu-fundo);
     }
 
     .menu__mais > summary::after {

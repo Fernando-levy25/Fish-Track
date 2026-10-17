@@ -27,9 +27,9 @@
     transition: background-color var(--transicao), border-color var(--transicao), color var(--transicao), transform var(--transicao);
 }
 
-/* Um leve afundar ao tocar confirma o clique, principalmente no celular. */
+/* Afundar ao clicar confirma o toque, principalmente no celular (seção 9.2). */
 .botao:active:not(:disabled) {
-    transform: translateY(1px);
+    transform: scale(0.96);
 }
 
 .botao:disabled,
@@ -82,6 +82,11 @@
 .link:hover {
     color: var(--cor-primaria-escura);
     text-decoration-thickness: 2px;
+}
+
+/* No celular não há hover: a resposta vem no toque. */
+.link:active {
+    opacity: 0.7;
 }
 
 /* Links soltos, fora de um parágrafo, precisam da área mínima de toque. */
@@ -367,6 +372,7 @@
 }
 
 .cartao-indicador__valor {
+    font-family: var(--fonte-titulo);
     font-size: var(--texto-6);
     font-weight: 650;
     font-variant-numeric: tabular-nums;
@@ -379,11 +385,15 @@
     align-content: start;
     gap: var(--espaco-3);
     padding: var(--espaco-4);
-    transition: border-color var(--transicao);
+    transition: border-color var(--transicao), transform var(--duracao-media) var(--curva-saida), box-shadow var(--duracao-media) var(--curva-saida);
 }
 
-.cartao-tanque:hover {
-    border-color: var(--cor-borda-forte);
+@media (hover: hover) {
+    .cartao-tanque:hover {
+        border-color: var(--cor-borda-forte);
+        box-shadow: var(--sombra-elevada);
+        transform: translateY(-3px);
+    }
 }
 
 .cartao-tanque__cabecalho {
@@ -444,10 +454,18 @@
     display: none;
 }
 
+/* O gráfico se desenha da esquerda para a direita ao aparecer (seção 9.2). */
 .cartao-grafico__area svg {
     width: 100%;
     height: auto;
     overflow: visible;
+    animation: desenhar calc(var(--duracao-lenta) * 1.5) var(--curva-saida) backwards;
+}
+
+@keyframes desenhar {
+    from {
+        clip-path: inset(0 100% 0 0);
+    }
 }
 
 .cartao-grafico__vazio {
@@ -578,6 +596,17 @@
     font-weight: 600;
 }
 
+/* A gravidade vai sempre escrita, não só na cor do marcador (seção 2.3). */
+.lista-alertas__titulo .selo {
+    margin-left: var(--espaco-2);
+    vertical-align: 0.1em;
+}
+
+/* No alerta grave o cartão já é vermelho-claro: o selo ganha fundo branco para aparecer. */
+.lista-alertas__item--alta .selo {
+    background: var(--cor-superficie);
+}
+
 .lista-alertas__detalhe {
     grid-column: 2;
     color: var(--cor-texto-suave);
@@ -673,7 +702,8 @@
     transition: color var(--transicao), border-color var(--transicao);
 }
 
-.abas__aba:hover {
+.abas__aba:hover,
+.abas__aba:active {
     color: var(--cor-texto);
 }
 
@@ -883,7 +913,8 @@
     border-bottom: 0;
 }
 
-.calendario__dia:hover {
+.calendario__dia:hover,
+.calendario__dia:active {
     background: var(--cor-superficie-suave);
 }
 
@@ -1067,6 +1098,8 @@
    limite, mais agitada a água. Animações só com transform e opacity. */
 .barra-agua {
     --cor-agua: var(--cor-primaria);
+    /* O texto da faixa usa um tom mais escuro que a água, para ter contraste de 4,5:1. */
+    --cor-agua-texto: var(--cor-primaria);
     --altura-barra: 16px;
     --ritmo-onda: 1.8s;
     --ritmo-bolha: 3.4s;
@@ -1076,16 +1109,19 @@
 
 .barra-agua--atencao {
     --cor-agua: #c47f12;
+    --cor-agua-texto: var(--cor-atencao);
 }
 
 .barra-agua--perto {
     --cor-agua: #b5521b;
+    --cor-agua-texto: #93400f;
     --ritmo-onda: 1.1s;
     --ritmo-bolha: 1.9s;
 }
 
 .barra-agua--acima {
     --cor-agua: var(--cor-perigo);
+    --cor-agua-texto: var(--cor-perigo);
     --ritmo-onda: 0.9s;
     --ritmo-bolha: 1.6s;
 }
@@ -1109,12 +1145,13 @@
 
 .barra-agua__faixa {
     margin-left: auto;
-    color: var(--cor-agua);
+    color: var(--cor-agua-texto);
     font-size: var(--texto-1);
     font-weight: 700;
 }
 
 .barra-agua__valor {
+    font-family: var(--fonte-titulo);
     font-weight: 650;
     font-variant-numeric: tabular-nums;
 }
@@ -1141,7 +1178,7 @@
     position: absolute;
     inset: 0 auto 0 0;
     width: var(--nivel);
-    animation: barra-encher 1s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: barra-encher 1s var(--curva-saida) both;
 }
 
 .barra-agua__preenchimento {

@@ -82,9 +82,9 @@ export function renderizarAlertas(lista, alertas, { mostrarTanque = false, hrefT
         detalhe.append(alerta.descricao);
         return criarElemento('li', { classe: `lista-alertas__item lista-alertas__item--${alerta.gravidade}` }, [
             criarElemento('span', { classe: 'lista-alertas__titulo' }, [
-                // A gravidade aparece só pela cor do marcador; o leitor de tela recebe em texto.
-                criarElemento('span', { classe: 'visualmente-oculto', texto: `Gravidade ${alerta.rotuloGravidade.toLowerCase()}: ` }),
                 alerta.titulo,
+                // A gravidade vai escrita, nunca só na cor (seção 2.3).
+                criarSelo(alerta.rotuloGravidade, `alerta-${alerta.gravidade}`),
             ]),
             detalhe,
         ]);

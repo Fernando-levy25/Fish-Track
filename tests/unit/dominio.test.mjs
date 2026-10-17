@@ -96,6 +96,16 @@ describe('core/utils', () => {
     });
 });
 
+describe('ui/graficos: cor fixa por tanque (seção 2.1)', () => {
+    it('segue a ordem de criação e repete a paleta depois do sexto tanque', async () => {
+        const { obterCorTanque, CORES_TANQUES } = await import(RAIZ + 'ui/graficos.js');
+        const lista = Array.from({ length: 7 }, (_, i) => ({ id: `t${i}`, criadoEm: `2026-01-0${i + 1}` })).reverse();
+        assert.equal(obterCorTanque(lista.find((t) => t.id === 't0'), lista), CORES_TANQUES[0]);
+        assert.equal(obterCorTanque(lista.find((t) => t.id === 't2'), lista), CORES_TANQUES[2]);
+        assert.equal(obterCorTanque(lista.find((t) => t.id === 't6'), lista), CORES_TANQUES[0]);
+    });
+});
+
 describe('core/format', () => {
     it('formata números no padrão brasileiro (seção 9.4)', () => {
         assert.equal(format.formatarNumero(1234.5, 1), '1.234,5');

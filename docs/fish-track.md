@@ -482,7 +482,8 @@ fish-track/
 │       └── configuracoes.js
 │
 ├── assets/
-│   └── icons/                # Ícones SVG e ícones do PWA
+│   ├── icons/                # Ícones SVG e ícones do PWA
+│   └── fonts/                # Figtree e Bricolage Grotesque (woff2, licença OFL)
 │
 ├── tests/
 │   ├── unit/                 # Regras e cálculos: node --test
@@ -540,6 +541,11 @@ fish-track/
 
 - **Mobile-first:** estilos base para celular, com `@media (min-width: ...)` para telas maiores.
 - Cores, espaçamentos e fontes em **variáveis CSS** (`--cor-primaria`, `--espaco-2`) definidas em `base.css`.
+- **Fontes:** Figtree no texto (`--fonte`) e Bricolage Grotesque em títulos e números grandes (`--fonte-titulo`), com números tabulares. Os arquivos ficam em `assets/fonts/` e no service worker, nunca no Google Fonts, porque o app precisa abrir offline; a fonte do sistema é a reserva.
+- **Cores:** fundo `#f3f2ec`; menu lateral `#0c3c37` com destaque `#5fd0b4`; estados em sucesso, atenção, perigo e informação, cada um com sua versão suave. Texto sempre com contraste mínimo de 4,5:1.
+- **Cor fixa por tanque** nos gráficos, pela ordem de criação: `#0e5a52`, `#c47f12`, `#3f68a8`, `#7a4fa0`, `#2f8f6b`, `#b5523b` (`obterCorTanque` em `ui/graficos.js`).
+- **Gravidade de alerta sempre com texto** (Alta, Média, Baixa), nunca só cor.
+- **Movimento:** durações e curvas ficam em variáveis (`--duracao-rapida`, `--duracao-media`, `--duracao-lenta`, `--atraso-passo`, `--curva-saida`, `--curva-mola`). Com "reduzir movimento", elas zeram em `:root`; animações contínuas (como a da barra de capacidade) recebem `animation: none`. Animações usam `transform`, `opacity` ou `clip-path`, e todo elemento clicável responde ao toque com `:active`, porque o celular não tem hover.
 - Classes no padrão **BEM** em kebab-case: `.card`, `.card__titulo`, `.card--alerta`.
 - Evitar seletores por ID e `!important`. A única exceção é a regra `[hidden]` em `base.css`, que garante que o atributo `hidden` esconda até elementos com `display` definido por classe.
 - Estados visuais usam atributos ARIA quando existem (`aria-current`, `aria-selected`, `aria-invalid`, `aria-pressed`), e não classes modificadoras. O JS altera o atributo, e o CSS reage a ele.

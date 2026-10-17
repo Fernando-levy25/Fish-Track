@@ -5,6 +5,20 @@ import { diasEntre } from '../core/utils.js';
 import { formatarDataCurta } from '../core/format.js';
 
 const SVG = 'http://www.w3.org/2000/svg';
+
+// Cor fixa de cada tanque nos gráficos (seção 2.1). As cores diferem também em
+// claridade, não só no tom, para continuarem distinguíveis para quem não
+// enxerga bem as cores.
+export const CORES_TANQUES = ['#0e5a52', '#c47f12', '#3f68a8', '#7a4fa0', '#2f8f6b', '#b5523b'];
+
+// A cor segue a ordem de criação do tanque entre todos os tanques, para não
+// mudar quando a lista é filtrada ou ordenada por nome.
+export function obterCorTanque(tanque, tanques) {
+    const porCriacao = [...tanques].sort((a, b) => a.criadoEm.localeCompare(b.criadoEm));
+    const indice = Math.max(porCriacao.findIndex((item) => item.id === tanque.id), 0);
+    return CORES_TANQUES[indice % CORES_TANQUES.length];
+}
+
 const LARGURA = 320;
 const ALTURA = 168;
 const AREA = { esquerda: 4, direita: 316, topo: 20, base: 144 };
