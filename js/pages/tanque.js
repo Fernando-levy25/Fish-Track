@@ -18,12 +18,13 @@ import {
 import { arquivarTanque, desarquivarTanque, excluirTanque, obterSituacao, ROTULOS_STATUS } from '../domain/tanques.js';
 import { listarEventosCalendario } from '../domain/ciclos.js';
 import { excluirRegistro, listarRegistrosDoCiclo, resumirRegistro } from '../domain/registros.js';
-import { calcularSeries } from '../domain/indicadores.js';
-import { analisarTanque } from '../domain/alertas.js';
+import { calcularCargaMaximaKg, calcularSeries } from '../domain/indicadores.js';
+import { analisarTanque, resolverLimites } from '../domain/alertas.js';
 import { obterLimitesPadrao, salvarLimitesTanque } from '../domain/configuracoes.js';
 import { iniciarNavegacao, irPara, lerParametro, montarUrl } from '../ui/nav.js';
 import {
     confirmar,
+    criarBarraCapacidade,
     criarElemento,
     criarItemRegistro,
     iniciarAbas,
@@ -111,8 +112,9 @@ function renderizarCabecalho() {
     const selo = porId('selo-status-tanque');
     selo.textContent = ROTULOS_STATUS[tanque.status];
     selo.className = `selo selo--${tanque.status}`;
-    porId('especie-tanque').textContent = `${tanque.especie} · ${formatarVolume(tanque.volumeM3)} · `
-        + `capacidade de ${pluralizar(tanque.capacidade, 'peixe', 'peixes')}`;
+    const cargaMaxima = calcularCargaMaximaKg(tanque.densidadeMaximaKgM3, tanque.volumeM3);
+    porId('especie-tanque').textContent = `${tanque.especie} · ${formatarVolume(tanque.volumeM3)} de água · `
+        + (cargaMaxima ? `carga máxima de ${formatarKg(cargaMaxima)}` : 'capacidade não definida');
     porId('resumo-ciclo').textContent = cicloAtivo ? descreverCicloAtivo(cicloAtivo) : '';
     porId('observacoes-tanque').textContent = tanque.observacoes;
 
@@ -194,7 +196,20 @@ function renderizarResumo() {
         return;
     }
 
-    const { indicadores, alertas } = analisarTanque(situacao, { limitesPadrao: obterLimitesPadrao(), hoje: hojeISO() });
+    const limitesPadrao = obterLimitesPadrao();
+    const { indicadores, alertas } = analisarTanque(situacao, { limitesPadrao, hoje: hojeISO() });
+    porId('barra-capacidade-tanque').replaceChildren(criarBarraCapacidade({
+        percentual: indicadores.capacidadeUtilizada,
+        cargaKg: indicadores.biomassaKg,
+        cargaMaximaKg: indicadores.cargaMaximaKg,
+        densidade: indicadores.densidadeKgM3,
+        densidadeMaxima: tanque.densidadeMaximaKgM3,
+        limiteAlerta: resolverLimites(limitesPadrao, tanque.limitesAlerta).capacidadePct,
+        projecaoDias: indicadores.projecaoDiasLimite,
+        hrefDefinir: montarUrl('tanque-form.html', { id: tanque.id }),
+    }));
+    // Informativo (seção 4.2): quantos peixes por m³ entraram no povoamento.
+    porId('densidade-povoamento').textContent = `Povoamento com ${formatarNumero(indicadores.densidadePovoamento, 1)} peixes por m³ de água.`;
     preencherIndicadores(porId('conteudo-resumo'), {
         quantidade: formatarInteiro(indicadores.quantidade),
         pesoMedio: formatarGramas(indicadores.pesoMedioG),

@@ -36,9 +36,9 @@ function criarExemplo(hoje) {
     const sortear = criarSorteio(SEMENTE);
     const dia = (deslocamento) => somarDias(hoje, deslocamento);
 
-    // Bom crescimento, perto da capacidade e com uma contagem que corrigiu o estoque.
+    // Bom crescimento, com uma contagem que corrigiu o estoque. Capacidade informada como carga total.
     const tanque01 = salvarTanque({
-        nome: 'Tanque 01', especie: 'Tilápia', volumeM3: 300, capacidade: 2600,
+        nome: 'Tanque 01', especie: 'Tilápia', volumeM3: 300, cargaMaximaKg: 1200,
         observacoes: 'Viveiro escavado, com aerador de pás.',
     });
     simularCiclo(tanque01.id, {
@@ -47,20 +47,20 @@ function criarExemplo(hoje) {
     });
 
     // Crescimento abaixo do esperado e mortalidade alta no último registro.
-    const tanque02 = salvarTanque({ nome: 'Tanque 02', especie: 'Tambaqui', volumeM3: 450, capacidade: 4000 });
+    const tanque02 = salvarTanque({ nome: 'Tanque 02', especie: 'Tambaqui', volumeM3: 450, densidadeMaximaKgM3: 2 });
     simularCiclo(tanque02.id, {
         inicio: dia(-63), dias: 63, quantidadeInicial: 3200, pesoInicialG: 3, pesoFinalG: 230,
         pesoAlvoG: 1200, duracaoPrevista: 240, sortear,
         ultimoRegistro: { mortalidade: 45, observacoes: 'Peixes na superfície pela manhã. Possível falta de oxigênio.' },
     });
 
-    // Sem registros há quase duas semanas.
-    const tanque05 = salvarTanque({ nome: 'Tanque 05', especie: 'Tambacu', volumeM3: 200, capacidade: 1800 });
+    // Sem registros há quase duas semanas e perto da carga máxima.
+    const tanque05 = salvarTanque({ nome: 'Tanque 05', especie: 'Tambacu', volumeM3: 200, densidadeMaximaKgM3: 0.9 });
     simularCiclo(tanque05.id, { inicio: dia(-70), dias: 58, quantidadeInicial: 1500, pesoInicialG: 8, pesoFinalG: 120, sortear });
 
     // Vazio, com um ciclo encerrado no histórico.
     const viveiro = salvarTanque({
-        nome: 'Viveiro Norte', especie: 'Tilápia', volumeM3: 800, capacidade: 6000,
+        nome: 'Viveiro Norte', especie: 'Tilápia', volumeM3: 800, densidadeMaximaKgM3: 1.5,
         observacoes: 'Abastecido pela represa; esvaziado após a despesca.',
     });
     simularCiclo(viveiro.id, {
@@ -69,10 +69,10 @@ function criarExemplo(hoje) {
     });
 
     // Em manutenção, sem ciclos.
-    salvarTanque({ nome: 'Tanque-rede 04', especie: 'Pintado', volumeM3: 18, capacidade: 900, manutencao: true });
+    salvarTanque({ nome: 'Tanque-rede 04', especie: 'Pintado', volumeM3: 18, densidadeMaximaKgM3: 80, manutencao: true });
 
     // Fora de uso: arquivado depois de um ciclo antigo.
-    const antigo = salvarTanque({ nome: 'Tanque 03', especie: 'Tilápia', volumeM3: 250, capacidade: 2000 });
+    const antigo = salvarTanque({ nome: 'Tanque 03', especie: 'Tilápia', volumeM3: 250, densidadeMaximaKgM3: 3 });
     simularCiclo(antigo.id, {
         inicio: dia(-520), dias: 120, quantidadeInicial: 1800, pesoInicialG: 5, pesoFinalG: 520,
         despesca: { perda: 10 }, sortear,

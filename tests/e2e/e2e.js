@@ -111,11 +111,13 @@ async function roteiro() {
     verificar('erro no nome', texto('erro-nome') === 'Informe o nome do tanque.' && porId('campo-nome').getAttribute('aria-invalid') === 'true', texto('erro-nome'));
     verificar('erro no volume', texto('erro-volume') === 'Informe o volume.', texto('erro-volume'));
     verificar('foco vai para o primeiro erro', doc().activeElement === porId('campo-nome'));
-    preencher({ 'campo-nome': 'Tanque Teste', 'campo-especie': 'Tilápia', 'campo-volume': '120', 'campo-capacidade': '1.000', 'campo-observacoes': 'Tanque de teste' });
+    preencher({ 'campo-nome': 'Tanque Teste', 'campo-especie': 'Tilápia', 'campo-volume': '120', 'campo-densidade-maxima': '5', 'campo-observacoes': 'Tanque de teste' });
+    verificar('equivalência da capacidade', texto('equivalencia-capacidade') === 'Equivale a uma carga máxima de 600 kg neste tanque.', texto('equivalencia-capacidade'));
     verificar('erro some ao digitar', !porId('campo-nome').hasAttribute('aria-invalid') && texto('erro-nome') === '');
     await enviarENavegar('formulario-tanque');
     const tanqueId = new URLSearchParams(doc().location.search).get('id');
     verificar('abre a página do tanque', pagina() === 'tanque.html' && tanqueId, doc().location.href);
+    verificar('carga máxima no cabeçalho', texto('especie-tanque') === 'Tilápia · 120 m³ de água · carga máxima de 600 kg', texto('especie-tanque'));
     verificar('título e selo', texto('titulo-tanque') === 'Tanque Teste' && porId('selo-status-tanque').classList.contains('selo--vazio'), texto('selo-status-tanque'));
     verificar('ações de tanque vazio sem ciclos', !porId('link-iniciar-ciclo').hidden && !porId('botao-excluir-tanque').hidden
         && porId('botao-arquivar-tanque').hidden && porId('link-novo-registro').hidden);
@@ -123,7 +125,7 @@ async function roteiro() {
 
     etapa = 'RN01 nome único';
     await abrir('tanque-form.html');
-    preencher({ 'campo-nome': ' tanque teste ', 'campo-especie': 'X', 'campo-volume': '1', 'campo-capacidade': '1' });
+    preencher({ 'campo-nome': ' tanque teste ', 'campo-especie': 'X', 'campo-volume': '1' });
     await enviarSemSair('formulario-tanque');
     verificar('nome repetido recusado', texto('erro-nome') === 'Já existe um tanque com esse nome.', texto('erro-nome'));
 
@@ -133,6 +135,14 @@ async function roteiro() {
     preencher({ 'campo-volume': '150,5' });
     await enviarENavegar('formulario-tanque');
     verificar('vírgula decimal no volume', dados().tanques[0].volumeM3 === 150.5, dados().tanques[0].volumeM3);
+    await abrir(`tanque-form.html?id=${tanqueId}`);
+    preencher({ 'unidade-carga': true });
+    verificar('troca para carga total', !porId('campo-carga-maxima').hidden && porId('campo-densidade-maxima').hidden && porId('campo-carga-maxima').value === '752,5',
+        porId('campo-carga-maxima').value);
+    preencher({ 'campo-carga-maxima': '900' });
+    await enviarENavegar('formulario-tanque');
+    verificar('carga total convertida', texto('especie-tanque').endsWith('carga máxima de 900 kg') && Math.abs(dados().tanques[0].densidadeMaximaKgM3 - 900 / 150.5) < 1e-9,
+        texto('especie-tanque'));
 
     etapa = 'Iniciar ciclo';
     await navegarCom(() => porId('link-iniciar-ciclo').click());
@@ -145,6 +155,9 @@ async function roteiro() {
     await enviarENavegar('formulario-iniciar-ciclo');
     verificar('ponto de milhar: 1.000 peixes', dados().ciclos[0].quantidadeInicial === 1000, dados().ciclos[0].quantidadeInicial);
     verificar('tanque ativo', texto('selo-status-tanque') === 'Ativo');
+    const barra = porId('barra-capacidade-tanque').querySelector('[role="progressbar"]');
+    verificar('barra de capacidade acessível', barra?.getAttribute('aria-valuetext') === '1,1%, 10 de 900 kg', barra?.getAttribute('aria-valuetext'));
+    verificar('densidade de povoamento', texto('densidade-povoamento') === 'Povoamento com 6,6 peixes por m³ de água.', texto('densidade-povoamento'));
     verificar('indicadores iniciais', indicador('quantidade') === '1.000' && indicador('diasCultivo') === '30' && indicador('fca') === '—',
         `${indicador('quantidade')} ${indicador('diasCultivo')} ${indicador('fca')}`);
     verificar('ações com ciclo ativo', !porId('link-novo-registro').hidden && !porId('link-registrar-despesca').hidden
@@ -259,9 +272,10 @@ async function roteiro() {
 
     etapa = 'Manutenção e exclusão';
     await abrir('tanque-form.html');
-    preencher({ 'campo-nome': 'Descartável', 'campo-especie': 'Pacu', 'campo-volume': '10', 'campo-capacidade': '50', 'campo-manutencao': true });
+    preencher({ 'campo-nome': 'Descartável', 'campo-especie': 'Pacu', 'campo-volume': '10', 'campo-manutencao': true });
     await enviarENavegar('formulario-tanque');
     verificar('em manutenção, sem iniciar ciclo', texto('selo-status-tanque') === 'Em manutenção' && porId('link-iniciar-ciclo').hidden);
+    verificar('sem capacidade definida', texto('especie-tanque').endsWith('capacidade não definida'), texto('especie-tanque'));
     const carga = aguardarCarga();
     porId('botao-excluir-tanque').click();
     await responderConfirmacao(true);
@@ -304,8 +318,10 @@ async function roteiro() {
     await abrir('index.html');
     verificar('3 tanques ativos', indicador('tanquesAtivos') === '3', indicador('tanquesAtivos'));
     verificar('alerta alto primeiro', doc().querySelector('#lista-alertas li')?.classList.contains('lista-alertas__item--alta'));
+    verificar('barra compacta nos cartões', doc().querySelectorAll('#grade-tanques .barra-agua--compacta').length === 3);
+    verificar('Tanque 05 perto do limite', [...doc().querySelectorAll('#grade-tanques .cartao-tanque')].find((c) => c.textContent.includes('Tanque 05'))?.querySelector('.barra-agua--perto .barra-agua__faixa')?.textContent === 'Perto do limite');
     await abrir('alertas.html');
-    verificar('3 grupos de alertas', doc().querySelectorAll('#grupos-alertas .grupo-alertas').length === 3);
+    verificar('2 grupos de alertas', doc().querySelectorAll('#grupos-alertas .grupo-alertas').length === 2);
     await abrir('calendario.html');
     verificar('eventos de hoje', doc().querySelectorAll('#lista-eventos-dia .lista-eventos__item').length >= 2, texto('lista-eventos-dia'));
     await abrir('tanques.html');

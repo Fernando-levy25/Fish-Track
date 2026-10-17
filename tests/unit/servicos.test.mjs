@@ -20,8 +20,8 @@ beforeEach(() => localStorage.clear());
 
 describe('services/exportacao (seção 9.7)', () => {
     it('CSV com BOM, ";", vírgula decimal, aspas e proteção contra fórmulas', () => {
-        const a = tanques.salvarTanque({ nome: 'Tanque B', especie: 'Tilápia', volumeM3: 1, capacidade: 100 });
-        const b = tanques.salvarTanque({ nome: 'Tanque A', especie: 'Pacu', volumeM3: 1, capacidade: 100 });
+        const a = tanques.salvarTanque({ nome: 'Tanque B', especie: 'Tilápia', volumeM3: 1, densidadeMaximaKgM3: 5 });
+        const b = tanques.salvarTanque({ nome: 'Tanque A', especie: 'Pacu', volumeM3: 1, densidadeMaximaKgM3: 5 });
         ciclos.iniciarCiclo(a.id, { dataInicio: '2026-09-01', quantidadeInicial: 50, pesoMedioInicialG: 5 });
         ciclos.iniciarCiclo(b.id, { dataInicio: '2026-09-02', quantidadeInicial: 50, pesoMedioInicialG: 5 });
         registros.salvarRegistro({ tanqueId: a.id, data: '2026-09-10', pesoMedioG: 12.5, racaoKg: 1.25, observacoes: 'Água "turva"; ok' });
@@ -35,7 +35,7 @@ describe('services/exportacao (seção 9.7)', () => {
         assert.equal(exportacao.gerarCsvRegistros({ tanqueId: a.id }).quantidade, 1);
     });
     it('backup: lê, valida a versão e restaura', async () => {
-        tanques.salvarTanque({ nome: 'X', especie: 'Y', volumeM3: 1, capacidade: 1 });
+        tanques.salvarTanque({ nome: 'X', especie: 'Y', volumeM3: 1, densidadeMaximaKgM3: 5 });
         const texto = JSON.stringify(storage.lerDados());
         localStorage.clear();
         exportacao.restaurarBackup(await exportacao.lerBackup(new Blob([texto])));
@@ -73,9 +73,10 @@ describe('services/seed (dados de exemplo)', () => {
             const { alertas, indicadores } = analisarTanque(s, { limitesPadrao, hoje });
             return [s.tanque.nome, { tipos: alertas.map((a) => a.tipo), indicadores }];
         }));
-        assert.deepEqual(porTanque['Tanque 01'].tipos, ['capacidade']);
+        assert.deepEqual(porTanque['Tanque 01'].tipos, []);
         assert.deepEqual(porTanque['Tanque 02'].tipos, ['mortalidade-registro', 'peso']);
-        assert.deepEqual(porTanque['Tanque 05'].tipos, ['sem-registro']);
+        assert.deepEqual(porTanque['Tanque 05'].tipos, ['capacidade', 'sem-registro']);
+        assert.ok(Math.abs(porTanque['Tanque 01'].indicadores.capacidadeUtilizada - 77) < 2, 'Tanque 01 perto de 77%');
         for (const [nome, { indicadores }] of Object.entries(porTanque)) {
             assert.ok(indicadores.fca > 1.2 && indicadores.fca < 1.7, `${nome}: FCA ${indicadores.fca}`);
         }
@@ -87,7 +88,7 @@ describe('services/seed (dados de exemplo)', () => {
         assert.deepEqual(segunda.registros.map((r) => r.racaoKg), dados.registros.map((r) => r.racaoKg));
     });
     it('substitui os dados atuais', () => {
-        tanques.salvarTanque({ nome: 'Meu tanque', especie: 'Y', volumeM3: 1, capacidade: 1 });
+        tanques.salvarTanque({ nome: 'Meu tanque', especie: 'Y', volumeM3: 1, densidadeMaximaKgM3: 5 });
         seed.carregarDadosExemplo();
         assert.ok(!tanques.listarTanques().some((t) => t.nome === 'Meu tanque'));
     });

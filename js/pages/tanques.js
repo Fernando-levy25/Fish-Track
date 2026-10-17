@@ -4,8 +4,10 @@ import { hojeISO } from '../core/utils.js';
 import { formatarData, formatarInteiro, formatarKg } from '../core/format.js';
 import { listarSituacoes, listarTanques, ROTULOS_STATUS } from '../domain/tanques.js';
 import { calcularIndicadores } from '../domain/indicadores.js';
+import { resolverLimites } from '../domain/alertas.js';
+import { obterLimitesPadrao } from '../domain/configuracoes.js';
 import { iniciarNavegacao, lerParametro, montarUrl } from '../ui/nav.js';
-import { criarCartaoTanque, criarElemento, mostrarErroPagina } from '../ui/componentes.js';
+import { criarBarraCapacidade, criarCartaoTanque, criarElemento, mostrarErroPagina } from '../ui/componentes.js';
 
 const filtro = document.getElementById('filtro-status');
 const grade = document.getElementById('grade-tanques');
@@ -40,10 +42,11 @@ function renderizar() {
         grade.replaceChildren(criarAvisoVazio());
         return;
     }
-    grade.replaceChildren(...situacoes.map((situacao) => criarCartao(situacao, hoje)));
+    const limitesPadrao = obterLimitesPadrao();
+    grade.replaceChildren(...situacoes.map((situacao) => criarCartao(situacao, hoje, limitesPadrao)));
 }
 
-function criarCartao({ tanque, cicloAtivo, registros, ultimoRegistro }, hoje) {
+function criarCartao({ tanque, cicloAtivo, registros, ultimoRegistro }, hoje, limitesPadrao) {
     const indicadores = cicloAtivo ? calcularIndicadores({ tanque, ciclo: cicloAtivo, registros, hoje }) : null;
     return criarCartaoTanque({
         nome: tanque.nome,
@@ -54,10 +57,27 @@ function criarCartao({ tanque, cicloAtivo, registros, ultimoRegistro }, hoje) {
             { rotulo: 'Biomassa', valor: formatarKg(indicadores?.biomassaKg) },
             { rotulo: 'Último registro', valor: formatarData(ultimoRegistro?.data) },
         ],
+        extra: criarBarra(tanque, indicadores, limitesPadrao),
         acoes: [
             { texto: 'Ver detalhes', href: montarUrl('tanque.html', { id: tanque.id }) },
             { texto: 'Editar', href: montarUrl('tanque-form.html', { id: tanque.id }) },
         ],
+    });
+}
+
+// Com peixes, a barra mostra a carga; sem peixes, só aparece para pedir que
+// a capacidade seja definida, se ainda não foi.
+function criarBarra(tanque, indicadores, limitesPadrao) {
+    if (!indicadores && (tanque.densidadeMaximaKgM3 || tanque.status === 'arquivado')) {
+        return null;
+    }
+    return criarBarraCapacidade({
+        percentual: indicadores?.capacidadeUtilizada ?? null,
+        cargaKg: indicadores?.biomassaKg,
+        cargaMaximaKg: indicadores?.cargaMaximaKg,
+        limiteAlerta: resolverLimites(limitesPadrao, tanque.limitesAlerta).capacidadePct,
+        compacta: true,
+        hrefDefinir: montarUrl('tanque-form.html', { id: tanque.id }),
     });
 }
 

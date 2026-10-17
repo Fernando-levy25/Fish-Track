@@ -993,3 +993,293 @@
     background: none;
     box-shadow: inset 0 0 0 1.5px var(--cor-evento);
 }
+
+/* ---------- Controle segmentado ---------- */
+
+/* Opções lado a lado em que só uma vale: radios (formulário) ou botões com
+   aria-pressed (filtros e períodos). */
+.segmentado {
+    display: inline-flex;
+    justify-self: start;
+    flex-wrap: wrap;
+    gap: 2px;
+    padding: 3px;
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio-grande);
+    background: var(--cor-superficie-suave);
+}
+
+.segmentado__opcao {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--altura-toque);
+    padding: 0 var(--espaco-4);
+    border: 0;
+    border-radius: var(--raio);
+    background: none;
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-3);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color var(--transicao), color var(--transicao);
+}
+
+.segmentado__opcao:hover {
+    color: var(--cor-texto);
+}
+
+.segmentado__opcao:has(:checked),
+.segmentado__opcao[aria-pressed="true"] {
+    background: var(--cor-superficie);
+    color: var(--cor-primaria-escura);
+    box-shadow: 0 1px 2px rgb(29 36 34 / 0.12);
+}
+
+.segmentado__opcao:has(:focus-visible) {
+    outline: 2px solid var(--cor-foco);
+    outline-offset: 2px;
+}
+
+.segmentado__opcao input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Grupo de campos com legenda (fieldset), como a capacidade do tanque. */
+.campo--grupo {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.campo--grupo > legend {
+    padding: 0;
+    margin-bottom: var(--espaco-2);
+}
+
+/* ---------- Barra de capacidade com água ---------- */
+
+/* Gerado por criarBarraCapacidade (seção 5). A cor e o ritmo da água vêm de
+   variáveis que os modificadores de faixa trocam: quanto mais perto do
+   limite, mais agitada a água. Animações só com transform e opacity. */
+.barra-agua {
+    --cor-agua: var(--cor-primaria);
+    --altura-barra: 16px;
+    --ritmo-onda: 1.8s;
+    --ritmo-bolha: 3.4s;
+    display: grid;
+    gap: var(--espaco-2);
+}
+
+.barra-agua--atencao {
+    --cor-agua: #c47f12;
+}
+
+.barra-agua--perto {
+    --cor-agua: #b5521b;
+    --ritmo-onda: 1.1s;
+    --ritmo-bolha: 1.9s;
+}
+
+.barra-agua--acima {
+    --cor-agua: var(--cor-perigo);
+    --ritmo-onda: 0.9s;
+    --ritmo-bolha: 1.6s;
+}
+
+.barra-agua--compacta {
+    --altura-barra: 10px;
+    gap: var(--espaco-1);
+}
+
+.barra-agua__topo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--espaco-1) var(--espaco-2);
+    font-size: var(--texto-2);
+}
+
+.barra-agua__rotulo {
+    color: var(--cor-texto-suave);
+}
+
+.barra-agua__faixa {
+    margin-left: auto;
+    color: var(--cor-agua);
+    font-size: var(--texto-1);
+    font-weight: 700;
+}
+
+.barra-agua__valor {
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Sem faixa, o valor vai sozinho para a direita; com faixa, quem empurra é ela. */
+.barra-agua__rotulo + .barra-agua__valor {
+    margin-left: auto;
+}
+
+.barra-agua__trilho {
+    position: relative;
+    height: var(--altura-barra);
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--cor-neutra-suave);
+}
+
+.barra-agua--indefinida .barra-agua__trilho {
+    border: 1px dashed var(--cor-borda-forte);
+    background: transparent;
+}
+
+.barra-agua__agua {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: var(--nivel);
+    animation: barra-encher 1s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.barra-agua__preenchimento {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    background: var(--cor-agua);
+    transition: background-color var(--transicao);
+}
+
+/* Borda direita ondulada: um recorte com forma de onda vertical que desce sem parar. */
+.barra-agua__onda {
+    position: absolute;
+    inset: -12px -4px -12px auto;
+    width: 8px;
+    background: var(--cor-agua);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='12'%3E%3Cpath d='M0 0H4C6 0 6 6 4 6C2 6 2 12 4 12H0Z'/%3E%3C/svg%3E") 0 0 / 8px 12px repeat-y;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='12'%3E%3Cpath d='M0 0H4C6 0 6 6 4 6C2 6 2 12 4 12H0Z'/%3E%3C/svg%3E") 0 0 / 8px 12px repeat-y;
+    animation: barra-onda var(--ritmo-onda) linear infinite;
+}
+
+.barra-agua__reflexo {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 45%;
+    background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.35), transparent);
+    transform: translateX(-120%);
+    animation: barra-reflexo 4s ease-in-out 1s infinite;
+}
+
+.barra-agua__bolha {
+    position: absolute;
+    bottom: -5px;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: rgb(255 255 255 / 0.5);
+    opacity: 0;
+    animation: barra-bolha var(--ritmo-bolha) ease-in infinite;
+}
+
+.barra-agua__bolha:nth-child(2) {
+    left: 18%;
+}
+
+.barra-agua__bolha:nth-child(3) {
+    left: 44%;
+    width: 3px;
+    height: 3px;
+    animation-delay: 0.9s;
+}
+
+.barra-agua__bolha:nth-child(4) {
+    left: 67%;
+    width: 5px;
+    height: 5px;
+    animation-delay: 1.7s;
+}
+
+.barra-agua__bolha:nth-child(5) {
+    left: 86%;
+    animation-delay: 2.4s;
+}
+
+/* Acima de 100%: um brilho pulsa na ponta, como se a água transbordasse. */
+.barra-agua--acima .barra-agua__agua::after {
+    content: "";
+    position: absolute;
+    inset: 0 -8px 0 auto;
+    width: 16px;
+    background: radial-gradient(closest-side, var(--cor-agua), transparent);
+    animation: barra-transbordar 1.2s ease-in-out infinite;
+}
+
+.barra-agua__marca {
+    position: absolute;
+    inset: 0 auto 0 var(--posicao);
+    width: 2px;
+    margin-left: -1px;
+    background: var(--cor-texto);
+    opacity: 0.35;
+}
+
+.barra-agua__detalhe {
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-2);
+    font-variant-numeric: tabular-nums;
+}
+
+.barra-agua--compacta .barra-agua__detalhe {
+    font-size: var(--texto-1);
+}
+
+@keyframes barra-encher {
+    from {
+        transform: translateX(-100%);
+    }
+}
+
+@keyframes barra-onda {
+    to {
+        transform: translateY(12px);
+    }
+}
+
+@keyframes barra-reflexo {
+    60%,
+    100% {
+        transform: translateX(320%);
+    }
+}
+
+@keyframes barra-bolha {
+    20% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(calc(-1 * var(--altura-barra) - 6px));
+    }
+}
+
+@keyframes barra-transbordar {
+    50% {
+        opacity: 0.3;
+    }
+}
+
+/* Movimento reduzido: a barra fica parada, só com a cor da faixa. */
+@media (prefers-reduced-motion: reduce) {
+    .barra-agua__agua,
+    .barra-agua__onda,
+    .barra-agua--acima .barra-agua__agua::after {
+        animation: none;
+    }
+
+    .barra-agua__reflexo,
+    .barra-agua__bolha {
+        display: none;
+    }
+}

@@ -2,13 +2,13 @@
 // por tanque com ciclo ativo.
 
 import { hojeISO } from '../core/utils.js';
-import { formatarInteiro, formatarKg, formatarPercentual } from '../core/format.js';
+import { formatarFca, formatarInteiro, formatarKg, formatarPercentual } from '../core/format.js';
 import { listarSituacoes } from '../domain/tanques.js';
 import { calcularResumoProducao } from '../domain/indicadores.js';
-import { analisarTanque, gravidadeMaisAlta, ordenarAlertas } from '../domain/alertas.js';
+import { analisarTanque, gravidadeMaisAlta, ordenarAlertas, resolverLimites } from '../domain/alertas.js';
 import { obterLimitesPadrao } from '../domain/configuracoes.js';
 import { iniciarNavegacao, montarUrl } from '../ui/nav.js';
-import { criarCartaoTanque, criarElemento, mostrarErroPagina, preencherIndicadores, renderizarAlertas } from '../ui/componentes.js';
+import { criarBarraCapacidade, criarCartaoTanque, criarElemento, mostrarErroPagina, preencherIndicadores, renderizarAlertas } from '../ui/componentes.js';
 
 const MAXIMO_ALERTAS = 5;
 const SELOS_GRAVIDADE = {
@@ -57,10 +57,10 @@ function renderizar() {
         grade.replaceChildren(criarAvisoSemTanques(situacoes.length));
         return;
     }
-    grade.replaceChildren(...ativos.map(criarCartao));
+    grade.replaceChildren(...ativos.map((item) => criarCartao(item, limitesPadrao)));
 }
 
-function criarCartao({ tanque, indicadores, alertas }) {
+function criarCartao({ tanque, indicadores, alertas }, limitesPadrao) {
     const gravidade = gravidadeMaisAlta(alertas);
     return criarCartaoTanque({
         nome: tanque.nome,
@@ -71,8 +71,16 @@ function criarCartao({ tanque, indicadores, alertas }) {
         metricas: [
             { rotulo: 'Peixes', valor: formatarInteiro(indicadores.quantidade) },
             { rotulo: 'Biomassa', valor: formatarKg(indicadores.biomassaKg) },
-            { rotulo: 'Capacidade', valor: formatarPercentual(indicadores.capacidadeUtilizada) },
+            { rotulo: 'Conversão', valor: formatarFca(indicadores.fca) },
         ],
+        extra: criarBarraCapacidade({
+            percentual: indicadores.capacidadeUtilizada,
+            cargaKg: indicadores.biomassaKg,
+            cargaMaximaKg: indicadores.cargaMaximaKg,
+            limiteAlerta: resolverLimites(limitesPadrao, tanque.limitesAlerta).capacidadePct,
+            compacta: true,
+            hrefDefinir: montarUrl('tanque-form.html', { id: tanque.id }),
+        }),
         acoes: [
             { texto: 'Ver detalhes', href: montarUrl('tanque.html', { id: tanque.id }) },
             { texto: 'Novo registro', href: montarUrl('registro.html', { tanqueId: tanque.id }) },

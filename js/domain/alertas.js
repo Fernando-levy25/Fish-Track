@@ -2,7 +2,7 @@
 // os dados mudam e nunca ficam salvos.
 
 import { diasEntre } from '../core/utils.js';
-import { formatarData, formatarGramas, formatarInteiro, formatarKg, formatarPercentual, pluralizar } from '../core/format.js';
+import { formatarData, formatarGramas, formatarKg, formatarPercentual, pluralizar } from '../core/format.js';
 import { calcularIndicadores, calcularLinhaDoTempo } from './indicadores.js';
 
 export const LIMITES_PADRAO = Object.freeze({
@@ -89,10 +89,11 @@ export function avaliarAlertas({ tanque, ciclo, registros, indicadores, limites,
         }
     }
 
-    if (indicadores.capacidadeUtilizada >= limites.capacidadePct) {
+    // Sem densidade máxima definida, não há limite para comparar (seção 4.2).
+    if (indicadores.capacidadeUtilizada !== null && indicadores.capacidadeUtilizada >= limites.capacidadePct) {
         adicionar('capacidade', 'media', 'Tanque próximo da capacidade',
             `${formatarPercentual(indicadores.capacidadeUtilizada)} da capacidade: `
-            + `${formatarInteiro(indicadores.quantidade)} de ${formatarInteiro(tanque.capacidade)} peixes `
+            + `${formatarKg(indicadores.biomassaKg)} de ${formatarKg(indicadores.cargaMaximaKg)} `
             + `(limite de ${formatarPercentual(limites.capacidadePct)}).`,
             dataReferencia);
     }

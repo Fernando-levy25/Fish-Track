@@ -87,6 +87,7 @@ export function calcularIndicadores({ tanque, ciclo, registros, hoje }) {
     const pesoMedioG = pesagemAtual.pesoMedioG;
 
     const biomassaKg = (quantidade * pesoMedioG) / 1000;
+    const cargaMaximaKg = calcularCargaMaximaKg(tanque.densidadeMaximaKgM3, tanque.volumeM3);
     const biomassaInicialKg = (ciclo.quantidadeInicial * ciclo.pesoMedioInicialG) / 1000;
     const ganhoBiomassaKg = biomassaKg - biomassaInicialKg;
     const racaoAcumuladaKg = somar(ordenados, 'racaoKg');
@@ -111,10 +112,39 @@ export function calcularIndicadores({ tanque, ciclo, registros, hoje }) {
         taxaCrescimentoGDia: calcularTaxaCrescimento(pesagens),
         crescimentoCicloGDia: calcularCrescimentoCiclo(ciclo, pesagemAtual),
         densidadeKgM3: biomassaKg / tanque.volumeM3,
-        capacidadeUtilizada: (quantidade / tanque.capacidade) * 100,
+        // Seção 4: o limite do tanque é peso de peixe por volume de água, e não número de peixes.
+        cargaMaximaKg,
+        capacidadeUtilizada: cargaMaximaKg ? (biomassaKg / cargaMaximaKg) * 100 : null,
+        projecaoDiasLimite: calcularProjecaoLimite(ciclo, ordenados, cargaMaximaKg, biomassaKg),
+        densidadePovoamento: ciclo.quantidadeInicial / tanque.volumeM3,
         diasCultivo: diasEntre(ciclo.dataInicio, ciclo.dataDespesca ?? hoje),
         ultimoRegistro: ordenados.at(-1) ?? null,
     };
+}
+
+// Carga máxima de peixe que o tanque suporta, derivada e nunca armazenada.
+export function calcularCargaMaximaKg(densidadeMaximaKgM3, volumeM3) {
+    return Number.isFinite(densidadeMaximaKgM3) && Number.isFinite(volumeM3) ? densidadeMaximaKgM3 * volumeM3 : null;
+}
+
+// Dias até a carga máxima no ritmo de ganho de biomassa entre as duas últimas
+// pesagens. Não é previsão: só estende o ritmo recente, e fica de fora quando
+// não há ganho ou o resultado sai de 1 a 180 dias, onde ele deixa de ser útil.
+function calcularProjecaoLimite(ciclo, registros, cargaMaximaKg, biomassaKg) {
+    if (!cargaMaximaKg || biomassaKg >= cargaMaximaKg) {
+        return null;
+    }
+    const pesagens = calcularLinhaDoTempo(ciclo, registros).filter((dia, indice) => indice === 0 || dia.pesou);
+    if (pesagens.length < 2) {
+        return null;
+    }
+    const [anterior, atual] = pesagens.slice(-2);
+    const ganhoPorDia = (atual.biomassaKg - anterior.biomassaKg) / diasEntre(anterior.data, atual.data);
+    if (!(ganhoPorDia > 0)) {
+        return null;
+    }
+    const dias = Math.ceil((cargaMaximaKg - biomassaKg) / ganhoPorDia);
+    return dias >= 1 && dias <= 180 ? dias : null;
 }
 
 function calcularTaxaCrescimento(pesagens) {

@@ -157,7 +157,7 @@ Visão geral de toda a produção.
 
 Página própria de cada tanque, organizada em abas:
 
-- **Resumo:** indicadores do ciclo atual, gráficos (peso médio, biomassa e mortalidade ao longo do tempo), registros recentes e alertas do tanque.
+- **Resumo:** carga do tanque (barra de capacidade da seção 9.8 e densidade de povoamento), indicadores do ciclo atual, gráficos (peso médio, biomassa e mortalidade ao longo do tempo), registros recentes e alertas do tanque.
 - **Histórico:** todos os registros do ciclo atual, com edição e exclusão. Permite consultar ciclos anteriores, que ficam só para leitura (RN10).
 - **Calendário:** eventos do tanque (povoamento, registros, despesca prevista e realizada).
 
@@ -165,7 +165,7 @@ Ações: editar tanque, iniciar ciclo, registrar despesca, novo registro, ajusta
 
 ### 7.4 Formulário de tanque (`tanque-form.html`)
 
-Cria ou edita um tanque (nome, espécie, volume, capacidade, status, observações).
+Cria ou edita um tanque (nome, espécie, volume, capacidade máxima, status, observações). A capacidade é opcional e pode ser informada em **kg por m³** ou como **carga máxima total (kg)**; o formulário mostra a equivalência na outra unidade, e o sistema guarda sempre kg/m³.
 
 ### 7.5 Formulário de ciclo (`ciclo-form.html`)
 
@@ -228,7 +228,7 @@ Os valores são sempre armazenados nestas unidades e convertidos apenas na exibi
   nome: "Tanque 01",
   especie: "Tilápia",
   volumeM3: 300,
-  capacidade: 3000,            // quantidade máxima de peixes
+  densidadeMaximaKgM3: 4,      // kg de peixe por m³ de água; null = não definida
   status: "ativo",             // "ativo" | "vazio" | "manutencao" | "arquivado"
   limitesAlerta: null,         // null = usa os limites padrão; ou objeto parcial
   observacoes: "",
@@ -323,7 +323,7 @@ O `limitesAlerta` de cada tanque usa as mesmas chaves e pode conter só as que f
 ### 9.1 Tanques
 
 - **RN01.** Nome e espécie são obrigatórios. O nome é único entre os tanques não arquivados, sem diferenciar maiúsculas nem acentos.
-- **RN02.** Volume e capacidade devem ser números maiores que zero.
+- **RN02.** O volume é obrigatório e maior que zero. A densidade máxima (kg/m³) é opcional, sem valor padrão, e maior que zero quando informada. Informada como carga total, é convertida usando o volume.
 - **RN03.** O status `ativo` é definido automaticamente quando há um ciclo ativo, e `vazio` quando não há. `manutencao` e `arquivado` são definidos pelo produtor. Um tanque com ciclo ativo não pode entrar em manutenção.
 - **RN04.** Um tanque com histórico não é excluído, e sim **arquivado**. Só é possível excluir um tanque sem nenhum ciclo, e arquivar um tanque sem ciclo ativo. Ao ser desarquivado, ele volta como `vazio`, desde que o nome não esteja em uso por outro tanque (RN01).
 
@@ -362,7 +362,10 @@ Todos os indicadores são calculados a partir do ciclo e dos registros, ordenado
 | **Taxa de crescimento (g/dia)** | `(pesoMedioAtual − pesoMedioAnterior) / dias entre as duas pesagens`. A anterior é a última pesagem de outra data; o peso inicial conta como pesagem. |
 | **Crescimento no ciclo (g/dia)** | `(pesoMedioAtual − pesoMedioInicial) / dias do início até a última pesagem` |
 | **Densidade (kg/m³)** | `biomassa / volumeM3` |
-| **Capacidade utilizada (%)** | `quantidade / capacidade × 100` |
+| **Carga máxima (kg)** | `densidadeMaximaKgM3 × volumeM3`. Derivada, nunca armazenada. |
+| **Capacidade utilizada (%)** | `biomassa / cargaMaxima × 100`. Sem densidade máxima, não é calculada. |
+| **Densidade de povoamento (peixes/m³)** | `quantidadeInicial / volumeM3`. Informativo. |
+| **Projeção até o limite (dias)** | `(cargaMaxima − biomassa) / ganho de biomassa por dia entre as duas últimas pesagens`. Só aparece com ganho positivo e resultado entre 1 e 180 dias. Não é previsão: estende o ritmo recente. |
 | **Dias de cultivo** | Dias entre `dataInicio` e hoje (ou `dataDespesca`). |
 
 **Dashboard:** os totais somam os tanques com ciclo ativo. As taxas gerais são médias ponderadas pela quantidade inicial de cada ciclo.
@@ -378,7 +381,7 @@ Os alertas são calculados sempre que os dados mudam e não são armazenados. Ca
 | **Mortalidade elevada no registro** | mortalidade do registro > X% da quantidade estimada | 1% | Alta |
 | **Mortalidade acumulada elevada** | taxa de mortalidade do ciclo > X% | 10% | Média |
 | **Ração acima do limite** | ração do dia > X% da biomassa | 5% | Média |
-| **Tanque próximo da capacidade** | capacidade utilizada ≥ X% | 90% | Média |
+| **Tanque próximo da capacidade** | capacidade utilizada (biomassa ÷ carga máxima) ≥ X%; não avaliado sem densidade máxima | 90% | Média |
 | **Peso médio abaixo do esperado** | peso atual < X% do peso esperado na data* | 85% | Baixa |
 | **Tanque sem registro** | nenhum registro há mais de X dias | 7 dias | Baixa |
 
@@ -403,6 +406,24 @@ No calendário geral, tanques arquivados ficam de fora. A despesca prevista só 
 
 - **CSV:** um arquivo por tanque ou geral, com uma linha por registro e colunas para tanque, espécie, ciclo, data e todos os campos. Separador `;` e decimal com vírgula, para abrir corretamente no Excel em português. O arquivo começa com BOM UTF-8 para manter os acentos, e textos que começam com `=`, `+`, `-` ou `@` recebem um apóstrofo, para o Excel não tratá-los como fórmula.
 - **Backup JSON:** exporta o objeto completo do `localStorage` e registra a data em `config.ultimoBackupEm`. A restauração valida a `versao`, migra backups antigos (seção 8.4) e pede confirmação antes de substituir os dados.
+
+
+### 9.8 Barra de capacidade
+
+O limite real de um tanque é o peso de peixe por volume de água, e não o número de peixes: a carga cresce com o peixe, mesmo quando a quantidade cai. A barra mostra a biomassa atual contra a carga máxima, em três lugares: cartões do Dashboard, lista de tanques e página do tanque.
+
+| Faixa | Cor da água | Rótulo |
+|---|---|---|
+| até 75% | verde-petróleo | — |
+| acima de 75% e abaixo do limite de alerta | âmbar | "Atenção" |
+| a partir do limite de alerta do tanque (padrão 90%) | laranja-escuro | "Perto do limite" |
+| acima de 100% | vermelho, barra cheia | "Acima do limite" |
+
+- Uma marca vertical indica o limite de alerta do tanque.
+- Abaixo da barra: "927,8 kg de 1.200 kg · 3,09 de 4,00 kg/m³" e, se houver, a projeção.
+- Sem densidade máxima: barra tracejada com o link "Defina a capacidade".
+- Acessibilidade: `role="progressbar"` com o texto completo em `aria-valuetext`.
+- Animação só com `transform` e `opacity`: a água enche, a borda ondula, um reflexo atravessa e bolhas sobem (só na barra grande). A agitação aumenta perto do limite, e acima de 100% a ponta pulsa. Com "reduzir movimento", a barra fica parada.
 
 ---
 
@@ -590,7 +611,6 @@ fish-track/
 
 | Ponto | Decisão provisória | Validar com |
 |---|---|---|
-| Capacidade do tanque em **quantidade de peixes** ou em **kg** | Quantidade de peixes | Produtores |
 | Limites padrão dos alertas | Valores da seção 9.5 | Produtores / técnicos |
 | Incluir o peso dos peixes mortos no ganho de biomassa da FCA | Não incluir no MVP | Técnicos |
 | Campo de natalidade é relevante para a maioria dos produtores | Manter como opcional | Produtores |

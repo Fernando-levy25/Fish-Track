@@ -3,6 +3,8 @@
 // 10): recebe das páginas os textos já formatados. Texto do usuário entra
 // sempre por textContent (seção 11.2).
 
+import { formatarKg, formatarNumero, formatarPercentual, pluralizar } from '../core/format.js';
+
 // ---------- Elementos ----------
 
 export function criarElemento(tag, { classe, texto, atributos = {} } = {}, filhos = []) {
@@ -46,7 +48,7 @@ function preencher(raiz, gancho, valores) {
 
 // ---------- Cartões e listas ----------
 
-export function criarCartaoTanque({ nome, nivelTitulo = 2, especie, selo, metricas, acoes }) {
+export function criarCartaoTanque({ nome, nivelTitulo = 2, especie, selo, metricas, extra = null, acoes }) {
     return criarElemento('article', { classe: 'cartao-tanque' }, [
         criarElemento('div', { classe: 'cartao-tanque__cabecalho' }, [
             criarElemento(`h${nivelTitulo}`, { classe: 'cartao-tanque__nome', texto: nome }),
@@ -59,6 +61,7 @@ export function criarCartaoTanque({ nome, nivelTitulo = 2, especie, selo, metric
                 criarElemento('dd', { texto: valor }),
             ])
         ))),
+        extra,
         criarElemento('div', { classe: 'cartao-tanque__acoes' }, acoes.map(({ texto, href }) => (
             // Vários cartões têm "Ver detalhes": o nome do tanque no rótulo diferencia os links.
             criarElemento('a', { classe: 'link', texto, atributos: { href, 'aria-label': `${texto}: ${nome}` } })
@@ -86,6 +89,101 @@ export function renderizarAlertas(lista, alertas, { mostrarTanque = false, hrefT
             detalhe,
         ]);
     }));
+}
+
+// Barra de capacidade com animação de água (seção 5). 100% é a carga máxima do
+// tanque. As faixas têm sempre rótulo escrito; a cor só reforça. Sem densidade
+// máxima definida, a barra fica tracejada com o link para defini-la.
+export function criarBarraCapacidade({
+    percentual,
+    cargaKg,
+    cargaMaximaKg,
+    densidade,
+    densidadeMaxima,
+    limiteAlerta,
+    projecaoDias = null,
+    compacta = false,
+    hrefDefinir,
+}) {
+    const classes = ['barra-agua'];
+    if (compacta) {
+        classes.push('barra-agua--compacta');
+    }
+    const topo = (filhos) => criarElemento('div', { classe: 'barra-agua__topo' }, [
+        criarElemento('span', { classe: 'barra-agua__rotulo', texto: 'Capacidade' }),
+        ...filhos,
+    ]);
+
+    if (percentual === null || percentual === undefined) {
+        classes.push('barra-agua--indefinida');
+        return criarElemento('div', { classe: classes.join(' ') }, [
+            topo([]),
+            criarElemento('div', { classe: 'barra-agua__trilho', atributos: { 'aria-hidden': 'true' } }),
+            criarElemento('p', { classe: 'barra-agua__detalhe' }, [
+                criarElemento('a', { classe: 'link', texto: 'Defina a capacidade', atributos: { href: hrefDefinir } }),
+            ]),
+        ]);
+    }
+
+    const faixa = definirFaixaCapacidade(percentual, limiteAlerta);
+    if (faixa) {
+        classes.push(`barra-agua--${faixa.variante}`);
+    }
+    const textoValor = `${formatarPercentual(percentual)}, ${formatarNumero(cargaKg, 1)} de ${formatarKg(cargaMaximaKg)}`;
+
+    const agua = criarElemento('div', { classe: 'barra-agua__agua' }, [
+        criarElemento('div', { classe: 'barra-agua__preenchimento' }, [
+            criarElemento('span', { classe: 'barra-agua__reflexo' }),
+            // Bolhas só na barra grande: na compacta viram ruído.
+            ...(compacta ? [] : Array.from({ length: 4 }, () => criarElemento('span', { classe: 'barra-agua__bolha' }))),
+        ]),
+        criarElemento('span', { classe: 'barra-agua__onda' }),
+    ]);
+    agua.style.setProperty('--nivel', `${Math.min(percentual, 100)}%`);
+    const marca = criarElemento('span', { classe: 'barra-agua__marca' });
+    marca.style.setProperty('--posicao', `${Math.min(limiteAlerta, 100)}%`);
+
+    const detalhe = compacta
+        ? `${formatarKg(cargaKg)} de ${formatarKg(cargaMaximaKg)}`
+        : `${formatarKg(cargaKg)} de ${formatarKg(cargaMaximaKg)} · ${formatarNumero(densidade, 2, 2)} de ${formatarNumero(densidadeMaxima, 2, 2)} kg/m³`;
+
+    return criarElemento('div', { classe: classes.join(' ') }, [
+        topo([
+            faixa && criarElemento('span', { classe: 'barra-agua__faixa', texto: faixa.rotulo }),
+            criarElemento('span', { classe: 'barra-agua__valor', texto: formatarPercentual(percentual) }),
+        ]),
+        criarElemento('div', {
+            classe: 'barra-agua__trilho',
+            atributos: {
+                role: 'progressbar',
+                'aria-label': 'Capacidade',
+                'aria-valuemin': '0',
+                'aria-valuemax': '100',
+                'aria-valuenow': String(Math.round(Math.min(percentual, 100))),
+                'aria-valuetext': textoValor,
+            },
+        }, [agua, marca]),
+        criarElemento('p', { classe: 'barra-agua__detalhe', texto: detalhe }),
+        !compacta && projecaoDias && criarElemento('p', {
+            classe: 'barra-agua__detalhe',
+            texto: `No ritmo atual, atinge o limite em ~${pluralizar(projecaoDias, 'dia', 'dias')}.`,
+        }),
+    ]);
+}
+
+// Seção 5.1: até 75% a água fica calma; depois, atenção; a partir do limite de
+// alerta do tanque, perto do limite; acima de 100%, acima do limite.
+function definirFaixaCapacidade(percentual, limiteAlerta) {
+    if (percentual > 100) {
+        return { variante: 'acima', rotulo: 'Acima do limite' };
+    }
+    if (percentual >= limiteAlerta) {
+        return { variante: 'perto', rotulo: 'Perto do limite' };
+    }
+    if (percentual > 75) {
+        return { variante: 'atencao', rotulo: 'Atenção' };
+    }
+    return null;
 }
 
 export function criarItemRegistro({ data, resumo }) {
@@ -150,6 +248,11 @@ export function lerFormulario(formulario) {
         }
         if (campo.type === 'checkbox') {
             valores[campo.name] = campo.checked;
+        } else if (campo.type === 'radio') {
+            // Num grupo de radios, só o marcado vale.
+            if (campo.checked) {
+                valores[campo.name] = campo.value;
+            }
         } else {
             valores[campo.name] = campo.value;
         }

@@ -57,20 +57,33 @@
                     <p class="campo__erro" id="erro-especie"></p>
                 </div>
 
-                <div class="formulario__grade">
-                    <div class="campo">
-                        <label class="campo__rotulo" for="campo-volume">Volume (m³)</label>
-                        <input class="campo__input" id="campo-volume" name="volumeM3" type="text" autocomplete="off" pattern="[0-9]*[.,]?[0-9]*" inputmode="decimal" required aria-describedby="erro-volume">
-                        <p class="campo__erro" id="erro-volume"></p>
-                    </div>
-
-                    <div class="campo">
-                        <label class="campo__rotulo" for="campo-capacidade">Capacidade (nº de peixes)</label>
-                        <input class="campo__input" id="campo-capacidade" name="capacidade" type="text" autocomplete="off" pattern="[0-9]*" inputmode="numeric" required aria-describedby="ajuda-capacidade erro-capacidade">
-                        <p class="campo__ajuda" id="ajuda-capacidade">Quantidade máxima de peixes que o tanque comporta.</p>
-                        <p class="campo__erro" id="erro-capacidade"></p>
-                    </div>
+                <div class="campo">
+                    <label class="campo__rotulo" for="campo-volume">Volume de água (m³)</label>
+                    <input class="campo__input" id="campo-volume" name="volumeM3" type="text" autocomplete="off" pattern="[0-9]*[.,]?[0-9]*" inputmode="decimal" required aria-describedby="erro-volume">
+                    <p class="campo__erro" id="erro-volume"></p>
                 </div>
+
+                <fieldset class="campo campo--grupo">
+                    <legend class="campo__rotulo">Capacidade máxima (opcional)</legend>
+                    <div class="segmentado">
+                        <label class="segmentado__opcao">
+                            <input type="radio" name="capacidadeUnidade" value="densidade" id="unidade-densidade" checked>
+                            kg por m³
+                        </label>
+                        <label class="segmentado__opcao">
+                            <input type="radio" name="capacidadeUnidade" value="carga" id="unidade-carga">
+                            Carga total (kg)
+                        </label>
+                    </div>
+                    <label class="visualmente-oculto" for="campo-densidade-maxima">Densidade máxima (kg de peixe por m³)</label>
+                    <input class="campo__input" id="campo-densidade-maxima" name="densidadeMaximaKgM3" type="text" autocomplete="off" pattern="[0-9]*[.,]?[0-9]*" inputmode="decimal" aria-describedby="ajuda-capacidade equivalencia-capacidade erro-densidade-maxima">
+                    <label class="visualmente-oculto" for="campo-carga-maxima">Carga máxima total (kg de peixe)</label>
+                    <input class="campo__input" id="campo-carga-maxima" name="cargaMaximaKg" type="text" autocomplete="off" pattern="[0-9]*[.,]?[0-9]*" inputmode="decimal" aria-describedby="ajuda-capacidade equivalencia-capacidade erro-carga-maxima" hidden disabled>
+                    <p class="campo__ajuda" id="ajuda-capacidade">Peso de peixe que o tanque suporta. Use o valor recomendado pelo seu técnico para este tanque.</p>
+                    <p class="campo__ajuda" id="equivalencia-capacidade" aria-live="polite"></p>
+                    <p class="campo__erro" id="erro-densidade-maxima"></p>
+                    <p class="campo__erro" id="erro-carga-maxima"></p>
+                </fieldset>
 
                 <div class="campo campo--checkbox">
                     <input class="campo__checkbox" id="campo-manutencao" name="manutencao" type="checkbox" aria-describedby="ajuda-manutencao">

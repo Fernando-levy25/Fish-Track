@@ -70,6 +70,11 @@ export function salvarTanque(entrada) {
     const arquivado = existente?.status === 'arquivado';
     const temCicloAtivo = Boolean(existente)
         && dados.ciclos.some((ciclo) => ciclo.tanqueId === existente.id && ciclo.status === 'ativo');
+    // A capacidade pode vir como densidade (kg/m³) ou como carga total (kg); o
+    // formulário envia só a que o produtor escolheu. Fica guardada sempre em kg/m³.
+    const informouCarga = entrada.cargaMaximaKg !== undefined;
+    const valorCapacidade = (informouCarga ? entrada.cargaMaximaKg : entrada.densidadeMaximaKgM3) ?? null;
+    const erroCapacidade = validarNumero(valorCapacidade, { positivo: true });
 
     lancarSeHouverErros({
         nome: validarTexto(nome, { rotulo: 'o nome do tanque', obrigatorio: true, maximo: TAMANHO_MAXIMO_NOME })
@@ -77,7 +82,7 @@ export function salvarTanque(entrada) {
         especie: validarTexto(especie, { rotulo: 'a espécie', obrigatorio: true, maximo: TAMANHO_MAXIMO_NOME }),
         // RN02
         volumeM3: validarNumero(entrada.volumeM3, { rotulo: 'o volume', obrigatorio: true, positivo: true }),
-        capacidade: validarNumero(entrada.capacidade, { rotulo: 'a capacidade', obrigatorio: true, positivo: true, inteiro: true }),
+        [informouCarga ? 'cargaMaximaKg' : 'densidadeMaximaKgM3']: erroCapacidade,
         // RN03: com ciclo ativo o status é sempre "ativo".
         manutencao: entrada.manutencao && temCicloAtivo
             ? 'Um tanque com ciclo ativo não pode entrar em manutenção. Registre a despesca antes.'
@@ -87,9 +92,10 @@ export function salvarTanque(entrada) {
 
     const agora = agoraISO();
     const status = definirStatus({ arquivado, temCicloAtivo, manutencao: Boolean(entrada.manutencao) });
+    const densidadeMaximaKgM3 = valorCapacidade === null || !informouCarga ? valorCapacidade : valorCapacidade / entrada.volumeM3;
     if (existente) {
         Object.assign(existente, {
-            nome, especie, volumeM3: entrada.volumeM3, capacidade: entrada.capacidade, status, observacoes, atualizadoEm: agora,
+            nome, especie, volumeM3: entrada.volumeM3, densidadeMaximaKgM3, status, observacoes, atualizadoEm: agora,
         });
         salvarDados(dados);
         return existente;
@@ -99,7 +105,7 @@ export function salvarTanque(entrada) {
         nome,
         especie,
         volumeM3: entrada.volumeM3,
-        capacidade: entrada.capacidade,
+        densidadeMaximaKgM3,
         status,
         limitesAlerta: null,
         observacoes,
