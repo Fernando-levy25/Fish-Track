@@ -44,13 +44,13 @@
                 <div class="formulario__grade">
                     <div class="campo">
                         <label class="campo__rotulo" for="campo-mortalidade-registro">Mortalidade em um registro (% dos peixes)</label>
-                        <input class="campo__input" id="campo-mortalidade-registro" name="mortalidadeRegistroPct" type="text" autocomplete="off" inputmode="decimal" required aria-describedby="erro-mortalidade-registro">
+                        <input class="campo__input" id="campo-mortalidade-registro" name="mortalidadeRegistroPct" type="text" autocomplete="off" pattern="[0-9]*[.,]?[0-9]*" inputmode="decimal" required aria-describedby="erro-mortalidade-registro">
                         <p class="campo__erro" id="erro-mortalidade-registro"></p>
                     </div>
 
                     <div class="campo">
                         <label class="campo__rotulo" for="campo-mortalidade-acumulada">Mortalidade acumulada no ciclo (%)</label>
-                        <input class="campo__input" id="campo-mortalidade-acumulada" name="mortalidadeAcumuladaPct" type="text" autocomplete="off" inputmode="decimal" required aria-describedby="erro-mortalidade-acumulada">
+                        <input class="campo__input" id="campo-mortalidade-acumulada" name="mortalidadeAcumuladaPct" type="text" autocomplete="off" pattern="[0-9]*[.,]?[0-9]*" inputmode="decimal" required aria-describedby="erro-mortalidade-acumulada">
                         <p class="campo__erro" id="erro-mortalidade-acumulada"></p>
                     </div>
                 </div>
@@ -58,13 +58,13 @@
                 <div class="formulario__grade">
                     <div class="campo">
                         <label class="campo__rotulo" for="campo-racao-diaria">Ração do dia (% da biomassa)</label>
-                        <input class="campo__input" id="campo-racao-diaria" name="racaoDiariaPct" type="text" autocomplete="off" inputmode="decimal" required aria-describedby="erro-racao-diaria">
+                        <input class="campo__input" id="campo-racao-diaria" name="racaoDiariaPct" type="text" autocomplete="off" pattern="[0-9]*[.,]?[0-9]*" inputmode="decimal" required aria-describedby="erro-racao-diaria">
                         <p class="campo__erro" id="erro-racao-diaria"></p>
                     </div>
 
                     <div class="campo">
                         <label class="campo__rotulo" for="campo-capacidade">Capacidade utilizada (%)</label>
-                        <input class="campo__input" id="campo-capacidade" name="capacidadePct" type="text" autocomplete="off" inputmode="decimal" required aria-describedby="erro-capacidade">
+                        <input class="campo__input" id="campo-capacidade" name="capacidadePct" type="text" autocomplete="off" pattern="[0-9]*[.,]?[0-9]*" inputmode="decimal" required aria-describedby="erro-capacidade">
                         <p class="campo__erro" id="erro-capacidade"></p>
                     </div>
                 </div>
@@ -72,13 +72,13 @@
                 <div class="formulario__grade">
                     <div class="campo">
                         <label class="campo__rotulo" for="campo-peso-esperado">Peso médio mínimo (% do esperado)</label>
-                        <input class="campo__input" id="campo-peso-esperado" name="pesoEsperadoPct" type="text" autocomplete="off" inputmode="decimal" required aria-describedby="erro-peso-esperado">
+                        <input class="campo__input" id="campo-peso-esperado" name="pesoEsperadoPct" type="text" autocomplete="off" pattern="[0-9]*[.,]?[0-9]*" inputmode="decimal" required aria-describedby="erro-peso-esperado">
                         <p class="campo__erro" id="erro-peso-esperado"></p>
                     </div>
 
                     <div class="campo">
                         <label class="campo__rotulo" for="campo-dias-sem-registro">Dias sem registro</label>
-                        <input class="campo__input" id="campo-dias-sem-registro" name="diasSemRegistro" type="text" autocomplete="off" inputmode="numeric" required aria-describedby="erro-dias-sem-registro">
+                        <input class="campo__input" id="campo-dias-sem-registro" name="diasSemRegistro" type="text" autocomplete="off" pattern="[0-9]*" inputmode="numeric" required aria-describedby="erro-dias-sem-registro">
                         <p class="campo__erro" id="erro-dias-sem-registro"></p>
                     </div>
                 </div>

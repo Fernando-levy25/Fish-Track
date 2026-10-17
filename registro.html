@@ -69,13 +69,13 @@
                 <div class="formulario__grade">
                     <div class="campo">
                         <label class="campo__rotulo" for="campo-peso-medio">Peso médio (g)</label>
-                        <input class="campo__input" id="campo-peso-medio" name="pesoMedioG" type="text" autocomplete="off" inputmode="decimal" aria-describedby="erro-peso-medio">
+                        <input class="campo__input" id="campo-peso-medio" name="pesoMedioG" type="text" autocomplete="off" pattern="[0-9]*[.,]?[0-9]*" inputmode="decimal" aria-describedby="erro-peso-medio">
                         <p class="campo__erro" id="erro-peso-medio"></p>
                     </div>
 
                     <div class="campo">
                         <label class="campo__rotulo" for="campo-racao">Ração fornecida (kg)</label>
-                        <input class="campo__input" id="campo-racao" name="racaoKg" type="text" autocomplete="off" inputmode="decimal" aria-describedby="erro-racao">
+                        <input class="campo__input" id="campo-racao" name="racaoKg" type="text" autocomplete="off" pattern="[0-9]*[.,]?[0-9]*" inputmode="decimal" aria-describedby="erro-racao">
                         <p class="campo__erro" id="erro-racao"></p>
                     </div>
                 </div>
@@ -83,20 +83,20 @@
                 <div class="formulario__grade">
                     <div class="campo">
                         <label class="campo__rotulo" for="campo-mortalidade">Mortalidade</label>
-                        <input class="campo__input" id="campo-mortalidade" name="mortalidade" type="text" autocomplete="off" inputmode="numeric" aria-describedby="erro-mortalidade">
+                        <input class="campo__input" id="campo-mortalidade" name="mortalidade" type="text" autocomplete="off" pattern="[0-9]*" inputmode="numeric" aria-describedby="erro-mortalidade">
                         <p class="campo__erro" id="erro-mortalidade"></p>
                     </div>
 
                     <div class="campo">
                         <label class="campo__rotulo" for="campo-natalidade">Natalidade</label>
-                        <input class="campo__input" id="campo-natalidade" name="natalidade" type="text" autocomplete="off" inputmode="numeric" aria-describedby="erro-natalidade">
+                        <input class="campo__input" id="campo-natalidade" name="natalidade" type="text" autocomplete="off" pattern="[0-9]*" inputmode="numeric" aria-describedby="erro-natalidade">
                         <p class="campo__erro" id="erro-natalidade"></p>
                     </div>
                 </div>
 
                 <div class="campo">
                     <label class="campo__rotulo" for="campo-quantidade-contada">Quantidade contada</label>
-                    <input class="campo__input" id="campo-quantidade-contada" name="quantidadeContada" type="text" autocomplete="off" inputmode="numeric" aria-describedby="ajuda-quantidade-contada erro-quantidade-contada">
+                    <input class="campo__input" id="campo-quantidade-contada" name="quantidadeContada" type="text" autocomplete="off" pattern="[0-9]*" inputmode="numeric" aria-describedby="ajuda-quantidade-contada erro-quantidade-contada">
                     <p class="campo__ajuda" id="ajuda-quantidade-contada">Só se você contou os peixes. Corrige a quantidade estimada do tanque.</p>
                     <p class="campo__erro" id="erro-quantidade-contada"></p>
                 </div>
