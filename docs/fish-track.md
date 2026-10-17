@@ -9,7 +9,7 @@
 | **Stack** | HTML, CSS e JavaScript puros, sem frameworks e sem backend |
 | **Atualizado em** | 17/10/2026 |
 
-## Sumário
+##  Sumário
 
 1. [Objetivo](#1-objetivo)
 2. [Problema e mercado](#2-problema-e-mercado)
