@@ -27,11 +27,13 @@
             <a class="menu__link menu__link--destaque" href="registro.html"><svg class="menu__icone menu__icone--girar" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span class="menu__texto menu__texto--curto">Registro</span><span class="menu__texto menu__texto--longo">Novo registro</span></a>
             <a class="menu__link" href="alertas.html"><svg class="menu__icone" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg><span class="menu__texto">Alertas</span><span class="menu__contador menu__contador--alerta" data-contador="alertas" hidden></span></a>
             <a class="menu__link menu__link--lateral" href="calendario.html"><svg class="menu__icone" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span class="menu__texto">Agenda</span></a>
+            <a class="menu__link menu__link--lateral" href="relatorio.html"><svg class="menu__icone" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6M16 13H8M16 17H8"/></svg><span class="menu__texto">Relatórios</span></a>
             <a class="menu__link menu__link--lateral" href="configuracoes.html"><svg class="menu__icone" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M2 14h4M10 8h4M18 16h4"/></svg><span class="menu__texto">Configurações</span></a>
             <details class="menu__mais" id="menu-mais">
                 <summary class="menu__link"><svg class="menu__icone" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.3" fill="currentColor"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><circle cx="19" cy="12" r="1.3" fill="currentColor"/></svg><span class="menu__texto">Mais</span></summary>
                 <div class="menu__submenu">
                     <a class="menu__link" href="calendario.html"><svg class="menu__icone" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span class="menu__texto">Agenda</span></a>
+                    <a class="menu__link" href="relatorio.html"><svg class="menu__icone" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6M16 13H8M16 17H8"/></svg><span class="menu__texto">Relatórios</span></a>
                     <a class="menu__link" href="configuracoes.html"><svg class="menu__icone" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M2 14h4M10 8h4M18 16h4"/></svg><span class="menu__texto">Configurações</span></a>
                 </div>
             </details>
@@ -73,6 +75,7 @@
                     <a class="botao botao--secundario" id="link-registrar-despesca" href="ciclo-form.html" hidden>Registrar despesca</a>
                     <a class="botao botao--secundario" id="link-editar-tanque" href="tanque-form.html">Editar</a>
                     <button class="botao botao--secundario" id="botao-limites-alerta" type="button">Limites de alerta</button>
+                    <a class="botao botao--secundario" id="link-exportar-relatorio" href="relatorio.html"><svg class="icone icone--descer" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Exportar relatório</a>
                     <button class="botao botao--secundario" id="botao-desarquivar-tanque" type="button" hidden>Desarquivar</button>
                     <button class="botao botao--perigo" id="botao-arquivar-tanque" type="button" hidden>Arquivar</button>
                     <button class="botao botao--perigo" id="botao-excluir-tanque" type="button" hidden>Excluir</button>
@@ -169,16 +172,19 @@
                         <div class="grade-graficos">
                             <figure class="cartao-grafico">
                                 <figcaption class="cartao-grafico__titulo">Peso médio (g)</figcaption>
+                                <button class="botao botao--secundario botao--pequeno cartao-grafico__baixar" type="button" data-baixar-grafico="peso-medio" hidden><svg class="icone icone--descer" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Baixar imagem</button>
                                 <div class="cartao-grafico__area" id="grafico-peso-medio"></div>
                                 <p class="cartao-grafico__vazio" id="aviso-grafico-peso-medio">Sem dados suficientes para exibir o gráfico.</p>
                             </figure>
                             <figure class="cartao-grafico">
                                 <figcaption class="cartao-grafico__titulo">Biomassa (kg)</figcaption>
+                                <button class="botao botao--secundario botao--pequeno cartao-grafico__baixar" type="button" data-baixar-grafico="biomassa" hidden><svg class="icone icone--descer" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Baixar imagem</button>
                                 <div class="cartao-grafico__area" id="grafico-biomassa"></div>
                                 <p class="cartao-grafico__vazio" id="aviso-grafico-biomassa">Sem dados suficientes para exibir o gráfico.</p>
                             </figure>
                             <figure class="cartao-grafico">
                                 <figcaption class="cartao-grafico__titulo">Mortalidade acumulada (%)</figcaption>
+                                <button class="botao botao--secundario botao--pequeno cartao-grafico__baixar" type="button" data-baixar-grafico="mortalidade" hidden><svg class="icone icone--descer" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Baixar imagem</button>
                                 <div class="cartao-grafico__area" id="grafico-mortalidade"></div>
                                 <p class="cartao-grafico__vazio" id="aviso-grafico-mortalidade">Sem dados suficientes para exibir o gráfico.</p>
                             </figure>

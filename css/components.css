@@ -445,8 +445,16 @@
 
 .cartao-grafico {
     display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
     gap: var(--espaco-3);
     padding: var(--espaco-4);
+}
+
+/* Título e "Baixar imagem" na primeira linha; o gráfico ocupa a largura toda. */
+.cartao-grafico__area,
+.cartao-grafico__vazio {
+    grid-column: 1 / -1;
 }
 
 .cartao-grafico__titulo {
@@ -638,7 +646,7 @@
     font-size: var(--texto-2);
 }
 
-@media (prefers-reduced-motion: reduce) {
+@media print, (prefers-reduced-motion: reduce) {
     .lista-alertas__item--alta .lista-alertas__icone {
         animation: none;
     }
@@ -1647,7 +1655,7 @@
 }
 
 /* Movimento reduzido: a barra fica parada, só com a cor da faixa. */
-@media (prefers-reduced-motion: reduce) {
+@media print, (prefers-reduced-motion: reduce) {
     .barra-agua__agua,
     .barra-agua__onda,
     .barra-agua--acima .barra-agua__agua::after {
@@ -1678,6 +1686,11 @@
 /* Botões com "+": o ícone gira ao passar o mouse (seção 9.2). */
 :hover > .icone--girar {
     transform: rotate(90deg);
+}
+
+/* Ícone de download desce 2 px ao passar o mouse (seção 9.2). */
+:hover > .icone--descer {
+    transform: translateY(2px);
 }
 
 .botao--pequeno {
@@ -1978,6 +1991,13 @@
     align-items: flex-start;
     justify-content: space-between;
     gap: var(--espaco-3);
+}
+
+.grafico-principal__acoes {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--espaco-2);
 }
 
 .grafico-principal__leitura {

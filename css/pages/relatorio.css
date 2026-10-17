@@ -1,0 +1,263 @@
+/* Relatório (seção 7.12): na tela, uma folha branca com a barra de escolha
+   acima; na impressão, só a folha, em A4, sem menu nem botões. */
+
+.relatorio {
+    display: grid;
+    gap: var(--espaco-5);
+}
+
+.relatorio__barra {
+    display: grid;
+    gap: var(--espaco-3);
+}
+
+.relatorio__controles {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--espaco-3);
+}
+
+.relatorio__controles .campo {
+    flex: 1 1 16rem;
+    max-width: 24rem;
+}
+
+.relatorio__folha {
+    display: grid;
+    gap: var(--espaco-6);
+    padding: var(--espaco-5) var(--espaco-4);
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio-grande);
+    background: var(--cor-superficie);
+    box-shadow: var(--sombra-elevada);
+    /* Mantém fundos e cores (selos, gráficos) também no papel. */
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+.relatorio__cabecalho {
+    display: grid;
+    gap: var(--espaco-1);
+    padding-bottom: var(--espaco-4);
+    border-bottom: 2px solid var(--cor-primaria);
+}
+
+.relatorio__marca {
+    display: flex;
+    align-items: center;
+    gap: var(--espaco-2);
+    margin-bottom: var(--espaco-2);
+    color: var(--cor-primaria-escura);
+    font-family: var(--fonte-titulo);
+    font-weight: 700;
+}
+
+.relatorio__simbolo {
+    width: 1.75rem;
+    height: 1.75rem;
+}
+
+.relatorio__titulo {
+    font-size: var(--texto-7);
+}
+
+.relatorio__emissao,
+.relatorio__nota {
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-2);
+}
+
+.relatorio__conteudo {
+    display: grid;
+    gap: var(--espaco-6);
+}
+
+.relatorio__secao {
+    display: grid;
+    gap: var(--espaco-3);
+}
+
+.relatorio__secao-titulo {
+    padding-bottom: var(--espaco-1);
+    border-bottom: 1px solid var(--cor-borda);
+    font-size: var(--texto-5);
+}
+
+.relatorio__dados,
+.relatorio__indicadores {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+    gap: var(--espaco-3) var(--espaco-5);
+}
+
+.relatorio__dados dt,
+.relatorio__rotulo {
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-1);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.relatorio__dados dd {
+    margin: 0;
+    font-weight: 600;
+}
+
+.relatorio__indicador {
+    display: grid;
+    align-content: start;
+    gap: 2px;
+    padding: var(--espaco-3);
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio);
+}
+
+.relatorio__valor {
+    margin: 0;
+    font-family: var(--fonte-titulo);
+    font-size: var(--texto-6);
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+}
+
+.relatorio__apoio {
+    margin: 0;
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-1);
+}
+
+.relatorio__indicadores--compacto {
+    grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
+    gap: var(--espaco-2);
+}
+
+.relatorio__indicadores--compacto .relatorio__indicador {
+    padding: var(--espaco-2);
+}
+
+.relatorio__indicadores--compacto .relatorio__valor {
+    font-size: var(--texto-4);
+}
+
+/* Nos cartões pequenos o rótulo em caixa alta não cabe ("MORTALIDADE"). */
+.relatorio__indicadores--compacto .relatorio__rotulo {
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+.relatorio__graficos {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+    gap: var(--espaco-3);
+}
+
+.relatorio__bloco {
+    display: grid;
+    gap: var(--espaco-3);
+}
+
+.relatorio__tabela {
+    font-size: var(--texto-2);
+    line-height: 1.3;
+}
+
+.relatorio__tabela th,
+.relatorio__tabela td {
+    padding: var(--espaco-1) var(--espaco-2);
+}
+
+/* Observações longas quebram linha no relatório (na tela do tanque, não). */
+.relatorio__tabela td:last-child {
+    white-space: normal;
+}
+
+@media (min-width: 40rem) {
+    .relatorio__folha {
+        padding: var(--espaco-7);
+    }
+
+    .relatorio__bloco {
+        grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+        align-items: start;
+    }
+}
+
+/* ---------- Impressão ---------- */
+
+@page {
+    size: A4;
+    margin: 14mm 12mm;
+}
+
+@media print {
+    body {
+        display: block;
+        padding: 0;
+        background: #ffffff;
+        font-size: 10.5pt;
+    }
+
+    .cabecalho,
+    .relatorio__barra {
+        display: none;
+    }
+
+    .pagina {
+        max-width: none;
+        padding: 0;
+    }
+
+    .relatorio__folha {
+        padding: 0;
+        border: 0;
+        box-shadow: none;
+    }
+
+    /* Nada de cartão, gráfico, linha de tabela ou título partido entre páginas. */
+    .relatorio__indicador,
+    .relatorio__dados,
+    .relatorio__bloco,
+    .cartao-grafico,
+    .lista-alertas__item,
+    .relatorio__tabela tr {
+        break-inside: avoid;
+    }
+
+    .relatorio__secao-titulo {
+        break-after: avoid;
+    }
+
+    .relatorio__secao--inteira {
+        break-inside: avoid;
+    }
+
+    .relatorio__indicadores {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .relatorio__indicadores--compacto {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .relatorio__graficos {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .relatorio__bloco {
+        grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+        align-items: start;
+    }
+
+    .relatorio .tabela-rolagem {
+        overflow: visible;
+        border: 0;
+    }
+
+    /* No papel o link não leva a lugar nenhum: fica como texto. */
+    .relatorio a {
+        color: inherit;
+        text-decoration: none;
+    }
+}

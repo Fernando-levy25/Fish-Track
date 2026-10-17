@@ -1,7 +1,7 @@
 // Dashboard (seção 7.1): resumo da produção no período, cinco indicadores que
 // trocam o gráfico principal, alertas filtráveis e um cartão por tanque em cultivo.
 
-import { diasEntre, hojeISO, somarDias } from '../core/utils.js';
+import { criarSlug, diasEntre, hojeISO, somarDias } from '../core/utils.js';
 import {
     formatarDataCompleta,
     formatarFca,
@@ -17,6 +17,7 @@ import { listarSituacoes, listarTanques } from '../domain/tanques.js';
 import { calcularResumoPeriodo } from '../domain/indicadores.js';
 import { analisarTanque, gravidadeMaisAlta, ordenarAlertas, resolverLimites, ROTULOS_GRAVIDADE } from '../domain/alertas.js';
 import { obterLimitesPadrao, obterMetaFca } from '../domain/configuracoes.js';
+import { exportarGraficoPng } from '../services/exportacao.js';
 import { montarUrl } from '../ui/nav.js';
 import {
     criarAnelProgresso,
@@ -56,6 +57,8 @@ const estado = {
 };
 let contexto = null;
 let resumo = null;
+// O que está no gráfico agora, para o título e a legenda da imagem PNG.
+let graficoAtual = null;
 
 iniciarPagina();
 try {
@@ -249,6 +252,8 @@ function renderizarGrafico() {
         maximoY: chave === 'fca' ? MAXIMO_EIXO_FCA : null,
     });
     porId('aviso-grafico-principal').hidden = desenhou;
+    porId('botao-baixar-grafico').hidden = !desenhou;
+    graficoAtual = { rotulo, legenda: series.map(({ nome, cor }) => ({ nome, cor })) };
 
     // Leitura do valor de hoje, para o número estar à vista sem passar o mouse.
     const atual = estado.tanqueId ? series[0]?.valores.at(-1) : totais.at(-1);
@@ -422,6 +427,14 @@ function criarCartaoSemCiclo(semCiclo) {
 // ---------- Interações ----------
 
 function configurarInteracoes() {
+    porId('botao-baixar-grafico').addEventListener('click', () => {
+        const svg = porId('grafico-principal').querySelector('svg');
+        exportarGraficoPng(svg, `fish-track-${criarSlug(graficoAtual.rotulo)}-${contexto.hoje}`, {
+            titulo: graficoAtual.rotulo,
+            subtitulo: `Fish Track · ${porId('leitura-grafico').textContent}`,
+            legenda: graficoAtual.legenda,
+        }).catch(mostrarErroPagina);
+    });
     porId('seletor-periodo').addEventListener('click', (evento) => {
         const botao = evento.target.closest('[data-periodo]');
         if (!botao || botao.dataset.periodo === estado.periodo) {

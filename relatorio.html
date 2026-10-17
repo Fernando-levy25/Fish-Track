@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fish Track - Relatório</title>
+    <meta name="theme-color" content="#0e5a52">
+    <link rel="icon" href="assets/icons/icone.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="assets/icons/icone-192.png">
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/pages/relatorio.css">
+</head>
+<body>
+    <header class="cabecalho">
+        <a class="cabecalho__marca" href="index.html">
+            <svg class="cabecalho__simbolo" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#5fd0b4"/><path d="M5 16c3.2-5 8.5-7.2 14-5.2L24 7v18l-5-3.8C13.5 23.2 8.2 21 5 16Z" fill="none" stroke="#0c3c37" stroke-width="2" stroke-linejoin="round"/><path d="M8.5 18.5 12 15l2.5 2 4-4.5" fill="none" stroke="#0c3c37" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span class="cabecalho__nome">
+                <span class="cabecalho__titulo">Fish Track</span>
+                <span class="cabecalho__subtitulo">Gestão de cultivos</span>
+            </span>
+        </a>
+        <nav class="menu" aria-label="Navegação principal">
+            <a class="menu__link" href="index.html"><svg class="menu__icone" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg><span class="menu__texto">Visão geral</span></a>
+            <a class="menu__link" href="tanques.html"><svg class="menu__icone" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7c0-1.7 4-3 9-3s9 1.3 9 3v10c0 1.7-4 3-9 3s-9-1.3-9-3Z"/><path d="M3 12c3 1.8 6 1.8 9 0s6-1.8 9 0"/></svg><span class="menu__texto">Tanques</span><span class="menu__contador" data-contador="tanques" hidden></span></a>
+            <a class="menu__link menu__link--destaque" href="registro.html"><svg class="menu__icone menu__icone--girar" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span class="menu__texto menu__texto--curto">Registro</span><span class="menu__texto menu__texto--longo">Novo registro</span></a>
+            <a class="menu__link" href="alertas.html"><svg class="menu__icone" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg><span class="menu__texto">Alertas</span><span class="menu__contador menu__contador--alerta" data-contador="alertas" hidden></span></a>
+            <a class="menu__link menu__link--lateral" href="calendario.html"><svg class="menu__icone" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span class="menu__texto">Agenda</span></a>
+            <a class="menu__link menu__link--lateral" href="relatorio.html" aria-current="page"><svg class="menu__icone" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6M16 13H8M16 17H8"/></svg><span class="menu__texto">Relatórios</span></a>
+            <a class="menu__link menu__link--lateral" href="configuracoes.html"><svg class="menu__icone" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M2 14h4M10 8h4M18 16h4"/></svg><span class="menu__texto">Configurações</span></a>
+            <details class="menu__mais" id="menu-mais">
+                <summary class="menu__link"><svg class="menu__icone" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.3" fill="currentColor"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><circle cx="19" cy="12" r="1.3" fill="currentColor"/></svg><span class="menu__texto">Mais</span></summary>
+                <div class="menu__submenu">
+                    <a class="menu__link" href="calendario.html"><svg class="menu__icone" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span class="menu__texto">Agenda</span></a>
+                    <a class="menu__link" href="relatorio.html" aria-current="page"><svg class="menu__icone" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6M16 13H8M16 17H8"/></svg><span class="menu__texto">Relatórios</span></a>
+                    <a class="menu__link" href="configuracoes.html"><svg class="menu__icone" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M2 14h4M10 8h4M18 16h4"/></svg><span class="menu__texto">Configurações</span></a>
+                </div>
+            </details>
+        </nav>
+        <section class="lembretes-hoje" aria-labelledby="titulo-lembretes-hoje">
+            <div class="lembretes-hoje__cabecalho">
+                <h2 class="lembretes-hoje__titulo" id="titulo-lembretes-hoje">Lembretes de hoje</h2>
+                <span class="lembretes-hoje__contador" id="contador-lembretes-hoje"></span>
+            </div>
+            <ul class="lembretes-hoje__lista" id="lista-lembretes-hoje"></ul>
+            <a class="lembretes-hoje__link" href="calendario.html?lembrete=novo">Adicionar lembrete</a>
+        </section>
+        <div class="cabecalho__rodape">
+            <p class="cabecalho__status" id="status-offline">Preparando o uso offline…</p>
+            <p class="cabecalho__backup" id="status-backup"></p>
+            <button class="cabecalho__acao" id="botao-backup-rapido" type="button">Fazer backup agora</button>
+        </div>
+    </header>
+
+    <main class="pagina relatorio">
+        <section class="relatorio__barra" aria-labelledby="titulo-pagina-relatorio">
+            <h1 class="pagina__titulo" id="titulo-pagina-relatorio">Relatórios</h1>
+            <p class="secao__descricao">Escolha o relatório e use "Salvar como PDF" na janela de impressão. Nada é enviado para a internet.</p>
+            <div class="relatorio__controles">
+                <div class="campo">
+                    <label class="campo__rotulo" for="campo-relatorio">Relatório de</label>
+                    <select class="campo__select" id="campo-relatorio">
+                        <option value="">Toda a produção</option>
+                    </select>
+                </div>
+                <button class="botao botao--primario" id="botao-imprimir" type="button">Imprimir ou salvar PDF</button>
+            </div>
+        </section>
+
+        <article class="relatorio__folha" aria-labelledby="titulo-relatorio">
+            <header class="relatorio__cabecalho">
+                <div class="relatorio__marca">
+                    <svg class="relatorio__simbolo" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#5fd0b4"/><path d="M5 16c3.2-5 8.5-7.2 14-5.2L24 7v18l-5-3.8C13.5 23.2 8.2 21 5 16Z" fill="none" stroke="#0c3c37" stroke-width="2" stroke-linejoin="round"/><path d="M8.5 18.5 12 15l2.5 2 4-4.5" fill="none" stroke="#0c3c37" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <span class="relatorio__nome">Fish Track</span>
+                </div>
+                <h2 class="relatorio__titulo" id="titulo-relatorio">Relatório</h2>
+                <p class="relatorio__emissao" id="emissao-relatorio"></p>
+            </header>
+
+            <div class="relatorio__conteudo" id="conteudo-relatorio"></div>
+        </article>
+    </main>
+
+    <script type="module" src="js/pages/relatorio.js"></script>
+</body>
+</html>

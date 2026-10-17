@@ -142,7 +142,7 @@ Pequeno e médio produtor que:
 
 Visão geral de toda a produção. A versão principal é a de computador; no celular os blocos se empilham.
 
-- **Cabeçalho:** data por extenso, título, resumo ("3 tanques em cultivo, de 6 cadastrados · 4 alertas pedem atenção") e seletor de período (7 dias, 30 dias, ciclo inteiro; padrão 30 dias). A escolha é lembrada no aparelho, fora dos dados do produtor.
+- **Cabeçalho:** data por extenso, título, resumo ("3 tanques em cultivo, de 6 cadastrados · 4 alertas pedem atenção") e seletor de período (7 dias, 30 dias, ciclo inteiro; padrão 30 dias) e botão **"Exportar relatório"**, que abre o relatório da produção (seção 7.12) já com a janela de impressão. A escolha do período é lembrada no aparelho, fora dos dados do produtor.
 - **Cinco indicadores clicáveis**, cada um com contexto:
 
 | Indicador | Valor | Apoio | Visual |
@@ -153,14 +153,14 @@ Visão geral de toda a produção. A versão principal é a de computador; no ce
 | Mortalidade acumulada | taxa geral | variação em pontos percentuais e selo do limite | barra até o limite |
 | Ração fornecida | total no período | média por dia | minigráfico da ração diária |
 
-- **Gráfico principal:** mostra o indicador selecionado, com uma linha por tanque na cor fixa do tanque, eixo com 4 marcas e 5 datas, tooltip com o valor de cada tanque e o total (ou "Geral", para FCA e mortalidade) e, na FCA, a linha da meta. Pode ser filtrado por tanque. Também responde ao teclado: com o gráfico em foco, as setas percorrem os dias.
+- **Gráfico principal:** mostra o indicador selecionado, com uma linha por tanque na cor fixa do tanque, eixo com 4 marcas e 5 datas, tooltip com o valor de cada tanque e o total (ou "Geral", para FCA e mortalidade) e, na FCA, a linha da meta. Pode ser filtrado por tanque. Também responde ao teclado: com o gráfico em foco, as setas percorrem os dias. O botão "Baixar imagem" salva o gráfico em PNG (seção 9.9).
 - **Alertas:** filtráveis por gravidade, cada um com ícone, gravidade escrita, tanque e link de ação ("Ver registro", "Planejar despesca", "Registrar agora"...).
 - **Tanques em cultivo:** um cartão por tanque, com faixa na cor do tanque, anel do peso médio até o peso alvo, peixes, biomassa, FCA, dias até a despesca, barra de capacidade compacta, último registro e ações ("+ Registro", "Ver no gráfico", "Abrir"). Um cartão tracejado resume os tanques sem ciclo.
 - O botão de novo registro fica só no menu lateral.
 
 ### 7.11 Menu lateral
 
-Em telas largas, coluna escura com a marca, o botão "Novo registro", a navegação com ícones (Visão geral, Tanques e Alertas com contadores, Agenda, Configurações), os **Lembretes de hoje** (seção 7.8: checkbox para concluir, contador "1 de 3", atrasados com o selo "Atrasado", até cinco itens e o link "Adicionar lembrete") e um rodapé com o estado do uso offline e o tempo desde o último backup (em âmbar depois de 7 dias, com o link "Fazer backup agora"). No celular, vira a barra inferior com "Mais".
+Em telas largas, coluna escura com a marca, o botão "Novo registro", a navegação com ícones (Visão geral, Tanques e Alertas com contadores, Agenda, Relatórios, Configurações), os **Lembretes de hoje** (seção 7.8: checkbox para concluir, contador "1 de 3", atrasados com o selo "Atrasado", até cinco itens e o link "Adicionar lembrete") e um rodapé com o estado do uso offline e o tempo desde o último backup (em âmbar depois de 7 dias, com o link "Fazer backup agora"). No celular, vira a barra inferior com "Mais".
 
 ### 7.2 Tanques (`tanques.html`)
 
@@ -176,7 +176,9 @@ Página própria de cada tanque, organizada em abas:
 - **Histórico:** todos os registros do ciclo atual, com edição e exclusão. Permite consultar ciclos anteriores, que ficam só para leitura (RN10).
 - **Calendário:** a mesma agenda da seção 7.8, filtrada pelo tanque (sem os chips de tanque e sem a abreviação do tanque nas etiquetas), com o quadro do dia. Lembretes gerais também aparecem.
 
-Ações: editar tanque, iniciar ciclo, registrar despesca, novo registro, ajustar limites de alerta (num diálogo; campo vazio usa o limite padrão), arquivar e desarquivar (ou excluir, se o tanque nunca teve ciclo). Cada ação aparece só quando o status do tanque permite.
+Cada gráfico da aba Resumo tem o botão "Baixar imagem" (seção 9.9).
+
+Ações: editar tanque, iniciar ciclo, registrar despesca, novo registro, exportar relatório (seção 7.12, já com a janela de impressão), ajustar limites de alerta (num diálogo; campo vazio usa o limite padrão), arquivar e desarquivar (ou excluir, se o tanque nunca teve ciclo). Cada ação aparece só quando o status do tanque permite.
 
 ### 7.4 Formulário de tanque (`tanque-form.html`)
 
@@ -249,7 +251,19 @@ O link "Adicionar lembrete" do menu lateral abre `calendario.html?lembrete=novo`
 
 ### 7.10 Navegação
 
-Barra inferior fixa no celular (Dashboard, Tanques, **+ Registro**, Alertas, Mais) e menu lateral em telas largas. O item **Mais** abre Agenda e Configurações.
+Barra inferior fixa no celular (Dashboard, Tanques, **+ Registro**, Alertas, Mais) e menu lateral em telas largas. O item **Mais** abre Agenda, Relatórios e Configurações.
+
+### 7.12 Relatórios (`relatorio.html`)
+
+Relatório pronto para imprimir ou salvar em PDF, sem bibliotecas: o PDF sai da impressão do navegador ("Salvar como PDF"). `relatorio.html?tanqueId=...` mostra o relatório de um tanque; sem parâmetro, o da produção toda. Com `&imprimir=1` (usado pelos botões "Exportar relatório"), a janela de impressão abre sozinha depois de carregar as fontes.
+
+- Na tela: uma folha branca, com a escolha do relatório ("Toda a produção" ou um tanque) e o botão "Imprimir ou salvar PDF" acima dela.
+- Na impressão: só a folha, em A4 com margens, sem menu nem botões; cores e fundos mantidos; cartões, gráficos e linhas da tabela não se dividem entre páginas. O título da página ("Fish Track - Relatório Tanque 01 - 2026-10-17") vira o nome sugerido do PDF.
+- Cabeçalho: logo, título e data de emissão.
+- **Relatório do tanque:** dados do tanque e do ciclo; indicadores com contexto (peixes e perdas, peso médio e alvo, biomassa e densidade, FCA e meta, mortalidade e limite, capacidade, crescimento, dias de cultivo); gráficos de peso, biomassa e mortalidade; alertas ativos; tabela com todos os registros do ciclo. Sem ciclo em andamento, mostra os dados do tanque e o resumo do último ciclo.
+- **Relatório da produção:** resumo (tanques em cultivo, peixes, biomassa, ração, mortalidade média, alertas), os tanques sem ciclo, um bloco por tanque em cultivo (indicadores, gráfico de biomassa e último registro) e todos os alertas.
+
+O conteúdo exato ainda será refinado depois dos primeiros testes com produtores (seção 13).
 
 ---
 
@@ -507,6 +521,10 @@ O limite real de um tanque é o peso de peixe por volume de água, e não o núm
 - Acessibilidade: `role="progressbar"` com o texto completo em `aria-valuetext`.
 - Animação só com `transform` e `opacity`: a água enche, a borda ondula, um reflexo atravessa e bolhas sobem (só na barra grande). A agitação aumenta perto do limite, e acima de 100% a ponta pulsa. Com "reduzir movimento", a barra fica parada.
 
+### 9.9 Imagem dos gráficos
+
+O botão "Baixar imagem" (gráfico principal do Dashboard e gráficos do tanque) gera um PNG com `exportarGraficoPng(svg, nomeArquivo, { titulo, subtitulo, legenda })`, em `services/exportacao.js`: SVG → `Image` → `canvas` → `toBlob`. A imagem sai em 2× de resolução, com fundo branco, título, subtítulo (o que está no gráfico) e, no gráfico com vários tanques, a legenda com a cor de cada um. Como o SVG vira imagem fora da página, os estilos calculados de cada elemento vão junto, no próprio SVG.
+
 ---
 
 ## 10. Estrutura de arquivos
@@ -521,6 +539,7 @@ fish-track/
 ├── registro.html             # Novo / editar registro
 ├── alertas.html
 ├── calendario.html
+├── relatorio.html            # Relatório para imprimir / salvar PDF
 ├── configuracoes.html
 ├── manifest.json             # PWA
 ├── sw.js                     # Service worker (cache offline)
@@ -529,7 +548,8 @@ fish-track/
 │   ├── base.css              # Reset, variáveis (cores, espaçamentos, fontes)
 │   ├── layout.css            # Estrutura geral, navegação, grid
 │   ├── components.css        # Botões, cartões, formulários, abas, badges
-│   └── pages/                # Estilos específicos de página, se necessário
+│   └── pages/
+│       └── relatorio.css     # Folha do relatório e regras de impressão (A4)
 │
 ├── js/
 │   ├── core/
@@ -552,7 +572,7 @@ fish-track/
 │   │   ├── icones.js         # Ícones em traço
 │   │   └── calendario.js     # Agenda: grade com etiquetas, quadro do dia e formulário de lembrete
 │   ├── services/
-│   │   ├── exportacao.js     # CSV e backup JSON
+│   │   ├── exportacao.js     # CSV, backup JSON e PNG dos gráficos
 │   │   └── seed.js           # Dados de exemplo
 │   └── pages/
 │       ├── agenda.js         # Liga a agenda ao domínio (página Agenda e aba do tanque)
@@ -565,6 +585,7 @@ fish-track/
 │       ├── registro.js
 │       ├── alertas.js
 │       ├── calendario.js
+│       ├── relatorio.js
 │       └── configuracoes.js
 │
 ├── assets/
@@ -586,7 +607,7 @@ fish-track/
 | `core` | — | Conhecer regras de negócio ou o DOM |
 | `domain` | `core` | Acessar o DOM |
 | `ui` | `core` | Ler ou gravar dados diretamente |
-| `services` | `core`, `domain` | Acessar o DOM, exceto para disparar download |
+| `services` | `core`, `domain` | Acessar o DOM, exceto para disparar download e desenhar o PNG dos gráficos num canvas |
 | `pages` | todas (inclusive `pages/comum.js`) | Acessar o `localStorage` diretamente |
 
 ---
@@ -708,3 +729,4 @@ fish-track/
 | Campo de natalidade é relevante para a maioria dos produtores | Manter como opcional | Produtores |
 | Registrar parâmetros da água (oxigênio, pH, temperatura) | Fora do MVP | Produtores |
 | Corrigir ou cancelar um ciclo iniciado com dados errados | Não previsto no MVP: hoje só é possível registrar a despesca | Produtores |
+| Conteúdo exato dos relatórios em PDF | O da seção 7.12 | Produtores |

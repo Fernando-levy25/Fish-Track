@@ -240,7 +240,7 @@ body {
     }
 }
 
-@media (prefers-reduced-motion: reduce) {
+@media print, (prefers-reduced-motion: reduce) {
     .menu__contador--alerta {
         animation: none;
     }

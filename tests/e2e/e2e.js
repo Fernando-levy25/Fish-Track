@@ -366,6 +366,7 @@ async function roteiro() {
     await abrir('alertas.html');
     verificar('2 grupos de alertas', doc().querySelectorAll('#grupos-alertas .grupo-alertas').length === 2);
     await testarAgenda();
+    await testarRelatorios();
     await abrir('tanques.html');
     verificar('5 tanques na lista padrão', doc().querySelectorAll('.cartao-tanque').length === 5);
 
@@ -545,6 +546,75 @@ async function testarAgenda() {
     quadroDia().querySelector('.quadro__fechar').click();
     await esperar(40);
     verificar('fechar devolve o foco ao dia', quadroDia().hidden && doc().activeElement === celula(HOJE));
+    quadro.style.width = '';
+}
+
+// Seção 7.12 e 9.9: relatório para imprimir e imagem PNG dos gráficos.
+async function testarRelatorios() {
+    // Guarda os arquivos que o app manda baixar, em vez de depender do download do navegador.
+    const capturarDownloads = () => {
+        const janela = quadro.contentWindow;
+        const arquivos = [];
+        const original = janela.URL.createObjectURL.bind(janela.URL);
+        janela.URL.createObjectURL = (blob) => {
+            arquivos.push(blob);
+            return original(blob);
+        };
+        return arquivos;
+    };
+    const esperarPng = async (arquivos) => {
+        await esperarAte(() => arquivos.some((blob) => blob.type === 'image/png'), 5000);
+        return arquivos.find((blob) => blob.type === 'image/png');
+    };
+
+    etapa = 'Imagem PNG dos gráficos';
+    await abrir('index.html');
+    verificar('"Exportar relatório" no dashboard', doc().querySelector('a[href="relatorio.html?imprimir=1"]')?.textContent.trim() === 'Exportar relatório');
+    let arquivos = capturarDownloads();
+    const larguraPrincipal = porId('grafico-principal').querySelector('svg').getBoundingClientRect().width;
+    porId('botao-baixar-grafico').click();
+    let png = await esperarPng(arquivos);
+    const imagem = png && await quadro.contentWindow.createImageBitmap(png);
+    verificar('PNG do gráfico principal em 2×, com margem', imagem && Math.abs(imagem.width - Math.round((larguraPrincipal + 48) * 2)) <= 2,
+        `${imagem?.width} x ${imagem?.height}, svg ${larguraPrincipal}`);
+    const tanque02 = dados().tanques.find((tanque) => tanque.nome === 'Tanque 02').id;
+    await abrir(`tanque.html?id=${tanque02}`);
+    verificar('"Exportar relatório" no tanque', porId('link-exportar-relatorio').getAttribute('href') === `relatorio.html?tanqueId=${tanque02}&imprimir=1`);
+    verificar('"Baixar imagem" nos três gráficos', [...doc().querySelectorAll('[data-baixar-grafico]')].every((botao) => !botao.hidden));
+    arquivos = capturarDownloads();
+    doc().querySelector('[data-baixar-grafico="peso-medio"]').click();
+    png = await esperarPng(arquivos);
+    verificar('PNG do gráfico do tanque', png?.size > 2000, png?.size);
+
+    etapa = 'Relatório da produção';
+    await abrir('relatorio.html');
+    verificar('item Relatórios no menu', doc().querySelector('.menu__link--lateral[href="relatorio.html"]')?.getAttribute('aria-current') === 'page');
+    verificar('título e emissão', texto('titulo-relatorio') === 'Relatório da produção' && texto('emissao-relatorio').startsWith('Emitido em '));
+    verificar('um bloco por tanque em cultivo', doc().querySelectorAll('.relatorio__secao--inteira').length === 3);
+    verificar('alertas com o tanque', doc().querySelectorAll('#conteudo-relatorio .lista-alertas__item').length === 4);
+    verificar('tanques sem ciclo citados', porId('conteudo-relatorio').textContent.includes('Tanque-rede 04 (em manutenção)'));
+    verificar('nome do PDF pelo título', doc().title === `Fish Track - Relatório da produção - ${HOJE}`, doc().title);
+    await navegarCom(() => {
+        porId('campo-relatorio').value = tanque02;
+        porId('campo-relatorio').dispatchEvent(new Event('change', { bubbles: true }));
+    });
+
+    etapa = 'Relatório do tanque';
+    verificar('trocar o relatório leva ao tanque', texto('titulo-relatorio') === 'Relatório do Tanque 02' && porId('campo-relatorio').value === tanque02);
+    verificar('três gráficos', porId('conteudo-relatorio').querySelectorAll('.cartao-grafico svg').length === 3);
+    const registrosT02 = dados().registros.filter((registro) => registro.tanqueId === tanque02).length;
+    verificar('tabela com todos os registros do ciclo', porId('conteudo-relatorio').querySelectorAll('tbody tr').length === registrosT02, registrosT02);
+    verificar('alertas do tanque', porId('conteudo-relatorio').querySelectorAll('.lista-alertas__item').length === 2);
+    verificar('FCA com meta e contexto', porId('conteudo-relatorio').textContent.includes('meta de 1,60'));
+    const viveiro = dados().tanques.find((tanque) => tanque.nome === 'Viveiro Norte').id;
+    await abrir(`relatorio.html?tanqueId=${viveiro}`);
+    verificar('tanque sem ciclo mostra o último', porId('conteudo-relatorio').textContent.includes('Sem ciclo em andamento. Último ciclo'));
+    await abrir('relatorio.html?tanqueId=inexistente');
+    verificar('tanque inexistente', porId('conteudo-relatorio').textContent.includes('Tanque não encontrado'));
+    quadro.style.width = '390px';
+    await abrir(`relatorio.html?tanqueId=${tanque02}`);
+    verificar('relatório sem rolagem horizontal no celular', doc().documentElement.scrollWidth <= doc().documentElement.clientWidth,
+        `${doc().documentElement.scrollWidth} > ${doc().documentElement.clientWidth}`);
     quadro.style.width = '';
 }
 

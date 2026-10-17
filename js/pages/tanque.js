@@ -1,7 +1,7 @@
 // Detalhes do tanque (seção 7.3): cabeçalho com as ações e as abas Resumo,
 // Histórico e Calendário. Endereço: tanque.html?id=... (#historico abre a aba).
 
-import { hojeISO, paraNumero } from '../core/utils.js';
+import { criarSlug, hojeISO, paraNumero } from '../core/utils.js';
 import {
     formatarData,
     formatarDensidade,
@@ -20,6 +20,7 @@ import { excluirRegistro, listarRegistrosDoCiclo, resumirRegistro } from '../dom
 import { calcularCargaMaximaKg, calcularSeries } from '../domain/indicadores.js';
 import { analisarTanque, resolverLimites } from '../domain/alertas.js';
 import { obterLimitesPadrao, obterMetaFca, salvarLimitesTanque } from '../domain/configuracoes.js';
+import { exportarGraficoPng } from '../services/exportacao.js';
 import { irPara, lerParametro, montarUrl } from '../ui/nav.js';
 import {
     confirmar,
@@ -71,6 +72,7 @@ function iniciar() {
     abas = iniciarAbas(porId('abas-tanque'));
     calendario = montarAgenda(porId('agenda-tanque'), { tanqueId, nivelTitulo: 3 });
     configurarAcoes();
+    configurarGraficos();
     configurarHistorico();
     configurarLimites();
     renderizar();
@@ -109,6 +111,7 @@ function renderizarCabecalho() {
     mostrarLink('link-iniciar-ciclo', tanque.status === 'vazio', montarUrl('ciclo-form.html', { tanqueId: tanque.id, acao: 'iniciar' }));
     mostrarLink('link-registrar-despesca', Boolean(cicloAtivo), montarUrl('ciclo-form.html', { tanqueId: tanque.id, acao: 'despesca' }));
     mostrarLink('link-editar-tanque', true, montarUrl('tanque-form.html', { id: tanque.id }));
+    mostrarLink('link-exportar-relatorio', true, montarUrl('relatorio.html', { tanqueId: tanque.id, imprimir: 1 }));
     porId('botao-limites-alerta').hidden = arquivado;
     porId('botao-desarquivar-tanque').hidden = !arquivado;
     // RN04: com histórico, o tanque é arquivado; sem nenhum ciclo, pode ser excluído.
@@ -229,6 +232,24 @@ function renderizarResumo() {
 function desenharGrafico(nome, pontos, formatarValor, rotulo) {
     const desenhou = desenharGraficoLinha(porId(`grafico-${nome}`), pontos, { formatarValor, rotulo });
     porId(`aviso-grafico-${nome}`).hidden = desenhou;
+    document.querySelector(`[data-baixar-grafico="${nome}"]`).hidden = !desenhou;
+}
+
+// "Baixar imagem" de cada gráfico da aba Resumo (seção 9.9).
+function configurarGraficos() {
+    porId('conteudo-resumo').addEventListener('click', (evento) => {
+        const botao = evento.target.closest('[data-baixar-grafico]');
+        if (!botao) {
+            return;
+        }
+        const nome = botao.dataset.baixarGrafico;
+        const { tanque } = situacao;
+        const hoje = hojeISO();
+        exportarGraficoPng(porId(`grafico-${nome}`).querySelector('svg'), `fish-track-${criarSlug(tanque.nome)}-${nome}-${hoje}`, {
+            titulo: `${botao.closest('figure').querySelector('figcaption').textContent} · ${tanque.nome}`,
+            subtitulo: `Fish Track · ${formatarData(hoje)}`,
+        }).catch(mostrarErroPagina);
+    });
 }
 
 // ---------- Histórico ----------

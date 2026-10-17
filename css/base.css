@@ -110,7 +110,7 @@
     --transicao: var(--duracao-rapida) ease;
 }
 
-@media (prefers-reduced-motion: reduce) {
+@media print, (prefers-reduced-motion: reduce) {
     :root {
         --duracao-rapida: 0s;
         --duracao-media: 0s;

@@ -1,5 +1,6 @@
-// Exportação CSV e backup/restauração em JSON (seção 9.7). O DOM só é usado
-// para disparar o download (seção 10).
+// Exportação CSV, backup/restauração em JSON (seção 9.7) e imagem PNG dos
+// gráficos (seção 9.9). O DOM só é usado para disparar o download e, no PNG,
+// para desenhar o gráfico num canvas (seção 10).
 
 import { lerDados, salvarDados, validarEstrutura } from '../core/storage.js';
 import { agoraISO, compararTexto, criarSlug, hojeISO } from '../core/utils.js';
@@ -128,8 +129,106 @@ export function restaurarBackup(dados) {
     salvarDados(dados);
 }
 
+// ---------- Imagem dos gráficos ----------
+
+// Propriedades que o CSS dá ao gráfico. Fora da página, o SVG vira imagem sem
+// as folhas de estilo, então cada elemento leva os valores calculados.
+const ESTILOS_DO_GRAFICO = [
+    'fill', 'fill-opacity', 'stroke', 'stroke-width', 'stroke-dasharray', 'stroke-linecap', 'stroke-linejoin',
+    'stroke-opacity', 'opacity', 'font-family', 'font-size', 'font-weight', 'text-anchor', 'dominant-baseline',
+    'visibility', 'display',
+];
+const ESCALA_PNG = 2;
+const MARGEM_PNG = 24;
+
+// SVG → Image → canvas → PNG, com fundo branco, título e legenda, em 2× (seção 9.9).
+// legenda: [{ nome, cor }], para gráficos com uma linha por tanque.
+export async function exportarGraficoPng(svg, nomeArquivo, { titulo = '', subtitulo = '', legenda = [] } = {}) {
+    const { width: largura, height: altura } = svg.getBoundingClientRect();
+    const imagem = await carregarImagem(serializarComEstilos(svg, largura, altura));
+
+    const fonte = getComputedStyle(svg).fontFamily;
+    const alturaTitulo = titulo ? 28 : 0;
+    const alturaSubtitulo = subtitulo ? 22 : 0;
+    const alturaLegenda = legenda.length > 0 ? 26 : 0;
+    const topoGrafico = MARGEM_PNG + alturaTitulo + alturaSubtitulo + alturaLegenda + (titulo || subtitulo || legenda.length ? 12 : 0);
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round((largura + MARGEM_PNG * 2) * ESCALA_PNG);
+    canvas.height = Math.round((topoGrafico + altura + MARGEM_PNG) * ESCALA_PNG);
+    const contexto = canvas.getContext('2d');
+    contexto.scale(ESCALA_PNG, ESCALA_PNG);
+    contexto.fillStyle = '#ffffff';
+    contexto.fillRect(0, 0, canvas.width, canvas.height);
+    contexto.textBaseline = 'top';
+
+    let y = MARGEM_PNG;
+    if (titulo) {
+        contexto.fillStyle = '#1b2421';
+        contexto.font = `600 18px ${fonte}`;
+        contexto.fillText(titulo, MARGEM_PNG, y);
+        y += alturaTitulo;
+    }
+    if (subtitulo) {
+        contexto.fillStyle = '#5a6561';
+        contexto.font = `400 13px ${fonte}`;
+        contexto.fillText(subtitulo, MARGEM_PNG, y);
+        y += alturaSubtitulo;
+    }
+    let x = MARGEM_PNG;
+    contexto.font = `600 13px ${fonte}`;
+    for (const { nome, cor } of legenda) {
+        contexto.fillStyle = cor;
+        contexto.beginPath();
+        contexto.arc(x + 5, y + 8, 5, 0, Math.PI * 2);
+        contexto.fill();
+        contexto.fillStyle = '#1b2421';
+        contexto.fillText(nome, x + 16, y + 1);
+        x += 16 + contexto.measureText(nome).width + 20;
+    }
+    contexto.drawImage(imagem, MARGEM_PNG, topoGrafico, largura, altura);
+
+    const conteudo = await new Promise((resolver) => canvas.toBlob(resolver, 'image/png'));
+    const arquivo = `${nomeArquivo}.png`;
+    baixarArquivo(arquivo, conteudo, 'image/png');
+    return arquivo;
+}
+
+function serializarComEstilos(svg, largura, altura) {
+    const copia = svg.cloneNode(true);
+    const originais = [svg, ...svg.querySelectorAll('*')];
+    const copias = [copia, ...copia.querySelectorAll('*')];
+    originais.forEach((original, indice) => {
+        const estilo = getComputedStyle(original);
+        copias[indice].setAttribute('style', ESTILOS_DO_GRAFICO.map((nome) => `${nome}:${estilo.getPropertyValue(nome)}`).join(';'));
+    });
+    // A imagem final é estática: sem animação, recorte de entrada nem dica.
+    copia.querySelectorAll('title, .grafico-dica').forEach((elemento) => elemento.remove());
+    copia.setAttribute('width', largura);
+    copia.setAttribute('height', altura);
+    copia.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    return new XMLSerializer().serializeToString(copia);
+}
+
+function carregarImagem(conteudoSvg) {
+    const url = URL.createObjectURL(new Blob([conteudoSvg], { type: 'image/svg+xml;charset=utf-8' }));
+    return new Promise((resolver, rejeitar) => {
+        const imagem = new Image();
+        imagem.onload = () => {
+            URL.revokeObjectURL(url);
+            resolver(imagem);
+        };
+        imagem.onerror = () => {
+            URL.revokeObjectURL(url);
+            rejeitar(new Error('Não foi possível gerar a imagem do gráfico.'));
+        };
+        imagem.src = url;
+    });
+}
+
+// ---------- Download ----------
+
 function baixarArquivo(nome, conteudo, tipo) {
-    const url = URL.createObjectURL(new Blob([conteudo], { type: tipo }));
+    const url = URL.createObjectURL(conteudo instanceof Blob ? conteudo : new Blob([conteudo], { type: tipo }));
     const link = document.createElement('a');
     link.href = url;
     link.download = nome;

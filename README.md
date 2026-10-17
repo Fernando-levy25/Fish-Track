@@ -41,6 +41,7 @@ O uso segue um fluxo simples:
 * **Página do tanque:** indicadores, gráficos de evolução, histórico de registros e calendário do tanque.
 * **Alertas:** todos os alertas, agrupados por tanque e ordenados por gravidade.
 * **Agenda:** povoamentos, registros, despescas, alertas do dia e lembretes (com repetição) de todos os tanques, com quadro do dia e "Lembretes de hoje" no menu lateral.
+* **Relatórios:** relatório da produção ou de um tanque, pronto para imprimir ou salvar em PDF, e gráficos baixados como imagem PNG.
 * **Configurações:** limites dos alertas, exportação em CSV (abre no Excel), backup e restauração dos dados, e dados de exemplo.
 
 ## ▶️ Como usar
