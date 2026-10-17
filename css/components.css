@@ -1,0 +1,936 @@
+/* =========================================================
+   Fish Track — componentes
+   Estados visuais usam atributos ARIA quando existem
+   (aria-current, aria-selected, aria-invalid, aria-pressed).
+   Classes marcadas com "gerado pelo JS" ainda não aparecem no
+   HTML: são criadas pelos módulos de js/ui e js/pages.
+   ========================================================= */
+
+/* ---------- Botões e links ---------- */
+
+.botao {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--espaco-2);
+    min-height: var(--altura-toque);
+    padding: 0 var(--espaco-4);
+    border: 1px solid transparent;
+    border-radius: var(--raio);
+    font-size: var(--texto-3);
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: center;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color var(--transicao), border-color var(--transicao), color var(--transicao);
+}
+
+.botao:disabled,
+.botao[aria-disabled="true"] {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.botao--primario {
+    background: var(--cor-primaria);
+    color: var(--cor-texto-invertido);
+}
+
+.botao--primario:hover {
+    background: var(--cor-primaria-escura);
+}
+
+.botao--secundario {
+    background: var(--cor-superficie);
+    border-color: var(--cor-borda-forte);
+    color: var(--cor-texto);
+}
+
+.botao--secundario:hover {
+    background: var(--cor-neutra-suave);
+}
+
+.botao--perigo {
+    background: var(--cor-superficie);
+    border-color: var(--cor-perigo-borda);
+    color: var(--cor-perigo);
+}
+
+.botao--perigo:hover {
+    background: var(--cor-perigo-suave);
+}
+
+.link {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--cor-primaria);
+    font-weight: 600;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+    cursor: pointer;
+}
+
+.link:hover {
+    color: var(--cor-primaria-escura);
+    text-decoration-thickness: 2px;
+}
+
+/* Links soltos, fora de um parágrafo, precisam da área mínima de toque. */
+.secao__cabecalho .link,
+.cartao-tanque__acoes .link {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--altura-toque);
+}
+
+/* ---------- Selo de status ---------- */
+
+.selo {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.125rem var(--espaco-2);
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: var(--cor-neutra-suave);
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-1);
+    font-weight: 600;
+    line-height: 1.4;
+    white-space: nowrap;
+}
+
+.selo:empty {
+    display: none;
+}
+
+/* Gerado pelo JS: um modificador por status do tanque.
+   "vazio" usa o estilo padrão do selo. */
+.selo--ativo {
+    background: var(--cor-sucesso-suave);
+    color: var(--cor-sucesso);
+}
+
+.selo--manutencao {
+    background: var(--cor-atencao-suave);
+    color: var(--cor-atencao);
+}
+
+.selo--arquivado {
+    background: transparent;
+    border-color: var(--cor-borda-forte);
+}
+
+/* ---------- Campos de formulário ---------- */
+
+.campo {
+    display: grid;
+    align-content: start;
+    gap: var(--espaco-2);
+    max-width: 40rem;
+}
+
+.campo--filtro {
+    max-width: 18rem;
+}
+
+.campo__rotulo {
+    font-size: var(--texto-3);
+    font-weight: 600;
+}
+
+.campo__input,
+.campo__select {
+    width: 100%;
+    min-height: var(--altura-toque);
+    padding: var(--espaco-2) var(--espaco-3);
+    border: 1px solid var(--cor-borda-forte);
+    border-radius: var(--raio);
+    background: var(--cor-superficie);
+    color: var(--cor-texto);
+    /* 1rem evita o zoom automático do iOS ao focar o campo. */
+    font-size: var(--texto-4);
+    transition: border-color var(--transicao);
+}
+
+.campo__input:hover,
+.campo__select:hover {
+    border-color: var(--cor-texto-suave);
+}
+
+.campo__input:focus-visible,
+.campo__select:focus-visible {
+    border-color: var(--cor-primaria);
+    outline-offset: 0;
+}
+
+.campo__input[aria-invalid="true"],
+.campo__select[aria-invalid="true"] {
+    border-color: var(--cor-perigo);
+}
+
+.campo__input--area {
+    min-height: 6rem;
+    resize: vertical;
+}
+
+.campo__select {
+    appearance: none;
+    padding-right: 2.5rem;
+    background: var(--cor-superficie) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%235c6662' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 0.875rem center;
+}
+
+.campo__input[type="file"] {
+    padding: var(--espaco-1);
+    font-size: var(--texto-3);
+}
+
+.campo__input::file-selector-button {
+    min-height: 2.25rem;
+    margin-right: var(--espaco-3);
+    padding: 0 var(--espaco-3);
+    border: 1px solid var(--cor-borda-forte);
+    border-radius: 4px;
+    background: var(--cor-superficie-suave);
+    color: var(--cor-texto);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* Sem espaço entre linhas: o padding do rótulo já separa a ajuda. */
+.campo--checkbox {
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 0 var(--espaco-3);
+}
+
+.campo--checkbox .campo__rotulo {
+    padding-block: var(--espaco-2);
+    cursor: pointer;
+}
+
+.campo--checkbox .campo__ajuda {
+    grid-column: 2;
+}
+
+.campo__checkbox {
+    width: 1.25rem;
+    height: 1.25rem;
+    margin: 0;
+    accent-color: var(--cor-primaria);
+}
+
+.campo__ajuda {
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-2);
+}
+
+.campo__erro {
+    color: var(--cor-perigo);
+    font-size: var(--texto-2);
+    font-weight: 600;
+}
+
+.campo__erro:empty {
+    display: none;
+}
+
+/* ---------- Formulário ---------- */
+
+.formulario {
+    display: grid;
+    gap: var(--espaco-5);
+    max-width: 40rem;
+}
+
+.formulario__grade {
+    display: grid;
+    gap: var(--espaco-5) var(--espaco-4);
+}
+
+.formulario__aviso {
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-3);
+}
+
+.formulario__erro-geral {
+    padding: var(--espaco-3) var(--espaco-4);
+    border: 1px solid var(--cor-perigo-borda);
+    border-radius: var(--raio);
+    background: var(--cor-perigo-suave);
+    color: var(--cor-perigo);
+    font-weight: 600;
+}
+
+.formulario__mensagem {
+    color: var(--cor-sucesso);
+    font-weight: 600;
+}
+
+.formulario__mensagem:empty {
+    display: none;
+}
+
+.formulario__acoes,
+.dialogo__acoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--espaco-3);
+}
+
+.formulario__acoes {
+    padding-top: var(--espaco-2);
+}
+
+/* No celular os botões dividem a largura; em telas maiores ficam à direita. */
+.formulario__acoes > *,
+.dialogo__acoes > * {
+    flex: 1 1 9rem;
+}
+
+@media (min-width: 40rem) {
+    /* Sem espaço entre linhas: as linhas de ajuda e erro ficam vazias quase
+       sempre, e o espaçamento interno vem do gap do próprio .campo. */
+    .formulario__grade {
+        grid-template-columns: 1fr 1fr;
+        row-gap: 0;
+    }
+
+    /* Rótulo, campo, ajuda e erro ocupam linhas compartilhadas pelas duas
+       colunas: um rótulo de duas linhas não desalinha o campo ao lado. */
+    .formulario__grade > .campo {
+        grid-row: span 4;
+        grid-template-rows: subgrid;
+    }
+
+    .formulario__acoes,
+    .dialogo__acoes {
+        justify-content: flex-end;
+    }
+
+    .formulario__acoes > *,
+    .dialogo__acoes > * {
+        flex: none;
+    }
+}
+
+/* ---------- Cartões ---------- */
+
+.cartao-indicador,
+.cartao-tanque,
+.cartao-grafico {
+    background: var(--cor-superficie);
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio-grande);
+}
+
+/* O valor fica no rodapé do cartão para alinhar na mesma linha da grade
+   mesmo quando algum rótulo quebra em duas linhas. */
+.cartao-indicador {
+    display: grid;
+    align-content: space-between;
+    gap: var(--espaco-1);
+    padding: var(--espaco-3) var(--espaco-4);
+}
+
+.cartao-indicador__rotulo {
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-2);
+}
+
+.cartao-indicador__valor {
+    font-size: var(--texto-6);
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+}
+
+.cartao-tanque {
+    display: grid;
+    align-content: start;
+    gap: var(--espaco-3);
+    padding: var(--espaco-4);
+}
+
+.cartao-tanque__cabecalho {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--espaco-3);
+}
+
+.cartao-tanque__nome {
+    font-size: var(--texto-5);
+}
+
+.cartao-tanque__especie {
+    margin-top: calc(var(--espaco-2) * -1);
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-2);
+}
+
+.cartao-tanque__metricas {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--espaco-3);
+    padding-top: var(--espaco-3);
+    border-top: 1px solid var(--cor-borda);
+}
+
+.cartao-tanque__metrica dt {
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-1);
+}
+
+.cartao-tanque__metrica dd {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.cartao-tanque__acoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--espaco-5);
+}
+
+/* ---------- Gráficos ---------- */
+
+.cartao-grafico {
+    display: grid;
+    gap: var(--espaco-3);
+    padding: var(--espaco-4);
+}
+
+.cartao-grafico__titulo {
+    font-size: var(--texto-3);
+    font-weight: 600;
+}
+
+.cartao-grafico__area:empty {
+    display: none;
+}
+
+.cartao-grafico__area svg {
+    width: 100%;
+    height: auto;
+    overflow: visible;
+}
+
+.cartao-grafico__vazio {
+    display: grid;
+    place-items: center;
+    min-height: 10rem;
+    padding: var(--espaco-4);
+    border-radius: var(--raio);
+    background: var(--cor-superficie-suave);
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-2);
+    text-align: center;
+}
+
+/* Gerado por js/ui/graficos.js: elementos do SVG. */
+.grafico__grade {
+    stroke: var(--cor-borda);
+    stroke-width: 1;
+}
+
+.grafico__rotulo {
+    fill: var(--cor-texto-suave);
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+}
+
+.grafico__area {
+    fill: var(--cor-primaria-suave);
+}
+
+.grafico__linha {
+    fill: none;
+    stroke: var(--cor-primaria);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.grafico__ponto {
+    fill: var(--cor-superficie);
+    stroke: var(--cor-primaria);
+    stroke-width: 2;
+}
+
+/* ---------- Avisos e estados vazios ---------- */
+
+.aviso-vazio {
+    padding: var(--espaco-4) var(--espaco-5);
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio-grande);
+    background: var(--cor-superficie);
+    color: var(--cor-texto-suave);
+}
+
+.aviso-vazio:not([hidden]) + * {
+    margin-top: var(--espaco-5);
+}
+
+.grade-tanques__vazio,
+.grupos-alertas__vazio,
+.lista-alertas__vazio,
+.lista-registros__vazio,
+.lista-eventos__vazio,
+.tabela__vazio,
+.aviso-pendente {
+    padding: var(--espaco-4) var(--espaco-5);
+    border: 1px dashed var(--cor-borda-forte);
+    border-radius: var(--raio-grande);
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-3);
+}
+
+.grade-tanques__vazio {
+    grid-column: 1 / -1;
+}
+
+/* ---------- Listas ---------- */
+
+.lista-alertas,
+.lista-registros,
+.lista-eventos,
+.legenda-calendario {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.lista-alertas {
+    display: grid;
+    gap: var(--espaco-2);
+}
+
+/* Gerado pelo JS: .lista-alertas__item com --alta, --media ou --baixa,
+   contendo .lista-alertas__titulo e .lista-alertas__detalhe. */
+.lista-alertas__item {
+    --cor-gravidade: var(--cor-info);
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: start;
+    column-gap: var(--espaco-3);
+    padding: var(--espaco-3) var(--espaco-4);
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio-grande);
+    background: var(--cor-superficie);
+}
+
+.lista-alertas__item::before {
+    content: "";
+    grid-row: span 2;
+    width: 0.625rem;
+    height: 0.625rem;
+    margin-top: 0.45em;
+    border-radius: 50%;
+    background: var(--cor-gravidade);
+}
+
+.lista-alertas__item--alta {
+    --cor-gravidade: var(--cor-perigo);
+    border-color: var(--cor-perigo-borda);
+    background: var(--cor-perigo-suave);
+}
+
+.lista-alertas__item--media {
+    --cor-gravidade: var(--cor-atencao);
+}
+
+.lista-alertas__titulo {
+    font-weight: 600;
+}
+
+.lista-alertas__detalhe {
+    grid-column: 2;
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-2);
+}
+
+.grupo-alertas {
+    display: grid;
+    gap: var(--espaco-3);
+}
+
+.grupo-alertas__titulo {
+    font-size: var(--texto-5);
+}
+
+.grupo-alertas__titulo .link {
+    color: var(--cor-texto);
+    text-decoration: none;
+}
+
+.grupo-alertas__titulo .link:hover {
+    text-decoration: underline;
+}
+
+.grupo-alertas__especie {
+    margin-top: calc(var(--espaco-3) * -1);
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-2);
+}
+
+/* Gerado pelo JS: linhas de registros recentes (__item, __data, __resumo)
+   e de eventos do dia (__item com o tipo do evento, __tanque, __tipo). */
+.lista-registros__item,
+.lista-eventos__item {
+    padding: var(--espaco-3) 0;
+    border-bottom: 1px solid var(--cor-borda);
+}
+
+.lista-registros__item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--espaco-1) var(--espaco-4);
+}
+
+/* Mesma estrutura dos alertas: marcador à esquerda, texto em duas linhas. */
+.lista-eventos__item {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: start;
+    column-gap: var(--espaco-3);
+}
+
+.lista-eventos__tipo {
+    grid-column: 2;
+}
+
+.lista-registros__data,
+.lista-eventos__tanque {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.lista-registros__resumo,
+.lista-eventos__tipo {
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-2);
+}
+
+/* ---------- Abas ---------- */
+
+.abas {
+    display: flex;
+    gap: var(--espaco-1);
+    margin-bottom: var(--espaco-6);
+    /* Linha de base em sombra: uma borda com margem negativa nas abas
+       geraria rolagem vertical de 1px dentro do overflow. */
+    box-shadow: inset 0 -1px 0 var(--cor-borda);
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.abas__aba {
+    flex: none;
+    min-height: var(--altura-toque);
+    padding: 0 var(--espaco-4);
+    border: 0;
+    border-bottom: 2px solid transparent;
+    background: none;
+    color: var(--cor-texto-suave);
+    font-weight: 600;
+    cursor: pointer;
+    transition: color var(--transicao), border-color var(--transicao);
+}
+
+.abas__aba:hover {
+    color: var(--cor-texto);
+}
+
+.abas__aba[aria-selected="true"] {
+    border-bottom-color: var(--cor-primaria);
+    color: var(--cor-primaria);
+}
+
+/* ---------- Tabela ---------- */
+
+.tabela-rolagem {
+    overflow-x: auto;
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio-grande);
+    background: var(--cor-superficie);
+}
+
+.tabela {
+    width: 100%;
+    font-size: var(--texto-3);
+    font-variant-numeric: tabular-nums;
+}
+
+.tabela th,
+.tabela td {
+    padding: var(--espaco-3) var(--espaco-4);
+    border-bottom: 1px solid var(--cor-borda);
+    text-align: left;
+    vertical-align: top;
+}
+
+.tabela th {
+    background: var(--cor-superficie-suave);
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-2);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.tabela td:last-child {
+    white-space: nowrap;
+}
+
+.tabela tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.tabela tbody tr:hover {
+    background: var(--cor-superficie-suave);
+}
+
+/* ---------- Diálogo ---------- */
+
+.dialogo {
+    width: min(28rem, calc(100% - 2 * var(--espaco-4)));
+    padding: 0;
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio-grande);
+    background: var(--cor-superficie);
+    color: var(--cor-texto);
+    box-shadow: var(--sombra-flutuante);
+}
+
+.dialogo::backdrop {
+    background: rgb(29 36 34 / 0.45);
+}
+
+.dialogo__conteudo {
+    display: grid;
+    gap: var(--espaco-5);
+    padding: var(--espaco-5);
+}
+
+/* ---------- Cabeçalho do tanque ---------- */
+
+.cabecalho-tanque {
+    display: grid;
+    gap: var(--espaco-2);
+    margin-bottom: var(--espaco-5);
+}
+
+.cabecalho-tanque__identificacao {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--espaco-2) var(--espaco-3);
+}
+
+.cabecalho-tanque__especie {
+    color: var(--cor-texto-suave);
+}
+
+.cabecalho-tanque__ciclo {
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-2);
+}
+
+.cabecalho-tanque__especie:empty,
+.cabecalho-tanque__ciclo:empty {
+    display: none;
+}
+
+.cabecalho-tanque__acoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--espaco-2);
+    margin-top: var(--espaco-3);
+}
+
+/* ---------- Calendário ---------- */
+
+.navegacao-mes {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--espaco-2);
+}
+
+.navegacao-mes__titulo {
+    flex: 1 1 auto;
+    min-width: 8rem;
+    font-size: var(--texto-5);
+    text-align: center;
+}
+
+.navegacao-mes .botao {
+    min-width: var(--altura-toque);
+    padding: 0 var(--espaco-3);
+}
+
+.calendario {
+    overflow: hidden;
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio-grande);
+    background: var(--cor-superficie);
+}
+
+/* Gerado por js/ui/calendario.js: .calendario__semana (nomes dos dias),
+   .calendario__grade com botões .calendario__dia, cada um com
+   .calendario__numero e .calendario__marcadores. */
+.calendario__semana,
+.calendario__grade {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.calendario__semana {
+    padding: var(--espaco-2) 0;
+    border-bottom: 1px solid var(--cor-borda);
+    background: var(--cor-superficie-suave);
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-1);
+    font-weight: 600;
+    text-align: center;
+}
+
+.calendario__dia {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--espaco-1);
+    min-height: 3.25rem;
+    padding: var(--espaco-1);
+    border: 0;
+    border-right: 1px solid var(--cor-borda);
+    border-bottom: 1px solid var(--cor-borda);
+    background: none;
+    color: var(--cor-texto);
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+}
+
+.calendario__dia:nth-child(7n) {
+    border-right: 0;
+}
+
+.calendario__dia:nth-last-child(-n + 7) {
+    border-bottom: 0;
+}
+
+.calendario__dia:hover {
+    background: var(--cor-superficie-suave);
+}
+
+.calendario__dia--fora-do-mes {
+    color: var(--cor-borda-forte);
+}
+
+.calendario__dia[aria-pressed="true"] {
+    box-shadow: inset 0 0 0 2px var(--cor-primaria);
+}
+
+.calendario__numero {
+    display: grid;
+    place-items: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 50%;
+    font-size: var(--texto-2);
+}
+
+.calendario__dia--hoje .calendario__numero {
+    background: var(--cor-primaria);
+    color: var(--cor-texto-invertido);
+    font-weight: 700;
+}
+
+.calendario__marcadores {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 3px;
+}
+
+.calendario__marcador {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--cor-evento);
+}
+
+@media (min-width: 40rem) {
+    .calendario__dia {
+        align-items: flex-start;
+        min-height: 5rem;
+        padding: var(--espaco-2);
+    }
+
+    .calendario__marcadores {
+        justify-content: flex-start;
+    }
+}
+
+.legenda-calendario {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--espaco-2) var(--espaco-5);
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-2);
+}
+
+.legenda-calendario__item {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--espaco-2);
+}
+
+.legenda-calendario__item::before,
+.lista-eventos__item::before {
+    content: "";
+    flex: none;
+    width: 0.625rem;
+    height: 0.625rem;
+    border-radius: 50%;
+    background: var(--cor-evento, var(--cor-texto-suave));
+}
+
+.lista-eventos__item::before {
+    grid-row: span 2;
+    margin-top: 0.45em;
+}
+
+/* Cor de cada tipo de evento, compartilhada por legenda, marcadores e lista. */
+.legenda-calendario__item--povoamento,
+.calendario__marcador--povoamento,
+.lista-eventos__item--povoamento {
+    --cor-evento: var(--cor-evento-povoamento);
+}
+
+.legenda-calendario__item--registro,
+.calendario__marcador--registro,
+.lista-eventos__item--registro {
+    --cor-evento: var(--cor-evento-registro);
+}
+
+.legenda-calendario__item--despesca-prevista,
+.calendario__marcador--despesca-prevista,
+.lista-eventos__item--despesca-prevista,
+.legenda-calendario__item--despesca-realizada,
+.calendario__marcador--despesca-realizada,
+.lista-eventos__item--despesca-realizada {
+    --cor-evento: var(--cor-evento-despesca);
+}
+
+.legenda-calendario__item--despesca-prevista::before,
+.calendario__marcador--despesca-prevista,
+.lista-eventos__item--despesca-prevista::before {
+    background: none;
+    box-shadow: inset 0 0 0 1.5px var(--cor-evento);
+}

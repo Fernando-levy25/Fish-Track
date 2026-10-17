@@ -494,7 +494,9 @@ fish-track/
 - **Mobile-first:** estilos base para celular, com `@media (min-width: ...)` para telas maiores.
 - Cores, espaçamentos e fontes em **variáveis CSS** (`--cor-primaria`, `--espaco-2`) definidas em `base.css`.
 - Classes no padrão **BEM** em kebab-case: `.card`, `.card__titulo`, `.card--alerta`.
-- Evitar seletores por ID e `!important`.
+- Evitar seletores por ID e `!important`. A única exceção é a regra `[hidden]` em `base.css`, que garante que o atributo `hidden` esconda até elementos com `display` definido por classe.
+- Estados visuais usam atributos ARIA quando existem (`aria-current`, `aria-selected`, `aria-invalid`, `aria-pressed`), e não classes modificadoras. O JS altera o atributo, e o CSS reage a ele.
+- Classes que só o JS cria (itens de listas, selos por status, calendário e elementos dos gráficos SVG) já estão definidas em `components.css`, com o comentário "gerado pelo JS" indicando a estrutura esperada.
 - Área de toque mínima de 44 × 44 px e contraste adequado para uso ao ar livre.
 
 ### 11.5 Arquivos e versionamento

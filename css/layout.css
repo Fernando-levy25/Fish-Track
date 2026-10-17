@@ -1,0 +1,342 @@
+/* =========================================================
+   Fish Track — layout
+   Estrutura da página, navegação e grades. Mobile-first:
+   no celular o menu é uma barra fixa embaixo; a partir de
+   60rem vira uma coluna lateral.
+   ========================================================= */
+
+body {
+    padding-bottom: calc(var(--altura-menu) + env(safe-area-inset-bottom));
+}
+
+/* ---------- Cabeçalho ---------- */
+
+.cabecalho {
+    display: flex;
+    align-items: center;
+    padding: var(--espaco-2) var(--espaco-4);
+    background: var(--cor-superficie);
+    border-bottom: 1px solid var(--cor-borda);
+}
+
+.cabecalho__marca {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--espaco-2);
+    min-height: var(--altura-toque);
+    color: var(--cor-primaria-escura);
+    font-size: var(--texto-5);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    text-decoration: none;
+}
+
+.cabecalho__logo {
+    font-size: 1.25rem;
+    line-height: 1;
+}
+
+/* ---------- Menu ---------- */
+
+.menu {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: 10;
+    display: flex;
+    align-items: stretch;
+    height: calc(var(--altura-menu) + env(safe-area-inset-bottom));
+    padding: 0 var(--espaco-1) env(safe-area-inset-bottom);
+    background: var(--cor-superficie);
+    border-top: 1px solid var(--cor-borda);
+}
+
+.menu > * {
+    flex: 1 1 auto;
+}
+
+.menu__link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 var(--espaco-1);
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-1);
+    font-weight: 600;
+    line-height: 1.2;
+    white-space: nowrap;
+    text-decoration: none;
+    cursor: pointer;
+    transition: color var(--transicao), background-color var(--transicao);
+}
+
+.menu__link:hover {
+    color: var(--cor-texto);
+}
+
+.menu__link[aria-current="page"],
+.menu__mais:not([open]):has([aria-current="page"]) > .menu__link {
+    color: var(--cor-primaria);
+    box-shadow: inset 0 2px 0 var(--cor-primaria);
+}
+
+.menu__link--destaque {
+    flex: none;
+    align-self: center;
+    min-height: var(--altura-toque);
+    margin: 0 var(--espaco-1);
+    padding: 0 var(--espaco-3);
+    border-radius: var(--raio);
+    background: var(--cor-primaria);
+    color: var(--cor-texto-invertido);
+}
+
+.menu__link--destaque:hover,
+.menu__link--destaque[aria-current="page"] {
+    background: var(--cor-primaria-escura);
+    color: var(--cor-texto-invertido);
+    box-shadow: none;
+}
+
+.menu__mais > summary {
+    height: 100%;
+    list-style: none;
+    user-select: none;
+}
+
+.menu__mais > summary::-webkit-details-marker {
+    display: none;
+}
+
+/* No celular, o submenu abre como painel acima da barra. */
+.menu__submenu {
+    position: absolute;
+    right: var(--espaco-2);
+    bottom: calc(100% + var(--espaco-2));
+    display: grid;
+    min-width: 12rem;
+    padding: var(--espaco-1);
+    background: var(--cor-superficie);
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio-grande);
+    box-shadow: var(--sombra-flutuante);
+}
+
+.menu__submenu .menu__link {
+    justify-content: flex-start;
+    min-height: var(--altura-toque);
+    padding: 0 var(--espaco-3);
+    border-radius: var(--raio);
+    color: var(--cor-texto);
+    font-size: var(--texto-3);
+}
+
+.menu__submenu .menu__link[aria-current="page"] {
+    background: var(--cor-primaria-suave);
+    color: var(--cor-primaria-escura);
+    box-shadow: none;
+}
+
+/* ---------- Página e seções ---------- */
+
+.pagina {
+    width: 100%;
+    max-width: var(--largura-conteudo);
+    margin-inline: auto;
+    padding: var(--espaco-5) var(--espaco-4) var(--espaco-7);
+}
+
+.pagina__titulo {
+    font-size: var(--texto-6);
+}
+
+.pagina > .pagina__titulo {
+    margin-bottom: var(--espaco-5);
+}
+
+.pagina__descricao,
+.secao__descricao {
+    max-width: 60ch;
+    color: var(--cor-texto-suave);
+}
+
+.secao {
+    display: grid;
+    align-content: start;
+    gap: var(--espaco-4);
+}
+
+.secao + .secao {
+    margin-top: var(--espaco-7);
+}
+
+.secao__cabecalho {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--espaco-2) var(--espaco-4);
+}
+
+.secao__titulo {
+    font-size: var(--texto-5);
+}
+
+.secao__descricao {
+    margin-top: calc(var(--espaco-2) * -1);
+}
+
+.secao__acoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--espaco-3);
+}
+
+/* ---------- Grades ---------- */
+
+.grade-indicadores {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(9.5rem, 100%), 1fr));
+    gap: var(--espaco-3);
+}
+
+.grade-tanques {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(18rem, 100%), 1fr));
+    gap: var(--espaco-4);
+}
+
+.grade-graficos {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(20rem, 100%), 1fr));
+    gap: var(--espaco-4);
+}
+
+.grupos-alertas {
+    display: grid;
+    gap: var(--espaco-6);
+}
+
+/* ---------- Tablet ---------- */
+
+@media (min-width: 40rem) {
+    .pagina {
+        padding: var(--espaco-6) var(--espaco-6) var(--espaco-8);
+    }
+
+    .pagina__titulo {
+        font-size: var(--texto-7);
+    }
+
+    .menu__link {
+        font-size: var(--texto-2);
+    }
+}
+
+/* ---------- Desktop: menu lateral ---------- */
+
+@media (min-width: 60rem) {
+    body {
+        display: grid;
+        grid-template-columns: 15rem minmax(0, 1fr);
+        padding-bottom: 0;
+    }
+
+    .cabecalho {
+        position: sticky;
+        top: 0;
+        align-self: start;
+        flex-direction: column;
+        align-items: stretch;
+        gap: var(--espaco-5);
+        height: 100dvh;
+        padding: var(--espaco-5) var(--espaco-4);
+        border-bottom: 0;
+        border-right: 1px solid var(--cor-borda);
+        overflow-y: auto;
+    }
+
+    .cabecalho__marca {
+        padding: 0 var(--espaco-3);
+    }
+
+    .menu {
+        position: static;
+        flex-direction: column;
+        gap: 2px;
+        height: auto;
+        padding: 0;
+        background: none;
+        border: 0;
+    }
+
+    .menu > * {
+        flex: none;
+    }
+
+    .menu__link {
+        justify-content: flex-start;
+        min-height: var(--altura-toque);
+        padding: 0 var(--espaco-3);
+        border-radius: var(--raio);
+        color: var(--cor-texto);
+        font-size: var(--texto-3);
+    }
+
+    .menu__link:hover {
+        background: var(--cor-neutra-suave);
+    }
+
+    .menu__link[aria-current="page"],
+    .menu__mais:not([open]):has([aria-current="page"]) > .menu__link {
+        background: var(--cor-primaria-suave);
+        color: var(--cor-primaria-escura);
+        box-shadow: none;
+    }
+
+    /* A ação principal fica no topo do menu, como botão. Repete as cores
+       porque as regras de .menu__link acima têm a mesma especificidade. */
+    .menu__link--destaque {
+        order: -1;
+        align-self: stretch;
+        justify-content: center;
+        margin: 0 0 var(--espaco-3);
+        background: var(--cor-primaria);
+        color: var(--cor-texto-invertido);
+    }
+
+    .menu__link--destaque:hover,
+    .menu__link--destaque[aria-current="page"] {
+        background: var(--cor-primaria-escura);
+        color: var(--cor-texto-invertido);
+    }
+
+    .menu__mais > summary::after {
+        content: "";
+        width: 0.4rem;
+        height: 0.4rem;
+        margin-left: auto;
+        border-right: 1.5px solid currentColor;
+        border-bottom: 1.5px solid currentColor;
+        transform: translateY(-2px) rotate(45deg);
+        transition: transform var(--transicao);
+    }
+
+    .menu__mais[open] > summary::after {
+        transform: translateY(1px) rotate(-135deg);
+    }
+
+    .menu__submenu {
+        position: static;
+        gap: 2px;
+        min-width: 0;
+        padding: 2px 0 0 var(--espaco-3);
+        background: none;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    .pagina {
+        padding: var(--espaco-7) var(--espaco-8) var(--espaco-8);
+    }
+}
