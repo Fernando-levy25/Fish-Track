@@ -1,102 +1,99 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fish Track - Novo Registro</title>
+    <title>Fish Track - Novo registro</title>
     <link rel="stylesheet" href="css/base.css">
-    <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/components.css">
 </head>
 <body>
     <header class="cabecalho">
-        <div class="cabecalho_marca">
-            <span class="cabecalho_logo">🐟</span>
-            <span class="cabecalho_titulo">fish track</span>
-        </div>
-        <nav class="menu">
-            <a class="menu_link menu_link_ativo" href="index.html">Inicio</a>
-            <a class="menu_link" href="tanques.html">Tanques</a>
-            <a class="menu_link" href="registro.html">Novo Registro</a>
+        <a class="cabecalho__marca" href="index.html">
+            <span class="cabecalho__logo" aria-hidden="true">🐟</span>
+            <span class="cabecalho__titulo">Fish Track</span>
+        </a>
+        <nav class="menu" aria-label="Navegação principal">
+            <a class="menu__link" href="index.html">Dashboard</a>
+            <a class="menu__link" href="tanques.html">Tanques</a>
+            <a class="menu__link menu__link--destaque" href="registro.html" aria-current="page">+ Registro</a>
         </nav>
     </header>
 
     <main class="pagina">
-        <p class="aviso-vazio" id="aviso-sem-tanques" hidden>
-            Nenhum tanque cadastrado ainda.
-            <a class="link-secao" href="tanques.html">Cadastrar o primeiro tanque</a>
+        <p class="aviso-vazio" id="aviso-sem-ciclo-ativo" hidden>
+            Nenhum tanque com ciclo ativo. Inicie um ciclo em um tanque para fazer registros.
+            <a class="link" href="tanques.html">Ir para os tanques</a>
         </p>
 
-        <section class="pagina_secao" id="secao-formulario-registro">
-            <h1 class="pagina_secao" id="titulo-pagina-registro">Novo Registro</h1>
+        <section class="secao" id="secao-formulario-registro" aria-labelledby="titulo-pagina-registro">
+            <h1 class="pagina__titulo" id="titulo-pagina-registro">Novo registro</h1>
 
-            <form class="formulario formulario-pagina" id="formulario-registro" novalidate>
-                <input type="hidden"campo-registro-id" name="id">
+            <form class="formulario" id="formulario-registro" novalidate>
+                <input type="hidden" id="campo-registro-id" name="id">
 
                 <div class="campo">
-                    <label class="campo_rotulo" for="campo-tanque">Tanque</label>
-                    <select class="campo_select" name="tanqueId" id="campo-tanque" required>
+                    <label class="campo__rotulo" for="campo-tanque">Tanque</label>
+                    <select class="campo__select" id="campo-tanque" name="tanqueId" required aria-describedby="erro-tanque">
                         <option value="" disabled selected>Selecione um tanque</option>
                     </select>
-                    <p class="campo_erro" id="erro-tanque"></p>
+                    <p class="campo__erro" id="erro-tanque"></p>
                 </div>
 
-                <div class="campo-grade">
-                    <div class="campo">
-                        <label class="campo_rotulo" for="campo-data">Data</label>
-                        <input class="campo_input" id="campo-data" name="data" type="date" required>
-                        <p class="campo_erro" id="erro-data"></p>
-                    </div>
-
-                    <div class="campo">
-                        <label class="campo_rotulo" for="campo-quantidade">Quantidade</label>
-                        <input class="campo_input" id="campo-quantidade" name="quantidade" type="number" min="0" step="1" required>
-                        <p class="campo_erro" id="campo-quantidade"></p>
-                    </div>
+                <div class="campo">
+                    <label class="campo__rotulo" for="campo-data">Data</label>
+                    <input class="campo__input" id="campo-data" name="data" type="date" required aria-describedby="erro-data">
+                    <p class="campo__erro" id="erro-data"></p>
                 </div>
 
-                <div class="campo-grade">
+                <p class="formulario__aviso">Preencha só o que foi medido ou observado nessa data.</p>
+
+                <div class="formulario__grade">
                     <div class="campo">
-                        <label for="campo-peso-medio">Peso médio (g)</label>
-                        <input class="campo_input" id="campo-peso-medio" name="pesoMedio" type="number" min="0.01" step="0.01" required>
-                        <p class="campo_erro" id="erro-peso-medio"></p>
+                        <label class="campo__rotulo" for="campo-peso-medio">Peso médio (g)</label>
+                        <input class="campo__input" id="campo-peso-medio" name="pesoMedioG" type="number" inputmode="decimal" min="0.01" step="0.01" aria-describedby="erro-peso-medio">
+                        <p class="campo__erro" id="erro-peso-medio"></p>
                     </div>
 
                     <div class="campo">
-                        <label class="campo_rotulo" for="campo-racao">Ração fornecida (kg)</label>
-                        <input class="campo_erro" id="campo-racao" name="racao" type="number" min="0" step="0.01" required>
-                        <p class="campo+erro" id="erroracao"></p> 
+                        <label class="campo__rotulo" for="campo-racao">Ração fornecida (kg)</label>
+                        <input class="campo__input" id="campo-racao" name="racaoKg" type="number" inputmode="decimal" min="0" step="0.01" aria-describedby="erro-racao">
+                        <p class="campo__erro" id="erro-racao"></p>
                     </div>
                 </div>
 
-                <div class="campo-grade">
+                <div class="formulario__grade">
                     <div class="campo">
-                        <label class="campo_rotulo" for="campo-mortalidade">Mortalidade</label>
-                        <input class="campo_input" id="campo-mortalidade" type="number" min="0" step="1" required> 
-                        <p class="campo_erro" id="erro-mortalidade"></p>
+                        <label class="campo__rotulo" for="campo-mortalidade">Mortalidade</label>
+                        <input class="campo__input" id="campo-mortalidade" name="mortalidade" type="number" inputmode="numeric" min="0" step="1" aria-describedby="erro-mortalidade">
+                        <p class="campo__erro" id="erro-mortalidade"></p>
                     </div>
 
                     <div class="campo">
-                        <label class="campo_rotulo" for="campo-natalidade">Natalidade (opcional)</label>
-                        <input class="campo_erro" id="campo-natalidade" type="number" min="0" step="1" placeholder="0">
-                        <p class="campo_erro" id="erro-natalidade"></p>
+                        <label class="campo__rotulo" for="campo-natalidade">Natalidade</label>
+                        <input class="campo__input" id="campo-natalidade" name="natalidade" type="number" inputmode="numeric" min="0" step="1" aria-describedby="erro-natalidade">
+                        <p class="campo__erro" id="erro-natalidade"></p>
                     </div>
                 </div>
 
                 <div class="campo">
-                    <label class="campo_rotulo" for="campo-observacoes">Observaçôes</label>
-                    <textarea class="campo_input campo_input-area" id="campo-observacoes" name="observacoes" rows="3"></textarea>
+                    <label class="campo__rotulo" for="campo-quantidade-contada">Quantidade contada</label>
+                    <input class="campo__input" id="campo-quantidade-contada" name="quantidadeContada" type="number" inputmode="numeric" min="0" step="1" aria-describedby="ajuda-quantidade-contada erro-quantidade-contada">
+                    <p class="campo__ajuda" id="ajuda-quantidade-contada">Só se você contou os peixes. Corrige a quantidade estimada do tanque.</p>
+                    <p class="campo__erro" id="erro-quantidade-contada"></p>
                 </div>
 
-                <p class="formulario_erro-geral" id="erro-geral-registro" hidden></p>
+                <div class="campo">
+                    <label class="campo__rotulo" for="campo-observacoes">Observações</label>
+                    <textarea class="campo__input campo__input--area" id="campo-observacoes" name="observacoes" rows="3"></textarea>
+                </div>
 
-                <div class="formulario_acoes">
-                    <a class="botao botao-secundario" id="link-cancelar-registro" href="tanques.html">
-                        Cancelar
-                    </a>
-                    <button class="botao botao-primario" type="submit">
-                        Salvar registro
-                    </button>
+                <p class="formulario__erro-geral" id="erro-geral-registro" role="alert" hidden></p>
+
+                <div class="formulario__acoes">
+                    <a class="botao botao--secundario" id="link-cancelar-registro" href="index.html">Cancelar</a>
+                    <button class="botao botao--primario" type="submit">Salvar registro</button>
                 </div>
             </form>
         </section>

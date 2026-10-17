@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fish Track - Tanque</title>
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+    <header class="cabecalho">
+        <a class="cabecalho__marca" href="index.html">
+            <span class="cabecalho__logo" aria-hidden="true">🐟</span>
+            <span class="cabecalho__titulo">Fish Track</span>
+        </a>
+        <nav class="menu" aria-label="Navegação principal">
+            <a class="menu__link" href="index.html">Dashboard</a>
+            <a class="menu__link" href="tanques.html" aria-current="page">Tanques</a>
+            <a class="menu__link menu__link--destaque" href="registro.html">+ Registro</a>
+        </nav>
+    </header>
+
+    <main class="pagina">
+        <p class="aviso-vazio" id="aviso-tanque-nao-encontrado" hidden>
+            Tanque não encontrado.
+            <a class="link" href="tanques.html">Voltar para a lista de tanques</a>
+        </p>
+
+        <section class="secao" id="secao-formulario-tanque" aria-labelledby="titulo-formulario-tanque">
+            <h1 class="pagina__titulo" id="titulo-formulario-tanque">Novo tanque</h1>
+
+            <form class="formulario" id="formulario-tanque" novalidate>
+                <input type="hidden" id="campo-tanque-id" name="id">
+
+                <div class="campo">
+                    <label class="campo__rotulo" for="campo-nome">Nome</label>
+                    <input class="campo__input" id="campo-nome" name="nome" type="text" maxlength="60" autocomplete="off" required aria-describedby="erro-nome">
+                    <p class="campo__erro" id="erro-nome"></p>
+                </div>
+
+                <div class="campo">
+                    <label class="campo__rotulo" for="campo-especie">Espécie</label>
+                    <input class="campo__input" id="campo-especie" name="especie" type="text" maxlength="60" required aria-describedby="erro-especie">
+                    <p class="campo__erro" id="erro-especie"></p>
+                </div>
+
+                <div class="formulario__grade">
+                    <div class="campo">
+                        <label class="campo__rotulo" for="campo-volume">Volume (m³)</label>
+                        <input class="campo__input" id="campo-volume" name="volumeM3" type="number" inputmode="decimal" min="0.01" step="0.01" required aria-describedby="erro-volume">
+                        <p class="campo__erro" id="erro-volume"></p>
+                    </div>
+
+                    <div class="campo">
+                        <label class="campo__rotulo" for="campo-capacidade">Capacidade (nº de peixes)</label>
+                        <input class="campo__input" id="campo-capacidade" name="capacidade" type="number" inputmode="numeric" min="1" step="1" required aria-describedby="ajuda-capacidade erro-capacidade">
+                        <p class="campo__ajuda" id="ajuda-capacidade">Quantidade máxima de peixes que o tanque comporta.</p>
+                        <p class="campo__erro" id="erro-capacidade"></p>
+                    </div>
+                </div>
+
+                <div class="campo campo--checkbox">
+                    <input class="campo__checkbox" id="campo-manutencao" name="manutencao" type="checkbox" aria-describedby="ajuda-manutencao">
+                    <label class="campo__rotulo" for="campo-manutencao">Tanque em manutenção</label>
+                    <p class="campo__ajuda" id="ajuda-manutencao">Os status ativo e vazio são definidos automaticamente pelo ciclo.</p>
+                </div>
+
+                <div class="campo">
+                    <label class="campo__rotulo" for="campo-observacoes">Observações</label>
+                    <textarea class="campo__input campo__input--area" id="campo-observacoes" name="observacoes" rows="3"></textarea>
+                </div>
+
+                <p class="formulario__erro-geral" id="erro-geral-tanque" role="alert" hidden></p>
+
+                <div class="formulario__acoes">
+                    <a class="botao botao--secundario" id="link-cancelar-tanque" href="tanques.html">Cancelar</a>
+                    <button class="botao botao--primario" type="submit">Salvar</button>
+                </div>
+            </form>
+        </section>
+    </main>
+
+    <script type="module" src="js/pages/tanque-form.js"></script>
+</body>
+</html>

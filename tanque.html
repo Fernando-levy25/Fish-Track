@@ -1,184 +1,223 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fish Track - Detalhes do tanque</title>
     <link rel="stylesheet" href="css/base.css">
-    <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/components.css">
 </head>
 <body>
     <header class="cabecalho">
-        <div class="cabecalho_marca">
-            <span class="cabecalho_logo">🐟</span>
-            <span class="cabecalho_titulo">fish track</span>
-        </div>
-        <nav class="menu">
-            <a class="menu_link menu_link_ativo" href="index.html">Inicio</a>
-            <a class="menu_link" href="tanques.html">Tanques</a>
-            <a class="menu_link" href="registro.html">Novo Registro</a>
+        <a class="cabecalho__marca" href="index.html">
+            <span class="cabecalho__logo" aria-hidden="true">🐟</span>
+            <span class="cabecalho__titulo">Fish Track</span>
+        </a>
+        <nav class="menu" aria-label="Navegação principal">
+            <a class="menu__link" href="index.html">Dashboard</a>
+            <a class="menu__link" href="tanques.html" aria-current="page">Tanques</a>
+            <a class="menu__link menu__link--destaque" href="registro.html">+ Registro</a>
         </nav>
     </header>
 
-    <main class="pagina" id="pagina-tanque">
+    <main class="pagina">
         <p class="aviso-vazio" id="aviso-tanque-nao-encontrado" hidden>
-            tanque não encontrado. <a class="link-secao" href="tanques.html"></a>
+            Tanque não encontrado.
+            <a class="link" href="tanques.html">Voltar para a lista de tanques</a>
         </p>
 
         <div id="conteudo-tanque" hidden>
-            <section class="pagina_secao" aria-labelledby="titulo-tanque">
-                <div class="secao_cabecalho">
-                    <div class="cabecalho-tanque">
-                        <h1 class="pagina_titulo" id="titulo-tanque">-</h1>
-                        <span class="selo-alerta" id="selo-status-tanque" data-campo="status"></span>
-                    </div>
-                    <div class="secao_acoes">
-                        <button class="botao botao-secundario" id="botao-editar-tanque" type="button">
-                            Editar
-                        </button>
-                        <button class="botao botao-perigo" id="botao-excluir-tanque" type="button">
-                            Excluir
-                        </button>
-                    </div>
+            <section class="cabecalho-tanque" aria-labelledby="titulo-tanque">
+                <div class="cabecalho-tanque__identificacao">
+                    <h1 class="pagina__titulo" id="titulo-tanque">—</h1>
+                    <span class="selo" id="selo-status-tanque"></span>
                 </div>
-                <p class="cabecalho-tanque_especie" id="especie-tanque">-</p>
-            </section>
+                <p class="cabecalho-tanque__especie" id="especie-tanque"></p>
+                <p class="cabecalho-tanque__ciclo" id="resumo-ciclo"></p>
 
-            <section class="pagina_secao" aria-labelledby="titulo-indicadores">
-                <h2 id="titulo-indicadores" class="pagina_subtitulo">Indicadores</h2>
-
-                <dl class="grade-indicadores" id="grade-indicadores">
-                    <div class="cartao-indicador">
-                        <dt>Quantidade atual</dt>
-                        <dd data-indicador="quantidadeAtual">sem dados</dd>
-                    </div>
-                    <div class="cartao-indicador">
-                        <dt>Peso médio</dt>
-                        <dd data-indicador="pesoMedio">sem dados</dd>
-                    </div>
-                    <div class="cartao-indicador">
-                        <dt>Biomassa</dt>
-                        <dd data-indicador="biomassa">sem dados</dd>
-                    </div>
-                    <div class="cartao-indicador">
-                        <dt>ganho de peso diário</dt>
-                        <dd data-indicador="ganhoPesoDiario">sem dados</dd>
-                    </div>
-                    <div class="cartao-indicador">
-                        <dt>Ração total</dt>
-                        <dd data-indicador="racaoTotal">sem dados</dd>
-                    </div>
-                    <div class="cartao-indicador">
-                        <dt>Taxa  de arraçoamento</dt>
-                        <dd data-indicador="taxaArrossamento">sem dados</dd>
-                    </div>
-                    <div class="cartao-indicador">
-                        <dt>Conversão alimentar (TCA) acumulada</dt>
-                        <dd data-indicador="tcaAcumulada">sem dados</dd>
-                    </div>
-                    <div class="cartao-indicador">
-                        <dt>Conversão alimentar (TCA) no período</dt>
-                        <dd data-indicador="tcaPeriodo">sem dados</dd>
-                    </div>
-                    <div class="cartao-indicador">
-                        <dt>Mortalidade acumulada</dt>
-                        <dd data-indicador="mortalidadeAcumulada">sem dados</dd>
-                    </div>
-                    <div class="cartao-indicador">
-                        <dt>Mortalidade no período</dt>
-                        <dd data-indicador="mortalidadePeriodo">sem dados</dd>
-                    </div>
-                    <div class="cartao-indicador">
-                        <dt>Sobrevivência</dt>
-                        <dd data-indicador="sobrevivencia">sem dados</dd>
-                    </div>
-                    <div class="cartao-indicador">
-                        <dt>Natalidade</dt>
-                        <dd data-indicador="natalidade">sem dados</dd>
-                    </div>
-                    <div class="cartao-indicador">
-                        <dt>Capacidade utilizada</dt>
-                        <dd data-indicador="capacidadeUtilizada">sem dados</dd>
-                    </div>
-                    <div class="cartao-indicador">
-                        <dt>Densidade</dt>
-                        <dd data-indicador="densidade">sem dados</dd>
-                    </div>
-                </dl>
-            </section>
-
-            <section class="pagina_secao" aria-labelledby="titulo-graficos">
-                <h2 id="titulo-graficos" class="pagina_subtitulo">Evolução</h2>
-
-                <div class="grade-graficos">
-                    <div class="cartao-grafico">
-                        <h3 class="cartao-grafico_titulo">Peso médio</h3>
-                        <canvas id="grafico-peso-medio"></canvas>
-                        <p class="cartao-grafico_vazio" id="aviso-grafico-peso-medio">
-                            Sem dados suficientes para exibir o gráfico.
-                        </p>
-                    </div>
-                    <div class="cartao-grafico">
-                        <h3 class="cartao-grafico-titulo">Biomassa</h3>
-                        <canvas id="grafico-biomassa"></canvas>
-                        <p class="cartao-grafico_vazio" id="aviso-grafico-biomassa">
-                            Sem dados suficientes para exibir o gráfico.
-                        </p>
-                    </div>
-                    <div class="cartao-grafico">
-                        <h3 class="cartao-grafico-titulo">Mortalidade</h3>
-                        <canvas id="grafico-mortalidade"></canvas>
-                        <p class="cartao-grafico_vazio" id="aviso-grafico-mortalidade">
-                            Sem dados suficientes para exibir o gráfico.
-                        </p>
-                    </div>
+                <div class="cabecalho-tanque__acoes">
+                    <a class="botao botao--primario" id="link-novo-registro" href="registro.html" hidden>Novo registro</a>
+                    <a class="botao botao--primario" id="link-iniciar-ciclo" href="ciclo-form.html" hidden>Iniciar ciclo</a>
+                    <a class="botao botao--secundario" id="link-registrar-despesca" href="ciclo-form.html" hidden>Registrar despesca</a>
+                    <a class="botao botao--secundario" id="link-editar-tanque" href="tanque-form.html">Editar</a>
+                    <button class="botao botao--perigo" id="botao-arquivar-tanque" type="button">Arquivar</button>
+                    <button class="botao botao--perigo" id="botao-excluir-tanque" type="button" hidden>Excluir</button>
                 </div>
             </section>
 
-            <section class="pagina_secao" aria-labelledby="titulo-alertas-tanque">
-                <h2 id="titulo-alertas-tanque" class="pagina_subtitulo">Alertas</h2>
-                <ul class="lista_alertas" id="lista-alertas-tanque">
-                    <li class="lista-alertas_vazio">Nenhum alerta para este tanque</li>
-                </ul>
-            </section>
+            <div class="abas" role="tablist" aria-label="Seções do tanque">
+                <button class="abas__aba" id="aba-resumo" type="button" role="tab" aria-selected="true" aria-controls="painel-resumo">Resumo</button>
+                <button class="abas__aba" id="aba-historico" type="button" role="tab" aria-selected="false" aria-controls="painel-historico" tabindex="-1">Histórico</button>
+                <button class="abas__aba" id="aba-calendario" type="button" role="tab" aria-selected="false" aria-controls="painel-calendario" tabindex="-1">Calendário</button>
+            </div>
 
-            <section class="pagina_secao" aria-labelledby="titulo-registros">
-                <div class="secao_cabecalho">
-                    <h2 id="titulo-registros" class="pagina_subtitulo">Registros</h2>
-                    <a class="botao botao-primario" id="link-novo-registro" href="registro.html">
-                        Novo registro
-                    </a>
-                </div>
-
-                <table class="tabela-registros">
-                    <thead>
-                        <tr>
-                            <th scope="col">Data</th>
-                            <th scope="col">Quantidade</th>
-                            <th scope="col">Peso médio</th>
-                            <th scope="col">Ração</th>
-                            <th scope="col">Mortalidade</th>
-                            <th scope="col">Natalidade</th>
-                            <th scope="col">Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody id="corpo-tabela-registros">
-                    </tbody>
-                </table>
-
-                <p class="tabela-registros_vazio" id="aviso-tabela-registros">
-                        Nenhum registro encontrado. <a class="link-secao" id="link-primeiro-registro" href="registro.html">Fazer o primeiro registro</a>
-                    </p>
-            </section>
-
-            <section class="pagina_secao pagina_secao-pendente" aria-labelledby="titulo-calendario">
-                <h2 id="titulo-calendario" class="pagina_subtitulo">Calendário</h2>
-                <p class="aviso-pendente">
-                    Funcionalidade em definição (R20) - ainda não disponivel nesta versão.
+            <div class="abas__painel" id="painel-resumo" role="tabpanel" aria-labelledby="aba-resumo">
+                <p class="aviso-vazio" id="aviso-sem-ciclo" hidden>
+                    Este tanque não tem ciclo ativo.
+                    <a class="link" id="link-aviso-iniciar-ciclo" href="ciclo-form.html">Iniciar ciclo</a>
                 </p>
-            </section>
+
+                <section class="secao" aria-labelledby="titulo-indicadores">
+                    <h2 class="secao__titulo" id="titulo-indicadores">Indicadores do ciclo</h2>
+
+                    <dl class="grade-indicadores">
+                        <div class="cartao-indicador">
+                            <dt class="cartao-indicador__rotulo">Quantidade de peixes</dt>
+                            <dd class="cartao-indicador__valor" data-indicador="quantidade">—</dd>
+                        </div>
+                        <div class="cartao-indicador">
+                            <dt class="cartao-indicador__rotulo">Peso médio atual</dt>
+                            <dd class="cartao-indicador__valor" data-indicador="pesoMedio">—</dd>
+                        </div>
+                        <div class="cartao-indicador">
+                            <dt class="cartao-indicador__rotulo">Biomassa</dt>
+                            <dd class="cartao-indicador__valor" data-indicador="biomassa">—</dd>
+                        </div>
+                        <div class="cartao-indicador">
+                            <dt class="cartao-indicador__rotulo">Ração acumulada</dt>
+                            <dd class="cartao-indicador__valor" data-indicador="racaoAcumulada">—</dd>
+                        </div>
+                        <div class="cartao-indicador">
+                            <dt class="cartao-indicador__rotulo">Ganho de biomassa</dt>
+                            <dd class="cartao-indicador__valor" data-indicador="ganhoBiomassa">—</dd>
+                        </div>
+                        <div class="cartao-indicador">
+                            <dt class="cartao-indicador__rotulo">Conversão alimentar (FCA)</dt>
+                            <dd class="cartao-indicador__valor" data-indicador="fca">—</dd>
+                        </div>
+                        <div class="cartao-indicador">
+                            <dt class="cartao-indicador__rotulo">Taxa de mortalidade</dt>
+                            <dd class="cartao-indicador__valor" data-indicador="taxaMortalidade">—</dd>
+                        </div>
+                        <div class="cartao-indicador">
+                            <dt class="cartao-indicador__rotulo">Taxa de sobrevivência</dt>
+                            <dd class="cartao-indicador__valor" data-indicador="taxaSobrevivencia">—</dd>
+                        </div>
+                        <div class="cartao-indicador">
+                            <dt class="cartao-indicador__rotulo">Taxa de natalidade</dt>
+                            <dd class="cartao-indicador__valor" data-indicador="taxaNatalidade">—</dd>
+                        </div>
+                        <div class="cartao-indicador">
+                            <dt class="cartao-indicador__rotulo">Taxa de crescimento</dt>
+                            <dd class="cartao-indicador__valor" data-indicador="taxaCrescimento">—</dd>
+                        </div>
+                        <div class="cartao-indicador">
+                            <dt class="cartao-indicador__rotulo">Crescimento no ciclo</dt>
+                            <dd class="cartao-indicador__valor" data-indicador="crescimentoCiclo">—</dd>
+                        </div>
+                        <div class="cartao-indicador">
+                            <dt class="cartao-indicador__rotulo">Densidade</dt>
+                            <dd class="cartao-indicador__valor" data-indicador="densidade">—</dd>
+                        </div>
+                        <div class="cartao-indicador">
+                            <dt class="cartao-indicador__rotulo">Capacidade utilizada</dt>
+                            <dd class="cartao-indicador__valor" data-indicador="capacidadeUtilizada">—</dd>
+                        </div>
+                        <div class="cartao-indicador">
+                            <dt class="cartao-indicador__rotulo">Dias de cultivo</dt>
+                            <dd class="cartao-indicador__valor" data-indicador="diasCultivo">—</dd>
+                        </div>
+                    </dl>
+                </section>
+
+                <section class="secao" aria-labelledby="titulo-graficos">
+                    <h2 class="secao__titulo" id="titulo-graficos">Evolução</h2>
+
+                    <div class="grade-graficos">
+                        <figure class="cartao-grafico">
+                            <figcaption class="cartao-grafico__titulo">Peso médio (g)</figcaption>
+                            <div class="cartao-grafico__area" id="grafico-peso-medio"></div>
+                            <p class="cartao-grafico__vazio" id="aviso-grafico-peso-medio">Sem dados suficientes para exibir o gráfico.</p>
+                        </figure>
+                        <figure class="cartao-grafico">
+                            <figcaption class="cartao-grafico__titulo">Biomassa (kg)</figcaption>
+                            <div class="cartao-grafico__area" id="grafico-biomassa"></div>
+                            <p class="cartao-grafico__vazio" id="aviso-grafico-biomassa">Sem dados suficientes para exibir o gráfico.</p>
+                        </figure>
+                        <figure class="cartao-grafico">
+                            <figcaption class="cartao-grafico__titulo">Mortalidade</figcaption>
+                            <div class="cartao-grafico__area" id="grafico-mortalidade"></div>
+                            <p class="cartao-grafico__vazio" id="aviso-grafico-mortalidade">Sem dados suficientes para exibir o gráfico.</p>
+                        </figure>
+                    </div>
+                </section>
+
+                <section class="secao" aria-labelledby="titulo-alertas-tanque">
+                    <h2 class="secao__titulo" id="titulo-alertas-tanque">Alertas</h2>
+
+                    <ul class="lista-alertas" id="lista-alertas-tanque">
+                        <li class="lista-alertas__vazio">Nenhum alerta para este tanque.</li>
+                    </ul>
+                </section>
+
+                <section class="secao" aria-labelledby="titulo-registros-recentes">
+                    <div class="secao__cabecalho">
+                        <h2 class="secao__titulo" id="titulo-registros-recentes">Registros recentes</h2>
+                        <button class="link" id="botao-ver-historico" type="button">Ver histórico completo</button>
+                    </div>
+
+                    <ul class="lista-registros" id="lista-registros-recentes">
+                        <li class="lista-registros__vazio">Nenhum registro neste ciclo.</li>
+                    </ul>
+                </section>
+            </div>
+
+            <div class="abas__painel" id="painel-historico" role="tabpanel" aria-labelledby="aba-historico" hidden>
+                <section class="secao" aria-labelledby="titulo-historico">
+                    <div class="secao__cabecalho">
+                        <h2 class="secao__titulo" id="titulo-historico">Histórico de registros</h2>
+                    </div>
+
+                    <div class="campo campo--filtro">
+                        <label class="campo__rotulo" for="seletor-ciclo">Ciclo</label>
+                        <select class="campo__select" id="seletor-ciclo"></select>
+                    </div>
+
+                    <div class="tabela-rolagem">
+                        <table class="tabela" aria-labelledby="titulo-historico">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Data</th>
+                                    <th scope="col">Peso médio (g)</th>
+                                    <th scope="col">Ração (kg)</th>
+                                    <th scope="col">Mortalidade</th>
+                                    <th scope="col">Natalidade</th>
+                                    <th scope="col">Contagem</th>
+                                    <th scope="col">Observações</th>
+                                    <th scope="col">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="corpo-tabela-registros"></tbody>
+                        </table>
+                    </div>
+
+                    <p class="tabela__vazio" id="aviso-tabela-registros">
+                        Nenhum registro neste ciclo.
+                        <a class="link" id="link-primeiro-registro" href="registro.html">Fazer o primeiro registro</a>
+                    </p>
+                </section>
+            </div>
+
+            <div class="abas__painel" id="painel-calendario" role="tabpanel" aria-labelledby="aba-calendario" hidden>
+                <section class="secao" aria-labelledby="titulo-calendario">
+                    <h2 class="secao__titulo" id="titulo-calendario">Calendário</h2>
+                    <p class="aviso-pendente">O calendário do tanque será implementado na Fase 4.</p>
+                </section>
+            </div>
         </div>
     </main>
+
+    <dialog class="dialogo" id="dialogo-confirmacao" aria-labelledby="mensagem-confirmacao">
+        <form class="dialogo__conteudo" method="dialog">
+            <p class="dialogo__mensagem" id="mensagem-confirmacao"></p>
+            <div class="dialogo__acoes">
+                <button class="botao botao--secundario" value="cancelar">Cancelar</button>
+                <button class="botao botao--perigo" id="botao-confirmar" value="confirmar">Confirmar</button>
+            </div>
+        </form>
+    </dialog>
+
+    <script type="module" src="js/pages/tanque.js"></script>
 </body>
 </html>
