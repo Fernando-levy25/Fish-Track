@@ -5,10 +5,10 @@ import { paraNumero } from '../core/utils.js';
 import { apagarDados, lerDados } from '../core/storage.js';
 import { pluralizar } from '../core/format.js';
 import { listarTanques, ROTULOS_STATUS } from '../domain/tanques.js';
-import { obterLimitesPadrao, restaurarLimitesPadrao, salvarLimitesPadrao } from '../domain/configuracoes.js';
+import { obterLimitesPadrao, obterMetaFca, restaurarLimitesPadrao, salvarLimitesPadrao } from '../domain/configuracoes.js';
 import { exportarBackup, exportarCsv, lerBackup, restaurarBackup } from '../services/exportacao.js';
 import { carregarDadosExemplo } from '../services/seed.js';
-import { iniciarNavegacao } from '../ui/nav.js';
+
 import {
     confirmar,
     criarElemento,
@@ -21,12 +21,13 @@ import {
     mostrarMensagem,
     preencherFormulario,
 } from '../ui/componentes.js';
+import { atualizarMenu, iniciarPagina } from './comum.js';
 
 const porId = (id) => document.getElementById(id);
 const formularioLimites = porId('formulario-limites');
 const seletorExportacao = porId('campo-exportar-tanque');
 
-iniciarNavegacao();
+iniciarPagina();
 try {
     configurarLimites();
     configurarExportacao();
@@ -39,7 +40,8 @@ try {
 
 // Depois de restaurar, carregar exemplo ou apagar, os dados da tela mudam.
 function atualizarTela() {
-    preencherFormulario(formularioLimites, obterLimitesPadrao());
+    atualizarMenu();
+    preencherFormulario(formularioLimites, { ...obterLimitesPadrao(), metaFca: obterMetaFca() });
     limparErrosFormulario(formularioLimites, porId('erro-geral-limites'));
     const todos = criarElemento('option', { texto: 'Todos os tanques', atributos: { value: '' } });
     seletorExportacao.replaceChildren(todos, ...listarTanques({ incluirArquivados: true }).map((tanque) => criarElemento('option', {

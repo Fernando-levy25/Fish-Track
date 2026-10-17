@@ -20,8 +20,8 @@ import { listarEventosCalendario } from '../domain/ciclos.js';
 import { excluirRegistro, listarRegistrosDoCiclo, resumirRegistro } from '../domain/registros.js';
 import { calcularCargaMaximaKg, calcularSeries } from '../domain/indicadores.js';
 import { analisarTanque, resolverLimites } from '../domain/alertas.js';
-import { obterLimitesPadrao, salvarLimitesTanque } from '../domain/configuracoes.js';
-import { iniciarNavegacao, irPara, lerParametro, montarUrl } from '../ui/nav.js';
+import { obterLimitesPadrao, obterMetaFca, salvarLimitesTanque } from '../domain/configuracoes.js';
+import { irPara, lerParametro, montarUrl } from '../ui/nav.js';
 import {
     confirmar,
     criarBarraCapacidade,
@@ -39,6 +39,7 @@ import {
 } from '../ui/componentes.js';
 import { desenharGraficoLinha } from '../ui/graficos.js';
 import { iniciarCalendario } from '../ui/calendario.js';
+import { atualizarMenu, iniciarPagina, obterAcaoDoAlerta } from './comum.js';
 
 const MAXIMO_REGISTROS_RECENTES = 5;
 const TEXTOS_SEM_CICLO = {
@@ -54,7 +55,7 @@ let situacao = null;
 let abas = null;
 let calendario = null;
 
-iniciarNavegacao();
+iniciarPagina();
 try {
     iniciar();
 } catch (erro) {
@@ -95,6 +96,7 @@ function recarregar() {
     situacao = obterSituacao(tanqueId);
     renderizar();
     calendario.atualizar();
+    atualizarMenu();
 }
 
 function renderizar() {
@@ -232,7 +234,7 @@ function renderizarResumo() {
     desenharGrafico('biomassa', series.biomassa, formatarKg, 'Biomassa');
     desenharGrafico('mortalidade', series.mortalidade, formatarPercentual, 'Mortalidade acumulada');
 
-    renderizarAlertas(porId('lista-alertas-tanque'), alertas, { textoVazio: 'Nenhum alerta para este tanque.' });
+    renderizarAlertas(porId('lista-alertas-tanque'), alertas, { obterAcao: obterAcaoDoAlerta, textoVazio: 'Nenhum alerta para este tanque.' });
 
     const recentes = registros.slice(-MAXIMO_REGISTROS_RECENTES).reverse();
     porId('lista-registros-recentes').replaceChildren(...(recentes.length > 0
@@ -354,12 +356,12 @@ function configurarLimites() {
     const erroGeral = porId('erro-geral-limites-tanque');
 
     porId('botao-limites-alerta').addEventListener('click', () => {
-        const padrao = obterLimitesPadrao();
+        const padrao = { ...obterLimitesPadrao(), metaFca: obterMetaFca() };
         const proprios = situacao.tanque.limitesAlerta ?? {};
         limparErrosFormulario(formulario, erroGeral);
         preencherFormulario(formulario, Object.fromEntries(Object.keys(padrao).map((campo) => [campo, proprios[campo] ?? null])));
         for (const [campo, valor] of Object.entries(padrao)) {
-            formulario.elements.namedItem(campo).placeholder = `Padrão: ${formatarNumero(valor, 1)}`;
+            formulario.elements.namedItem(campo).placeholder = `Padrão: ${formatarNumero(valor, 2)}`;
         }
         dialogo.showModal();
     });

@@ -120,23 +120,27 @@
 /* Gerado pelo JS: um modificador por status do tanque ("vazio" usa o estilo
    padrão) e, no dashboard, pela maior gravidade entre os alertas do tanque. */
 .selo--ativo,
-.selo--sem-alerta {
+.selo--sem-alerta,
+.selo--sucesso {
     background: var(--cor-sucesso-suave);
     color: var(--cor-sucesso);
 }
 
 .selo--manutencao,
-.selo--alerta-media {
+.selo--alerta-media,
+.selo--atencao {
     background: var(--cor-atencao-suave);
     color: var(--cor-atencao);
 }
 
-.selo--alerta-alta {
+.selo--alerta-alta,
+.selo--perigo {
     background: var(--cor-perigo-suave);
     color: var(--cor-perigo);
 }
 
-.selo--alerta-baixa {
+.selo--alerta-baixa,
+.selo--info {
     background: var(--cor-info-suave);
     color: var(--cor-info);
 }
@@ -558,45 +562,64 @@
     gap: var(--espaco-2);
 }
 
-/* Gerado pelo JS: .lista-alertas__item com --alta, --media ou --baixa,
-   contendo .lista-alertas__titulo e .lista-alertas__detalhe. */
+/* Gerado por renderizarAlertas: ícone num círculo da cor da gravidade,
+   título com o selo da gravidade escrita, detalhe e um link de ação. */
 .lista-alertas__item {
     --cor-gravidade: var(--cor-info);
+    --fundo-gravidade: var(--cor-info-suave);
     display: grid;
     grid-template-columns: auto 1fr;
     align-items: start;
-    column-gap: var(--espaco-3);
+    gap: var(--espaco-3);
     padding: var(--espaco-3) var(--espaco-4);
     border: 1px solid var(--cor-borda);
     border-radius: var(--raio-grande);
     background: var(--cor-superficie);
 }
 
-.lista-alertas__item::before {
-    content: "";
-    grid-row: span 2;
-    width: 0.625rem;
-    height: 0.625rem;
-    margin-top: 0.45em;
-    border-radius: 50%;
-    background: var(--cor-gravidade);
-}
-
 .lista-alertas__item--alta {
     --cor-gravidade: var(--cor-perigo);
+    --fundo-gravidade: var(--cor-superficie);
     border-color: var(--cor-perigo-borda);
     background: var(--cor-perigo-suave);
 }
 
 .lista-alertas__item--media {
     --cor-gravidade: var(--cor-atencao);
+    --fundo-gravidade: var(--cor-atencao-suave);
+}
+
+.lista-alertas__icone {
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background: var(--fundo-gravidade);
+    color: var(--cor-gravidade);
+}
+
+.lista-alertas__icone .icone {
+    width: 1rem;
+    height: 1rem;
+}
+
+/* O alerta grave pulsa de leve, para não passar despercebido (seção 3.5). */
+.lista-alertas__item--alta .lista-alertas__icone {
+    animation: pulsar 2.4s ease-in-out infinite;
+}
+
+.lista-alertas__conteudo {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
 }
 
 .lista-alertas__titulo {
     font-weight: 600;
 }
 
-/* A gravidade vai sempre escrita, não só na cor do marcador (seção 2.3). */
+/* A gravidade vai sempre escrita, não só na cor (seção 2.3). */
 .lista-alertas__titulo .selo {
     margin-left: var(--espaco-2);
     vertical-align: 0.1em;
@@ -608,9 +631,20 @@
 }
 
 .lista-alertas__detalhe {
-    grid-column: 2;
     color: var(--cor-texto-suave);
     font-size: var(--texto-2);
+}
+
+.lista-alertas__acao {
+    justify-self: start;
+    margin-top: var(--espaco-1);
+    font-size: var(--texto-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .lista-alertas__item--alta .lista-alertas__icone {
+        animation: none;
+    }
 }
 
 .grupo-alertas {
@@ -1318,5 +1352,580 @@
     .barra-agua__reflexo,
     .barra-agua__bolha {
         display: none;
+    }
+}
+
+/* ---------- Ícones e botão pequeno ---------- */
+
+/* Gerado por criarIcone (ui/icones.js): ícones em traço na cor do texto. */
+.icone {
+    flex: none;
+    width: 1.125rem;
+    height: 1.125rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.9;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: transform var(--duracao-media) var(--curva-mola);
+}
+
+/* Botões com "+": o ícone gira ao passar o mouse (seção 9.2). */
+:hover > .icone--girar {
+    transform: rotate(90deg);
+}
+
+.botao--pequeno {
+    gap: var(--espaco-1);
+    padding: 0 var(--espaco-3);
+    font-size: var(--texto-2);
+}
+
+/* ---------- Chips de filtro ---------- */
+
+.chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--espaco-2);
+}
+
+.chip {
+    min-height: 2.25rem;
+    padding: 0 var(--espaco-3);
+    border: 1px solid var(--cor-borda-forte);
+    border-radius: 999px;
+    background: var(--cor-superficie);
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-2);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color var(--transicao), color var(--transicao), border-color var(--transicao);
+}
+
+.chip:hover,
+.chip:active {
+    color: var(--cor-texto);
+}
+
+.chip[aria-pressed="true"] {
+    border-color: var(--cor-primaria);
+    background: var(--cor-primaria-suave);
+    color: var(--cor-primaria-escura);
+}
+
+.segmentado--compacto .segmentado__opcao {
+    min-height: 2.25rem;
+    padding: 0 var(--espaco-3);
+    font-size: var(--texto-2);
+}
+
+.segmentado__cor {
+    width: 0.5rem;
+    height: 0.5rem;
+    margin-right: var(--espaco-2);
+    border-radius: 50%;
+    background: var(--cor-serie);
+}
+
+/* ---------- Cartões de indicador do dashboard ---------- */
+
+/* Gerado pelo JS: botões que trocam o gráfico principal (seção 3.3). */
+.destaque {
+    display: grid;
+    align-content: start;
+    gap: var(--espaco-1);
+    padding: var(--espaco-4);
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio-grande);
+    background: var(--cor-superficie);
+    color: var(--cor-texto);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color var(--transicao), transform var(--duracao-media) var(--curva-saida), box-shadow var(--duracao-media) var(--curva-saida);
+}
+
+.destaque[aria-pressed="true"] {
+    border-color: var(--cor-primaria);
+    box-shadow: inset 0 0 0 1px var(--cor-primaria);
+}
+
+.destaque:active {
+    transform: scale(0.98);
+}
+
+.destaque__topo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--espaco-1) var(--espaco-2);
+}
+
+.destaque__rotulo,
+.destaque__apoio {
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-2);
+}
+
+.destaque__valor {
+    font-family: var(--fonte-titulo);
+    font-size: var(--texto-6);
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+}
+
+.destaque__visual {
+    display: block;
+    margin-top: var(--espaco-2);
+}
+
+.destaque__sparkline {
+    display: block;
+    height: 2rem;
+    color: var(--cor-primaria);
+}
+
+/* Gerado por desenharSparkline. */
+.sparkline {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+.sparkline__area {
+    opacity: 0.12;
+}
+
+.sparkline__linha {
+    fill: none;
+    stroke-width: 1.75;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+}
+
+/* Régua da FCA: faixa verde até a meta e o valor marcado. */
+.regua {
+    display: grid;
+    gap: var(--espaco-1);
+}
+
+.regua__trilho {
+    position: relative;
+    display: block;
+    height: 0.5rem;
+    border-radius: 999px;
+    background: var(--cor-neutra-suave);
+}
+
+.regua__faixa {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: var(--fim);
+    border-radius: 999px;
+    background: var(--cor-sucesso-suave);
+    box-shadow: inset 0 0 0 1px rgb(45 106 49 / 0.25);
+}
+
+.regua__marcador {
+    position: absolute;
+    top: -0.25rem;
+    left: var(--posicao);
+    width: 0.25rem;
+    height: 1rem;
+    margin-left: -0.125rem;
+    border-radius: 2px;
+    background: var(--cor-texto);
+}
+
+.regua__escala {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-1);
+    font-variant-numeric: tabular-nums;
+}
+
+.regua__meta {
+    position: absolute;
+    left: var(--posicao);
+    transform: translateX(-50%);
+    color: var(--cor-sucesso);
+    font-weight: 600;
+}
+
+/* Barra de um valor até o limite (mortalidade). */
+.barra-limite {
+    display: block;
+    height: 0.5rem;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--cor-neutra-suave);
+}
+
+.barra-limite__preenchimento {
+    display: block;
+    width: var(--nivel);
+    height: 100%;
+    border-radius: 999px;
+    background: var(--cor-info);
+    transform-origin: left;
+    animation: preencher var(--duracao-lenta) var(--curva-saida) backwards;
+}
+
+.barra-limite--excedida .barra-limite__preenchimento {
+    background: var(--cor-perigo);
+}
+
+@keyframes preencher {
+    from {
+        transform: scaleX(0);
+    }
+}
+
+/* Anel de progresso: peso médio até o alvo. pathLength 100 no círculo faz o
+   traço visível ser a própria porcentagem. */
+.anel {
+    position: relative;
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 5.5rem;
+    height: 5.5rem;
+}
+
+.anel__grafico {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.anel__trilho,
+.anel__progresso {
+    fill: none;
+    stroke-width: 4;
+}
+
+.anel__trilho {
+    stroke: var(--cor-neutra-suave);
+}
+
+.anel--neutro .anel__trilho {
+    stroke: var(--cor-borda);
+    stroke-dasharray: 3px 3px;
+}
+
+.anel__progresso {
+    stroke: var(--cor-tanque, var(--cor-primaria));
+    stroke-linecap: round;
+    stroke-dasharray: 100px;
+    stroke-dashoffset: calc((100 - var(--progresso)) * 1px);
+    transform: rotate(-90deg);
+    transform-origin: center;
+    animation: anel-encher var(--duracao-lenta) var(--curva-saida) backwards;
+}
+
+@keyframes anel-encher {
+    from {
+        stroke-dashoffset: 100px;
+    }
+}
+
+.anel__valor {
+    position: relative;
+    font-family: var(--fonte-titulo);
+    font-size: var(--texto-3);
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+}
+
+.anel__apoio {
+    position: relative;
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-1);
+}
+
+/* ---------- Painéis do dashboard ---------- */
+
+.cartao-painel {
+    display: grid;
+    align-content: start;
+    gap: var(--espaco-4);
+    min-width: 0;
+    padding: var(--espaco-5);
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio-grande);
+    background: var(--cor-superficie);
+}
+
+.grafico-principal__cabecalho {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--espaco-3);
+}
+
+.grafico-principal__leitura {
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-2);
+    font-variant-numeric: tabular-nums;
+}
+
+.grafico-principal__area {
+    position: relative;
+    min-width: 0;
+}
+
+.grafico-principal__ajuda {
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-1);
+}
+
+.grafico-principal__vazio {
+    display: grid;
+    place-items: center;
+    min-height: 12rem;
+    border-radius: var(--raio);
+    background: var(--cor-superficie-suave);
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-2);
+}
+
+/* Gerado por desenharGraficoSeries. */
+.grafico-series {
+    display: block;
+    max-width: 100%;
+    border-radius: var(--raio);
+}
+
+.grafico-series:focus-visible {
+    outline-offset: 4px;
+}
+
+.grafico__series {
+    animation: desenhar calc(var(--duracao-lenta) * 1.5) var(--curva-saida) backwards;
+}
+
+.grafico__linha-serie {
+    fill: none;
+    stroke-width: 2.25;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.grafico__area-serie {
+    opacity: 0.12;
+}
+
+.grafico__meta {
+    stroke: var(--cor-sucesso);
+    stroke-dasharray: 6 4;
+    stroke-width: 1.5;
+}
+
+.grafico__rotulo--meta {
+    fill: var(--cor-sucesso);
+    font-weight: 700;
+}
+
+.grafico__guia {
+    stroke: var(--cor-borda-forte);
+    stroke-width: 1;
+}
+
+.grafico__marcador {
+    fill: var(--cor-superficie);
+    stroke-width: 2.5;
+}
+
+.grafico__captura {
+    fill: transparent;
+    cursor: crosshair;
+}
+
+.grafico-dica {
+    position: absolute;
+    top: 0.5rem;
+    z-index: 2;
+    min-width: 11rem;
+    padding: var(--espaco-2) var(--espaco-3);
+    border-radius: var(--raio);
+    background: var(--cor-menu-fundo);
+    color: var(--cor-menu-texto);
+    font-size: var(--texto-2);
+    box-shadow: var(--sombra-flutuante);
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity var(--duracao-rapida) ease, transform var(--duracao-rapida) ease;
+}
+
+.grafico-dica--visivel {
+    opacity: 1;
+    transform: none;
+}
+
+.grafico-dica__data {
+    margin-bottom: var(--espaco-1);
+    font-weight: 700;
+}
+
+.grafico-dica__linha {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--espaco-4);
+}
+
+.grafico-dica__nome {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--espaco-2);
+    color: var(--cor-menu-texto-suave);
+}
+
+.grafico-dica__nome::before {
+    content: "";
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: var(--cor-serie, transparent);
+}
+
+.grafico-dica__valor {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Cartões dos tanques em cultivo ---------- */
+
+/* Gerado pelo JS (seção 3.6): faixa na cor fixa do tanque, anel do peso,
+   dados, barra de capacidade compacta, último registro e ações. */
+.cartao-cultivo {
+    --cor-tanque: var(--cor-primaria);
+    position: relative;
+    display: grid;
+    align-content: start;
+    gap: var(--espaco-4);
+    overflow: hidden;
+    padding: var(--espaco-4) var(--espaco-4) var(--espaco-4) var(--espaco-5);
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio-grande);
+    background: var(--cor-superficie);
+    transition: border-color var(--transicao), transform var(--duracao-media) var(--curva-saida), box-shadow var(--duracao-media) var(--curva-saida);
+}
+
+.cartao-cultivo::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 4px;
+    background: var(--cor-tanque);
+}
+
+/* O tanque que está no gráfico fica destacado com a própria cor. */
+.cartao-cultivo:has([aria-pressed="true"]) {
+    border-color: var(--cor-tanque);
+    box-shadow: inset 0 0 0 1px var(--cor-tanque);
+}
+
+.cartao-cultivo__cabecalho {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--espaco-3);
+}
+
+.cartao-cultivo__nome {
+    font-family: var(--fonte-titulo);
+    font-size: var(--texto-5);
+    font-weight: 650;
+}
+
+.cartao-cultivo__especie {
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-2);
+}
+
+.cartao-cultivo__corpo {
+    display: flex;
+    align-items: center;
+    gap: var(--espaco-4);
+}
+
+.cartao-cultivo__dados {
+    display: grid;
+    flex: 1;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--espaco-2) var(--espaco-4);
+}
+
+.cartao-cultivo__dado dt {
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-1);
+}
+
+.cartao-cultivo__dado dd {
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+}
+
+.cartao-cultivo__registro {
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-2);
+}
+
+.cartao-cultivo__registro--em-dia {
+    color: var(--cor-sucesso);
+    font-weight: 600;
+}
+
+.cartao-cultivo__registro--atrasado {
+    color: var(--cor-atencao);
+    font-weight: 600;
+}
+
+.cartao-cultivo__acoes {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--espaco-2);
+}
+
+.cartao-cultivo__acoes .link {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--altura-toque);
+    margin-left: auto;
+}
+
+.cartao-cultivo--sem-ciclo {
+    align-content: center;
+    justify-items: start;
+    border-style: dashed;
+    border-color: var(--cor-borda-forte);
+    background: transparent;
+}
+
+.cartao-cultivo--sem-ciclo::before {
+    content: none;
+}
+
+@media (hover: hover) {
+    .destaque:hover,
+    .cartao-cultivo:not(.cartao-cultivo--sem-ciclo):hover {
+        box-shadow: var(--sombra-elevada);
+        transform: translateY(-3px);
+    }
+
+    .destaque[aria-pressed="true"]:hover {
+        box-shadow: inset 0 0 0 1px var(--cor-primaria), var(--sombra-elevada);
     }
 }

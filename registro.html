@@ -15,22 +15,32 @@
 <body>
     <header class="cabecalho">
         <a class="cabecalho__marca" href="index.html">
-            <span class="cabecalho__logo" aria-hidden="true">🐟</span>
-            <span class="cabecalho__titulo">Fish Track</span>
+            <svg class="cabecalho__simbolo" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#5fd0b4"/><path d="M5 16c3.2-5 8.5-7.2 14-5.2L24 7v18l-5-3.8C13.5 23.2 8.2 21 5 16Z" fill="none" stroke="#0c3c37" stroke-width="2" stroke-linejoin="round"/><path d="M8.5 18.5 12 15l2.5 2 4-4.5" fill="none" stroke="#0c3c37" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span class="cabecalho__nome">
+                <span class="cabecalho__titulo">Fish Track</span>
+                <span class="cabecalho__subtitulo">Gestão de cultivos</span>
+            </span>
         </a>
         <nav class="menu" aria-label="Navegação principal">
-            <a class="menu__link" href="index.html">Dashboard</a>
-            <a class="menu__link" href="tanques.html">Tanques</a>
-            <a class="menu__link menu__link--destaque" href="registro.html" aria-current="page">+ Registro</a>
-            <a class="menu__link" href="alertas.html">Alertas</a>
+            <a class="menu__link" href="index.html"><svg class="menu__icone" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg><span class="menu__texto">Visão geral</span></a>
+            <a class="menu__link" href="tanques.html"><svg class="menu__icone" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7c0-1.7 4-3 9-3s9 1.3 9 3v10c0 1.7-4 3-9 3s-9-1.3-9-3Z"/><path d="M3 12c3 1.8 6 1.8 9 0s6-1.8 9 0"/></svg><span class="menu__texto">Tanques</span><span class="menu__contador" data-contador="tanques" hidden></span></a>
+            <a class="menu__link menu__link--destaque" href="registro.html" aria-current="page"><svg class="menu__icone menu__icone--girar" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span class="menu__texto menu__texto--curto">Registro</span><span class="menu__texto menu__texto--longo">Novo registro</span></a>
+            <a class="menu__link" href="alertas.html"><svg class="menu__icone" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg><span class="menu__texto">Alertas</span><span class="menu__contador menu__contador--alerta" data-contador="alertas" hidden></span></a>
+            <a class="menu__link menu__link--lateral" href="calendario.html"><svg class="menu__icone" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span class="menu__texto">Agenda</span></a>
+            <a class="menu__link menu__link--lateral" href="configuracoes.html"><svg class="menu__icone" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M2 14h4M10 8h4M18 16h4"/></svg><span class="menu__texto">Configurações</span></a>
             <details class="menu__mais" id="menu-mais">
-                <summary class="menu__link">Mais</summary>
+                <summary class="menu__link"><svg class="menu__icone" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.3" fill="currentColor"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><circle cx="19" cy="12" r="1.3" fill="currentColor"/></svg><span class="menu__texto">Mais</span></summary>
                 <div class="menu__submenu">
-                    <a class="menu__link" href="calendario.html">Calendário</a>
-                    <a class="menu__link" href="configuracoes.html">Configurações</a>
+                    <a class="menu__link" href="calendario.html"><svg class="menu__icone" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span class="menu__texto">Agenda</span></a>
+                    <a class="menu__link" href="configuracoes.html"><svg class="menu__icone" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M2 14h4M10 8h4M18 16h4"/></svg><span class="menu__texto">Configurações</span></a>
                 </div>
             </details>
         </nav>
+        <div class="cabecalho__rodape">
+            <p class="cabecalho__status" id="status-offline">Preparando o uso offline…</p>
+            <p class="cabecalho__backup" id="status-backup"></p>
+            <button class="cabecalho__acao" id="botao-backup-rapido" type="button">Fazer backup agora</button>
+        </div>
     </header>
 
     <main class="pagina">

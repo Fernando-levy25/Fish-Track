@@ -1,7 +1,7 @@
 // Indicadores da seção 9.4. Funções puras: recebem tanque, ciclo e registros e
 // devolvem números, sem ler o storage nem tocar no DOM.
 
-import { diasEntre } from '../core/utils.js';
+import { diasEntre, somarDias } from '../core/utils.js';
 
 function informado(valor) {
     return valor !== null && valor !== undefined;
@@ -169,6 +169,122 @@ export function calcularSeries(ciclo, registros) {
             .map((dia) => ({ data: dia.data, valor: dia.pesoMedioG })),
         biomassa: dias.map((dia) => ({ data: dia.data, valor: dia.biomassaKg })),
         mortalidade: dias.map((dia) => ({ data: dia.data, valor: (dia.mortalidadeAcumulada / ciclo.quantidadeInicial) * 100 })),
+    };
+}
+
+// Série diária de um ciclo entre duas datas (seção 9.4): cada dia traz a
+// situação ao fim dele, repetindo o último valor conhecido entre registros.
+// Dias antes do povoamento ou depois da despesca ficam null.
+export function calcularSerieDiaria(ciclo, registros, dataInicio, dataFim) {
+    const dias = calcularLinhaDoTempo(ciclo, registros);
+    const biomassaInicialKg = (ciclo.quantidadeInicial * ciclo.pesoMedioInicialG) / 1000;
+    const serie = [];
+    let indice = -1;
+    for (let data = dataInicio; data <= dataFim; data = somarDias(data, 1)) {
+        if (data < ciclo.dataInicio || (ciclo.dataDespesca && data > ciclo.dataDespesca)) {
+            serie.push(null);
+            continue;
+        }
+        while (indice + 1 < dias.length && dias[indice + 1].data <= data) {
+            indice += 1;
+        }
+        const dia = dias[indice];
+        const noProprioDia = dia.data === data;
+        const ganhoKg = dia.biomassaKg - biomassaInicialKg;
+        serie.push({
+            data,
+            quantidade: dia.quantidade,
+            pesoMedioG: dia.pesoMedioG,
+            biomassaKg: dia.biomassaKg,
+            racaoDiaKg: noProprioDia ? dia.racaoDiaKg : 0,
+            racaoAcumuladaKg: dia.racaoAcumuladaKg,
+            mortalidadeDia: noProprioDia ? dia.mortalidadeDia : 0,
+            mortalidadeAcumulada: dia.mortalidadeAcumulada,
+            taxaMortalidade: (dia.mortalidadeAcumulada / ciclo.quantidadeInicial) * 100,
+            fca: ganhoKg > 0 ? dia.racaoAcumuladaKg / ganhoKg : null,
+        });
+    }
+    return serie;
+}
+
+// Valor no primeiro e no último dia válidos da série, e a diferença.
+export function calcularVariacaoPeriodo(serie, campo) {
+    const validos = serie.filter(Boolean);
+    if (validos.length === 0) {
+        return null;
+    }
+    const inicio = validos[0][campo];
+    const fim = validos.at(-1)[campo];
+    return { inicio, fim, variacao: fim - inicio, percentual: inicio ? ((fim - inicio) / inicio) * 100 : null };
+}
+
+// Produção no período, a partir de [{ tanque, ciclo, registros }] dos ciclos
+// ativos. O período vai do fim de dataInicio ao fim de dataFim; um tanque
+// povoado no meio dele parte da biomassa do povoamento.
+export function calcularResumoPeriodo(itens, { dataInicio, dataFim }) {
+    const datas = [];
+    for (let data = dataInicio; data <= dataFim; data = somarDias(data, 1)) {
+        datas.push(data);
+    }
+    const porTanque = itens.map((item) => ({ ...item, serie: calcularSerieDiaria(item.ciclo, item.registros, dataInicio, dataFim) }));
+    const biomassaInicial = (ciclo) => (ciclo.quantidadeInicial * ciclo.pesoMedioInicialG) / 1000;
+
+    // Totais de cada dia, somando só os tanques já povoados naquele dia.
+    const totais = datas.map((data, indice) => {
+        const presentes = porTanque.filter(({ serie }) => serie[indice]);
+        const somar = (obterValor) => presentes.reduce((total, item) => total + obterValor(item), 0);
+        const ganhoKg = somar(({ serie, ciclo }) => serie[indice].biomassaKg - biomassaInicial(ciclo));
+        const quantidadeInicial = somar(({ ciclo }) => ciclo.quantidadeInicial);
+        return {
+            data,
+            biomassaKg: somar(({ serie }) => serie[indice].biomassaKg),
+            quantidade: somar(({ serie }) => serie[indice].quantidade),
+            racaoDiaKg: somar(({ serie }) => serie[indice].racaoDiaKg),
+            fca: ganhoKg > 0 ? somar(({ serie }) => serie[indice].racaoAcumuladaKg) / ganhoKg : null,
+            taxaMortalidade: quantidadeInicial > 0 ? (somar(({ serie }) => serie[indice].mortalidadeAcumulada) / quantidadeInicial) * 100 : null,
+        };
+    });
+
+    const pontas = porTanque
+        .map(({ ciclo, serie }) => {
+            const validos = serie.filter(Boolean);
+            return validos.length > 0 ? { ciclo, inicio: validos[0], fim: validos.at(-1) } : null;
+        })
+        .filter(Boolean);
+    const somarPontas = (obterValor) => pontas.reduce((total, ponta) => total + obterValor(ponta), 0);
+    const biomassaInicio = somarPontas(({ inicio }) => inicio.biomassaKg);
+    const biomassaFim = somarPontas(({ fim }) => fim.biomassaKg);
+    const ganhoPeriodoKg = biomassaFim - biomassaInicio;
+    const racaoPeriodoKg = somarPontas(({ inicio, fim }) => fim.racaoAcumuladaKg - inicio.racaoAcumuladaKg);
+    const ganhoCicloKg = biomassaFim - somarPontas(({ ciclo }) => biomassaInicial(ciclo));
+    const mortalidadeInicio = somarPontas(({ inicio }) => inicio.mortalidadeAcumulada);
+    const mortalidadeFim = somarPontas(({ fim }) => fim.mortalidadeAcumulada);
+    const quantidadeInicial = somarPontas(({ ciclo }) => ciclo.quantidadeInicial);
+    const diasPeriodo = Math.max(datas.length - 1, 1);
+
+    return {
+        datas,
+        porTanque,
+        totais,
+        biomassa: {
+            atual: biomassaFim,
+            variacao: ganhoPeriodoKg,
+            percentual: biomassaInicio > 0 ? (ganhoPeriodoKg / biomassaInicio) * 100 : null,
+        },
+        peixes: { atual: somarPontas(({ fim }) => fim.quantidade), perdas: mortalidadeFim - mortalidadeInicio },
+        // FCA do ciclo (geral) e do período: ração dividida pelo ganho de biomassa em cada intervalo.
+        fca: {
+            geral: ganhoCicloKg > 0 ? somarPontas(({ fim }) => fim.racaoAcumuladaKg) / ganhoCicloKg : null,
+            periodo: ganhoPeriodoKg > 0 ? racaoPeriodoKg / ganhoPeriodoKg : null,
+            racaoPeriodoKg,
+            ganhoPeriodoKg,
+        },
+        mortalidade: {
+            taxa: quantidadeInicial > 0 ? (mortalidadeFim / quantidadeInicial) * 100 : null,
+            variacaoPontos: quantidadeInicial > 0 ? ((mortalidadeFim - mortalidadeInicio) / quantidadeInicial) * 100 : null,
+        },
+        racao: { total: racaoPeriodoKg, mediaPorDia: racaoPeriodoKg / diasPeriodo },
+        diasPeriodo,
     };
 }
 

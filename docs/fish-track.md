@@ -140,12 +140,27 @@ Pequeno e médio produtor que:
 
 ### 7.1 Dashboard (`index.html`)
 
-Visão geral de toda a produção.
+Visão geral de toda a produção. A versão principal é a de computador; no celular os blocos se empilham.
 
-- Cartões de resumo: tanques ativos, total de peixes, biomassa total, ração acumulada, mortalidade média.
-- Lista de alertas ativos (os 5 mais graves e recentes, com link para a página de alertas).
-- Mini-cartões por tanque ativo: nome, espécie, peixes, biomassa, % de capacidade e indicador de status, que mostra a maior gravidade entre os alertas do tanque.
-- Botão de ação rápida: **Novo registro**.
+- **Cabeçalho:** data por extenso, título, resumo ("3 tanques em cultivo, de 6 cadastrados · 4 alertas pedem atenção") e seletor de período (7 dias, 30 dias, ciclo inteiro; padrão 30 dias). A escolha é lembrada no aparelho, fora dos dados do produtor.
+- **Cinco indicadores clicáveis**, cada um com contexto:
+
+| Indicador | Valor | Apoio | Visual |
+|---|---|---|---|
+| Biomassa total | soma das biomassas | variação em kg e em % no período | minigráfico |
+| Peixes no estoque | soma das quantidades | perdas no período | minigráfico |
+| Conversão alimentar | FCA geral dos ciclos | FCA do período e selo "Na meta" ou "Acima da meta" | régua de 1,00 a 2,20 com a faixa da meta |
+| Mortalidade acumulada | taxa geral | variação em pontos percentuais e selo do limite | barra até o limite |
+| Ração fornecida | total no período | média por dia | minigráfico da ração diária |
+
+- **Gráfico principal:** mostra o indicador selecionado, com uma linha por tanque na cor fixa do tanque, eixo com 4 marcas e 5 datas, tooltip com o valor de cada tanque e o total (ou "Geral", para FCA e mortalidade) e, na FCA, a linha da meta. Pode ser filtrado por tanque. Também responde ao teclado: com o gráfico em foco, as setas percorrem os dias.
+- **Alertas:** filtráveis por gravidade, cada um com ícone, gravidade escrita, tanque e link de ação ("Ver registro", "Planejar despesca", "Registrar agora"...).
+- **Tanques em cultivo:** um cartão por tanque, com faixa na cor do tanque, anel do peso médio até o peso alvo, peixes, biomassa, FCA, dias até a despesca, barra de capacidade compacta, último registro e ações ("+ Registro", "Ver no gráfico", "Abrir"). Um cartão tracejado resume os tanques sem ciclo.
+- O botão de novo registro fica só no menu lateral.
+
+### 7.11 Menu lateral
+
+Em telas largas, coluna escura com a marca, o botão "Novo registro", a navegação com ícones (Visão geral, Tanques e Alertas com contadores, Agenda, Configurações) e um rodapé com o estado do uso offline e o tempo desde o último backup (em âmbar depois de 7 dias, com o link "Fazer backup agora"). No celular, vira a barra inferior com "Mais".
 
 ### 7.2 Tanques (`tanques.html`)
 
@@ -193,7 +208,7 @@ Visão mensal com os eventos de todos os tanques. Ao tocar em um dia, a lista ab
 
 ### 7.9 Configurações (`configuracoes.html`)
 
-- Limites padrão dos alertas.
+- Limites padrão dos alertas e meta de conversão alimentar.
 - Exportar CSV (por tanque ou geral).
 - Fazer backup e restaurar dados (JSON).
 - Carregar dados de exemplo e apagar todos os dados.
@@ -370,6 +385,8 @@ Todos os indicadores são calculados a partir do ciclo e dos registros, ordenado
 
 **Dashboard:** os totais somam os tanques com ciclo ativo. As taxas gerais são médias ponderadas pela quantidade inicial de cada ciclo.
 
+**Período do dashboard:** a série diária de cada ciclo repete o último valor conhecido entre registros. O período vai do fim do dia inicial até hoje; um tanque povoado no meio dele parte da biomassa do povoamento. A **variação** compara hoje com o início do período; a **FCA do período** é a ração do período dividida pelo ganho de biomassa do período; as **perdas** são a mortalidade registrada no período. A meta de FCA fica em `config.metaFca` (padrão 1,60) e pode ser sobrescrita por tanque.
+
 **Exibição:** números no formato brasileiro (`1.234,5`), com no máximo 1 casa decimal para percentuais e 2 para FCA.
 
 ### 9.5 Alertas
@@ -465,12 +482,14 @@ fish-track/
 │   ├── ui/
 │   │   ├── nav.js            # Navegação comum
 │   │   ├── componentes.js    # Cartões, badges, mensagens, modais
-│   │   ├── graficos.js       # Gráficos em SVG
+│   │   ├── graficos.js       # Gráficos em SVG e cor fixa por tanque
+│   │   ├── icones.js         # Ícones em traço
 │   │   └── calendario.js     # Componente de calendário
 │   ├── services/
 │   │   ├── exportacao.js     # CSV e backup JSON
 │   │   └── seed.js           # Dados de exemplo
 │   └── pages/
+│       ├── comum.js          # Menu lateral, contadores, backup e ações dos alertas
 │       ├── dashboard.js
 │       ├── tanques.js
 │       ├── tanque.js
@@ -501,7 +520,7 @@ fish-track/
 | `domain` | `core` | Acessar o DOM |
 | `ui` | `core` | Ler ou gravar dados diretamente |
 | `services` | `core`, `domain` | Acessar o DOM, exceto para disparar download |
-| `pages` | todas | Acessar o `localStorage` diretamente |
+| `pages` | todas (inclusive `pages/comum.js`) | Acessar o `localStorage` diretamente |
 
 ---
 

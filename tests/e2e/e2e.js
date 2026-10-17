@@ -100,9 +100,11 @@ async function roteiro() {
 
     etapa = 'Dashboard vazio';
     await abrir('index.html');
-    verificar('tanques ativos = 0', indicador('tanquesAtivos') === '0', indicador('tanquesAtivos'));
-    verificar('mortalidade média sem dados', indicador('mortalidadeMedia') === '—', indicador('mortalidadeMedia'));
+    verificar('resumo sem tanques', texto('resumo-producao') === '0 tanques em cultivo, de 0 cadastrados · nenhum alerta', texto('resumo-producao'));
+    verificar('cinco indicadores', doc().querySelectorAll('#grade-destaques .destaque').length === 5);
+    verificar('FCA sem dados', doc().querySelector('[data-indicador-grafico="fca"] .destaque__valor')?.textContent === '—');
     verificar('aviso de nenhum tanque', texto('grade-tanques').startsWith('Nenhum tanque cadastrado ainda'), texto('grade-tanques'));
+    verificar('gráfico sem dados', !porId('aviso-grafico-principal').hidden);
     verificar('sem alertas', texto('lista-alertas') === 'Nenhum alerta no momento.', texto('lista-alertas'));
 
     etapa = 'Cadastro de tanque';
@@ -316,10 +318,51 @@ async function roteiro() {
     const carregou = await esperarAte(() => (texto('mensagem-dados') ?? '').startsWith('Dados de exemplo carregados'), 15000);
     verificar('exemplo carregado', carregou && texto('mensagem-dados').includes('6 tanques, 5 ciclos'), texto('mensagem-dados'));
     await abrir('index.html');
-    verificar('3 tanques ativos', indicador('tanquesAtivos') === '3', indicador('tanquesAtivos'));
-    verificar('alerta alto primeiro', doc().querySelector('#lista-alertas li')?.classList.contains('lista-alertas__item--alta'));
+    etapa = 'Dashboard com dados';
+    verificar('resumo da produção', texto('resumo-producao') === '3 tanques em cultivo, de 6 cadastrados · 4 alertas pedem atenção', texto('resumo-producao'));
+    verificar('data por extenso', /^[A-ZÀ-Ú][a-zà-úç-]+, \d/.test(texto('data-hoje')), texto('data-hoje'));
+    verificar('contadores do menu', doc().querySelector('[data-contador="alertas"]').textContent === '4' && doc().querySelector('[data-contador="tanques"]').textContent === '5');
+    verificar('biomassa com variação e sparkline', /kg$/.test(doc().querySelector('[data-indicador-grafico="biomassa"] .destaque__valor').textContent)
+        && doc().querySelector('[data-indicador-grafico="biomassa"] .sparkline polyline'));
+    verificar('FCA com régua e meta', doc().querySelector('[data-indicador-grafico="fca"] .regua__meta')?.textContent === 'Meta 1,60');
+    verificar('alerta alto primeiro, com ação', doc().querySelector('#lista-alertas li')?.classList.contains('lista-alertas__item--alta')
+        && doc().querySelector('#lista-alertas li .lista-alertas__acao')?.textContent === 'Ver registro');
+    verificar('3 cartões em cultivo e 1 sem ciclo', doc().querySelectorAll('#grade-tanques .cartao-cultivo:not(.cartao-cultivo--sem-ciclo)').length === 3
+        && doc().querySelector('.cartao-cultivo--sem-ciclo')?.textContent.includes('1 vazio e 1 em manutenção'));
     verificar('barra compacta nos cartões', doc().querySelectorAll('#grade-tanques .barra-agua--compacta').length === 3);
-    verificar('Tanque 05 perto do limite', [...doc().querySelectorAll('#grade-tanques .cartao-tanque')].find((c) => c.textContent.includes('Tanque 05'))?.querySelector('.barra-agua--perto .barra-agua__faixa')?.textContent === 'Perto do limite');
+    const cartao05 = [...doc().querySelectorAll('#grade-tanques .cartao-cultivo')].find((c) => c.textContent.includes('Tanque 05'));
+    verificar('Tanque 05 perto do limite', cartao05?.querySelector('.barra-agua--perto .barra-agua__faixa')?.textContent === 'Perto do limite');
+    verificar('Tanque 05 sem registro há 12 dias', cartao05?.querySelector('.cartao-cultivo__registro--atrasado')?.textContent === 'Sem registro há 12 dias');
+    verificar('anel do peso até o alvo', [...doc().querySelectorAll('.cartao-cultivo')].find((c) => c.textContent.includes('Tanque 01'))?.querySelector('.anel__apoio')?.textContent === 'de 800 g');
+    verificar('gráfico com uma linha por tanque', porId('grafico-principal').querySelectorAll('.grafico__linha-serie').length === 3);
+    doc().querySelector('[data-indicador-grafico="fca"]').click();
+    await esperar(60);
+    verificar('linhas da FCA desenhadas', [...porId('grafico-principal').querySelectorAll('.grafico__linha-serie')].every((linha) => linha.getAttribute('d').length > 20));
+    verificar('indicador troca o gráfico', texto('titulo-grafico') === 'Conversão alimentar' && porId('grafico-principal').querySelector('.grafico__meta')
+        && doc().querySelector('[data-indicador-grafico="fca"]').getAttribute('aria-pressed') === 'true');
+    cartao05.querySelector('[data-ver-grafico]').click();
+    await esperar(60);
+    verificar('Ver no gráfico filtra o tanque', texto('leitura-grafico').endsWith('hoje · Tanque 05')
+        && porId('grafico-principal').querySelectorAll('.grafico__linha-serie').length === 1
+        && cartao05.querySelector('[data-ver-grafico]').textContent === 'Mostrando no gráfico', texto('leitura-grafico'));
+    cartao05.querySelector('[data-ver-grafico]').click();
+    await esperar(60);
+    verificar('clicar de novo volta para Todos', texto('leitura-grafico').endsWith('todos os tanques'), texto('leitura-grafico'));
+    const svgGrafico = porId('grafico-principal').querySelector('svg');
+    svgGrafico.focus();
+    await esperar(40);
+    verificar('tooltip pelo teclado', porId('grafico-principal').querySelector('.grafico-dica--visivel')?.textContent.includes('Geral'),
+        porId('grafico-principal').querySelector('.grafico-dica')?.textContent);
+    doc().querySelector('[data-gravidade="baixa"]').click();
+    await esperar(40);
+    verificar('chips filtram os alertas', doc().querySelectorAll('#lista-alertas .lista-alertas__item').length === 2
+        && doc().querySelectorAll('#lista-alertas .lista-alertas__item--baixa').length === 2);
+    doc().querySelector('[data-periodo="7"]').click();
+    await esperar(60);
+    verificar('período de 7 dias', doc().querySelector('[data-indicador-grafico="peixes"] .destaque__apoio').textContent.endsWith('em 7 dias'));
+    await abrir('index.html');
+    verificar('período lembrado ao recarregar', doc().querySelector('[data-periodo="7"]').getAttribute('aria-pressed') === 'true');
+    doc().querySelector('[data-periodo="30"]').click();
     await abrir('alertas.html');
     verificar('2 grupos de alertas', doc().querySelectorAll('#grupos-alertas .grupo-alertas').length === 2);
     await abrir('calendario.html');
@@ -334,7 +377,7 @@ async function roteiro() {
         verificar('service worker ativo', registro?.active?.state === 'activated', registro?.active?.state);
         await fetch('/__teste/offline?ligar=1', { method: 'POST' });
         await abrir('index.html');
-        verificar('dashboard sem internet', indicador('tanquesAtivos') === '3', indicador('tanquesAtivos'));
+        verificar('dashboard sem internet', texto('resumo-producao').startsWith('3 tanques em cultivo'), texto('resumo-producao'));
         await fetch('/__teste/offline?ligar=0', { method: 'POST' });
     }
 

@@ -88,6 +88,15 @@ export function formatarDataPorExtenso(dataISO) {
     return `${dia === 1 ? '1º' : dia} de ${MESES[mes - 1]} de ${ano}`;
 }
 
+const DIAS_DA_SEMANA = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
+
+// "Sábado, 17 de outubro de 2026", para o cabeçalho do dashboard.
+export function formatarDataCompleta(dataISO) {
+    const { ano, mes, dia } = partesData(dataISO);
+    const semana = DIAS_DA_SEMANA[new Date(Date.UTC(ano, mes - 1, dia)).getUTCDay()];
+    return `${semana[0].toUpperCase()}${semana.slice(1)}, ${formatarDataPorExtenso(dataISO)}`;
+}
+
 export function formatarMesAno(ano, mes) {
     const nome = MESES[mes - 1];
     return `${nome[0].toUpperCase()}${nome.slice(1)} de ${ano}`;

@@ -15,75 +15,86 @@
 <body>
     <header class="cabecalho">
         <a class="cabecalho__marca" href="index.html">
-            <span class="cabecalho__logo" aria-hidden="true">🐟</span>
-            <span class="cabecalho__titulo">Fish Track</span>
+            <svg class="cabecalho__simbolo" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#5fd0b4"/><path d="M5 16c3.2-5 8.5-7.2 14-5.2L24 7v18l-5-3.8C13.5 23.2 8.2 21 5 16Z" fill="none" stroke="#0c3c37" stroke-width="2" stroke-linejoin="round"/><path d="M8.5 18.5 12 15l2.5 2 4-4.5" fill="none" stroke="#0c3c37" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span class="cabecalho__nome">
+                <span class="cabecalho__titulo">Fish Track</span>
+                <span class="cabecalho__subtitulo">Gestão de cultivos</span>
+            </span>
         </a>
         <nav class="menu" aria-label="Navegação principal">
-            <a class="menu__link" href="index.html" aria-current="page">Dashboard</a>
-            <a class="menu__link" href="tanques.html">Tanques</a>
-            <a class="menu__link menu__link--destaque" href="registro.html">+ Registro</a>
-            <a class="menu__link" href="alertas.html">Alertas</a>
+            <a class="menu__link" href="index.html" aria-current="page"><svg class="menu__icone" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg><span class="menu__texto">Visão geral</span></a>
+            <a class="menu__link" href="tanques.html"><svg class="menu__icone" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7c0-1.7 4-3 9-3s9 1.3 9 3v10c0 1.7-4 3-9 3s-9-1.3-9-3Z"/><path d="M3 12c3 1.8 6 1.8 9 0s6-1.8 9 0"/></svg><span class="menu__texto">Tanques</span><span class="menu__contador" data-contador="tanques" hidden></span></a>
+            <a class="menu__link menu__link--destaque" href="registro.html"><svg class="menu__icone menu__icone--girar" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span class="menu__texto menu__texto--curto">Registro</span><span class="menu__texto menu__texto--longo">Novo registro</span></a>
+            <a class="menu__link" href="alertas.html"><svg class="menu__icone" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg><span class="menu__texto">Alertas</span><span class="menu__contador menu__contador--alerta" data-contador="alertas" hidden></span></a>
+            <a class="menu__link menu__link--lateral" href="calendario.html"><svg class="menu__icone" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span class="menu__texto">Agenda</span></a>
+            <a class="menu__link menu__link--lateral" href="configuracoes.html"><svg class="menu__icone" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M2 14h4M10 8h4M18 16h4"/></svg><span class="menu__texto">Configurações</span></a>
             <details class="menu__mais" id="menu-mais">
-                <summary class="menu__link">Mais</summary>
+                <summary class="menu__link"><svg class="menu__icone" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.3" fill="currentColor"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><circle cx="19" cy="12" r="1.3" fill="currentColor"/></svg><span class="menu__texto">Mais</span></summary>
                 <div class="menu__submenu">
-                    <a class="menu__link" href="calendario.html">Calendário</a>
-                    <a class="menu__link" href="configuracoes.html">Configurações</a>
+                    <a class="menu__link" href="calendario.html"><svg class="menu__icone" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span class="menu__texto">Agenda</span></a>
+                    <a class="menu__link" href="configuracoes.html"><svg class="menu__icone" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M2 14h4M10 8h4M18 16h4"/></svg><span class="menu__texto">Configurações</span></a>
                 </div>
             </details>
         </nav>
+        <div class="cabecalho__rodape">
+            <p class="cabecalho__status" id="status-offline">Preparando o uso offline…</p>
+            <p class="cabecalho__backup" id="status-backup"></p>
+            <button class="cabecalho__acao" id="botao-backup-rapido" type="button">Fazer backup agora</button>
+        </div>
     </header>
 
-    <main class="pagina">
-        <section class="secao" aria-labelledby="titulo-visao-geral">
-            <div class="secao__cabecalho">
-                <h1 class="pagina__titulo" id="titulo-visao-geral">Visão geral da produção</h1>
-                <a class="botao botao--primario" href="registro.html">Novo registro</a>
+    <main class="pagina painel">
+        <header class="painel__cabecalho">
+            <div class="painel__titulos">
+                <p class="painel__data" id="data-hoje"></p>
+                <h1 class="pagina__titulo">Visão geral da produção</h1>
+                <p class="painel__resumo" id="resumo-producao"></p>
             </div>
+            <div class="painel__acoes">
+                <div class="segmentado" id="seletor-periodo" role="group" aria-label="Período">
+                    <button class="segmentado__opcao" type="button" data-periodo="7" aria-pressed="false">7 dias</button>
+                    <button class="segmentado__opcao" type="button" data-periodo="30" aria-pressed="true">30 dias</button>
+                    <button class="segmentado__opcao" type="button" data-periodo="ciclo" aria-pressed="false">Ciclo inteiro</button>
+                </div>
+            </div>
+        </header>
 
-            <dl class="grade-indicadores">
-                <div class="cartao-indicador">
-                    <dt class="cartao-indicador__rotulo">Tanques ativos</dt>
-                    <dd class="cartao-indicador__valor" data-indicador="tanquesAtivos">—</dd>
-                </div>
-                <div class="cartao-indicador">
-                    <dt class="cartao-indicador__rotulo">Total de peixes</dt>
-                    <dd class="cartao-indicador__valor" data-indicador="totalPeixes">—</dd>
-                </div>
-                <div class="cartao-indicador">
-                    <dt class="cartao-indicador__rotulo">Biomassa total</dt>
-                    <dd class="cartao-indicador__valor" data-indicador="biomassaTotal">—</dd>
-                </div>
-                <div class="cartao-indicador">
-                    <dt class="cartao-indicador__rotulo">Ração acumulada</dt>
-                    <dd class="cartao-indicador__valor" data-indicador="racaoAcumulada">—</dd>
-                </div>
-                <div class="cartao-indicador">
-                    <dt class="cartao-indicador__rotulo">Mortalidade média</dt>
-                    <dd class="cartao-indicador__valor" data-indicador="mortalidadeMedia">—</dd>
-                </div>
-            </dl>
+        <section class="painel__destaques" aria-label="Indicadores da produção">
+            <div class="grade-destaques" id="grade-destaques"></div>
         </section>
 
-        <section class="secao" aria-labelledby="titulo-alertas">
-            <div class="secao__cabecalho">
-                <h2 class="secao__titulo" id="titulo-alertas">Alertas</h2>
-                <a class="link" href="alertas.html">Ver todos os alertas</a>
-            </div>
+        <div class="painel__grade">
+            <section class="cartao-painel grafico-principal" aria-labelledby="titulo-grafico">
+                <div class="grafico-principal__cabecalho">
+                    <div>
+                        <h2 class="secao__titulo" id="titulo-grafico">Biomassa total</h2>
+                        <p class="grafico-principal__leitura" id="leitura-grafico"></p>
+                    </div>
+                    <div class="segmentado segmentado--compacto" id="filtro-grafico" role="group" aria-label="Tanques no gráfico"></div>
+                </div>
+                <div class="grafico-principal__area" id="grafico-principal"></div>
+                <p class="grafico-principal__vazio" id="aviso-grafico-principal" hidden>Sem tanques em cultivo para mostrar no gráfico.</p>
+                <p class="grafico-principal__ajuda">Clique num indicador acima para trocar o gráfico. Passe o mouse para ver cada dia.</p>
+            </section>
 
-            <ul class="lista-alertas" id="lista-alertas">
-                <li class="lista-alertas__vazio">Nenhum alerta no momento.</li>
-            </ul>
-        </section>
+            <section class="cartao-painel painel-alertas" aria-labelledby="titulo-alertas">
+                <div class="secao__cabecalho">
+                    <h2 class="secao__titulo" id="titulo-alertas">Alertas</h2>
+                    <a class="link" href="alertas.html">Ver todos</a>
+                </div>
+                <div class="chips" id="filtro-alertas" role="group" aria-label="Filtrar alertas por gravidade"></div>
+                <ul class="lista-alertas" id="lista-alertas">
+                    <li class="lista-alertas__vazio">Nenhum alerta no momento.</li>
+                </ul>
+            </section>
+        </div>
 
         <section class="secao" aria-labelledby="titulo-tanques-ativos">
             <div class="secao__cabecalho">
-                <h2 class="secao__titulo" id="titulo-tanques-ativos">Tanques ativos</h2>
+                <h2 class="secao__titulo" id="titulo-tanques-ativos">Tanques em cultivo</h2>
                 <a class="link" href="tanques.html">Ver todos os tanques</a>
             </div>
-
-            <div class="grade-tanques" id="grade-tanques">
-                <p class="grade-tanques__vazio">Nenhum tanque com ciclo ativo no momento.</p>
-            </div>
+            <div class="grade-cultivo" id="grade-tanques"></div>
         </section>
     </main>
 

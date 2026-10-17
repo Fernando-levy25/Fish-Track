@@ -2,9 +2,6 @@
 // registro do service worker, que fica aqui porque este módulo roda em todas
 // as páginas.
 
-// Mesmo breakpoint de css/layout.css, onde o menu vira coluna lateral.
-const MENU_LATERAL = '(min-width: 60rem)';
-
 export function lerParametro(nome) {
     return new URLSearchParams(window.location.search).get(nome);
 }
@@ -29,25 +26,20 @@ export function iniciarNavegacao() {
     registrarServiceWorker();
 }
 
+// O "Mais" só existe na barra do celular, como um painel sobre a página:
+// fecha ao tocar fora ou com Esc. No desktop todos os destinos ficam à vista.
 function iniciarMenuMais() {
     const mais = document.getElementById('menu-mais');
     if (!mais) {
         return;
     }
-    const ehMenuLateral = () => window.matchMedia(MENU_LATERAL).matches;
-
-    // No menu lateral, o grupo já abre quando a página atual está dentro dele.
-    if (ehMenuLateral() && mais.querySelector('[aria-current="page"]')) {
-        mais.open = true;
-    }
-    // No celular, o "Mais" é um painel sobre a página: fecha ao tocar fora ou com Esc.
     document.addEventListener('click', (evento) => {
-        if (mais.open && !ehMenuLateral() && !mais.contains(evento.target)) {
+        if (mais.open && !mais.contains(evento.target)) {
             mais.open = false;
         }
     });
     document.addEventListener('keydown', (evento) => {
-        if (evento.key === 'Escape' && mais.open && !ehMenuLateral()) {
+        if (evento.key === 'Escape' && mais.open) {
             mais.open = false;
             mais.querySelector('summary').focus();
         }

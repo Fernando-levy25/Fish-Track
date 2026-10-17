@@ -5,8 +5,9 @@ import { paraNumero } from '../core/utils.js';
 import { formatarKg, formatarNumero } from '../core/format.js';
 import { obterSituacao, salvarTanque } from '../domain/tanques.js';
 import { calcularCargaMaximaKg } from '../domain/indicadores.js';
-import { iniciarNavegacao, irPara, lerParametro, montarUrl } from '../ui/nav.js';
+import { irPara, lerParametro, montarUrl } from '../ui/nav.js';
 import { iniciarFormulario, limparErroCampo, mostrarErroPagina, preencherFormulario } from '../ui/componentes.js';
+import { iniciarPagina } from './comum.js';
 
 const tanqueId = lerParametro('id');
 const porId = (id) => document.getElementById(id);
@@ -15,7 +16,7 @@ const campoVolume = porId('campo-volume');
 const campoDensidade = porId('campo-densidade-maxima');
 const campoCarga = porId('campo-carga-maxima');
 
-iniciarNavegacao();
+iniciarPagina();
 try {
     iniciar();
 } catch (erro) {

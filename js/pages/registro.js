@@ -6,8 +6,9 @@ import { formatarInteiro } from '../core/format.js';
 import { listarSituacoes, obterSituacao } from '../domain/tanques.js';
 import { obterRegistro, salvarRegistro } from '../domain/registros.js';
 import { calcularIndicadores } from '../domain/indicadores.js';
-import { iniciarNavegacao, irPara, lerParametro, montarUrl } from '../ui/nav.js';
+import { irPara, lerParametro, montarUrl } from '../ui/nav.js';
 import { criarElemento, iniciarFormulario, mostrarErroPagina, preencherFormulario } from '../ui/componentes.js';
+import { iniciarPagina } from './comum.js';
 
 const AJUDA_CONTAGEM = 'Só se você contou os peixes. Corrige a quantidade estimada do tanque.';
 
@@ -21,7 +22,7 @@ const campoData = porId('campo-data');
 // Tanques que aparecem no seletor, com o ciclo ativo e os registros de cada um.
 let situacoes = [];
 
-iniciarNavegacao();
+iniciarPagina();
 try {
     iniciar();
 } catch (erro) {

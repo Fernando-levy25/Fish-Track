@@ -4,6 +4,7 @@
 // sempre por textContent (seção 11.2).
 
 import { formatarKg, formatarNumero, formatarPercentual, pluralizar } from '../core/format.js';
+import { criarIcone } from './icones.js';
 
 // ---------- Elementos ----------
 
@@ -69,7 +70,24 @@ export function criarCartaoTanque({ nome, nivelTitulo = 2, especie, selo, metric
     ]);
 }
 
-export function renderizarAlertas(lista, alertas, { mostrarTanque = false, hrefTanque = null, textoVazio = 'Nenhum alerta.' } = {}) {
+// Ícone de cada tipo de alerta: o tipo também está escrito no título.
+const ICONE_DO_ALERTA = {
+    'mortalidade-registro': 'alerta',
+    'mortalidade-acumulada': 'tendencia',
+    racao: 'racao',
+    capacidade: 'medidor',
+    peso: 'balanca',
+    'sem-registro': 'relogio',
+};
+
+// Lista de alertas (seção 3.5): ícone na cor da gravidade, selo com a
+// gravidade escrita, tanque e, se a página informar, um link de ação.
+export function renderizarAlertas(lista, alertas, {
+    mostrarTanque = false,
+    hrefTanque = null,
+    obterAcao = null,
+    textoVazio = 'Nenhum alerta.',
+} = {}) {
     if (alertas.length === 0) {
         lista.replaceChildren(criarElemento('li', { classe: 'lista-alertas__vazio', texto: textoVazio }));
         return;
@@ -80,15 +98,81 @@ export function renderizarAlertas(lista, alertas, { mostrarTanque = false, hrefT
             detalhe.append(criarElemento('a', { classe: 'link', texto: alerta.tanqueNome, atributos: { href: hrefTanque(alerta) } }), ' · ');
         }
         detalhe.append(alerta.descricao);
+        const acao = obterAcao?.(alerta);
         return criarElemento('li', { classe: `lista-alertas__item lista-alertas__item--${alerta.gravidade}` }, [
-            criarElemento('span', { classe: 'lista-alertas__titulo' }, [
-                alerta.titulo,
-                // A gravidade vai escrita, nunca só na cor (seção 2.3).
-                criarSelo(alerta.rotuloGravidade, `alerta-${alerta.gravidade}`),
+            criarElemento('span', { classe: 'lista-alertas__icone' }, [criarIcone(ICONE_DO_ALERTA[alerta.tipo] ?? 'alerta')]),
+            criarElemento('div', { classe: 'lista-alertas__conteudo' }, [
+                criarElemento('span', { classe: 'lista-alertas__titulo' }, [
+                    alerta.titulo,
+                    // A gravidade vai escrita, nunca só na cor (seção 2.3).
+                    criarSelo(alerta.rotuloGravidade, `alerta-${alerta.gravidade}`),
+                ]),
+                detalhe,
+                acao && criarElemento('a', { classe: 'link lista-alertas__acao', texto: acao.texto, atributos: { href: acao.href } }),
             ]),
-            detalhe,
         ]);
     }));
+}
+
+// Anel de progresso (seção 3.6): o peso médio atual até o peso alvo. Sem
+// alvo, o anel fica neutro e mostra só o valor.
+export function criarAnelProgresso({ percentual = null, valor, apoio = '', descricao }) {
+    const svg = criarSvgSimples('svg', { class: 'anel__grafico', viewBox: '0 0 44 44', 'aria-hidden': 'true' });
+    svg.append(criarSvgSimples('circle', { class: 'anel__trilho', cx: 22, cy: 22, r: 18 }));
+    const anel = criarElemento('div', {
+        classe: percentual === null ? 'anel anel--neutro' : 'anel',
+        atributos: { role: 'img', 'aria-label': descricao },
+    }, [svg, criarElemento('span', { classe: 'anel__valor', texto: valor }), apoio && criarElemento('span', { classe: 'anel__apoio', texto: apoio })]);
+    if (percentual !== null) {
+        // pathLength 100: o traço visível é a própria porcentagem.
+        svg.append(criarSvgSimples('circle', { class: 'anel__progresso', cx: 22, cy: 22, r: 18, pathLength: 100 }));
+        anel.style.setProperty('--progresso', Math.min(Math.max(percentual, 0), 100));
+    }
+    return anel;
+}
+
+// Régua da FCA (seção 3.3): de 1,00 a 2,20, com a faixa até a meta e o valor atual.
+export function criarReguaFca({ valor, meta, minimo = 1, maximo = 2.2 }) {
+    const posicao = (numero) => `${(Math.min(Math.max(numero, minimo), maximo) - minimo) / (maximo - minimo) * 100}%`;
+    const faixa = criarElemento('span', { classe: 'regua__faixa' });
+    faixa.style.setProperty('--fim', posicao(meta));
+    const trilho = criarElemento('span', { classe: 'regua__trilho' }, [faixa]);
+    if (Number.isFinite(valor)) {
+        const marcador = criarElemento('span', { classe: 'regua__marcador' });
+        marcador.style.setProperty('--posicao', posicao(valor));
+        trilho.append(marcador);
+    }
+    const rotuloMeta = criarElemento('span', { classe: 'regua__meta', texto: `Meta ${formatarNumero(meta, 2, 2)}` });
+    rotuloMeta.style.setProperty('--posicao', posicao(meta));
+    return criarElemento('span', {
+        classe: 'regua',
+        atributos: { role: 'img', 'aria-label': `Conversão ${formatarNumero(valor, 2, 2)}, meta ${formatarNumero(meta, 2, 2)}` },
+    }, [
+        trilho,
+        criarElemento('span', { classe: 'regua__escala' }, [
+            criarElemento('span', { texto: formatarNumero(minimo, 2, 2) }),
+            rotuloMeta,
+            criarElemento('span', { texto: formatarNumero(maximo, 2, 2) }),
+        ]),
+    ]);
+}
+
+// Barra de um valor até o seu limite, como a mortalidade até 10% (seção 3.3).
+export function criarBarraLimite({ valor, limite }) {
+    const preenchimento = criarElemento('span', { classe: 'barra-limite__preenchimento' });
+    preenchimento.style.setProperty('--nivel', `${Math.min(Math.max((valor ?? 0) / limite, 0), 1) * 100}%`);
+    return criarElemento('span', {
+        classe: valor > limite ? 'barra-limite barra-limite--excedida' : 'barra-limite',
+        atributos: { role: 'img', 'aria-label': `${formatarPercentual(valor)} de um limite de ${formatarPercentual(limite)}` },
+    }, [preenchimento]);
+}
+
+function criarSvgSimples(tag, atributos) {
+    const elemento = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    for (const [nome, valor] of Object.entries(atributos)) {
+        elemento.setAttribute(nome, valor);
+    }
+    return elemento;
 }
 
 // Barra de capacidade com animação de água (seção 5). 100% é a carga máxima do

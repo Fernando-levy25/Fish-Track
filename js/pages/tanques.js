@@ -6,13 +6,14 @@ import { listarSituacoes, listarTanques, ROTULOS_STATUS } from '../domain/tanque
 import { calcularIndicadores } from '../domain/indicadores.js';
 import { resolverLimites } from '../domain/alertas.js';
 import { obterLimitesPadrao } from '../domain/configuracoes.js';
-import { iniciarNavegacao, lerParametro, montarUrl } from '../ui/nav.js';
+import { lerParametro, montarUrl } from '../ui/nav.js';
 import { criarBarraCapacidade, criarCartaoTanque, criarElemento, mostrarErroPagina } from '../ui/componentes.js';
+import { iniciarPagina } from './comum.js';
 
 const filtro = document.getElementById('filtro-status');
 const grade = document.getElementById('grade-tanques');
 
-iniciarNavegacao();
+iniciarPagina();
 try {
     iniciar();
 } catch (erro) {

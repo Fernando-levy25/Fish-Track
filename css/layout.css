@@ -1,15 +1,16 @@
 /* =========================================================
    Fish Track — layout
-   Estrutura da página, navegação e grades. Mobile-first:
-   no celular o menu é uma barra fixa embaixo; a partir de
-   60rem vira uma coluna lateral.
+   Estrutura da página, navegação e grades. A versão principal
+   é a de computador, mas o CSS segue mobile-first: no celular o
+   menu é uma barra fixa embaixo; a partir de 60rem ele vira a
+   coluna lateral escura (seção 3.1).
    ========================================================= */
 
 body {
     padding-bottom: calc(var(--altura-menu) + env(safe-area-inset-bottom));
 }
 
-/* ---------- Cabeçalho ---------- */
+/* ---------- Cabeçalho e marca ---------- */
 
 .cabecalho {
     display: flex;
@@ -22,25 +23,42 @@ body {
 .cabecalho__marca {
     display: inline-flex;
     align-items: center;
-    gap: var(--espaco-2);
+    gap: var(--espaco-3);
     min-height: var(--altura-toque);
     color: var(--cor-primaria-escura);
-    font-size: var(--texto-5);
-    font-weight: 700;
-    letter-spacing: -0.01em;
     text-decoration: none;
+}
+
+.cabecalho__simbolo {
+    flex: none;
+    width: 2rem;
+    height: 2rem;
+}
+
+.cabecalho__nome {
+    display: grid;
+    line-height: 1.15;
 }
 
 .cabecalho__titulo {
     font-family: var(--fonte-titulo);
+    font-size: var(--texto-5);
+    font-weight: 700;
+    letter-spacing: -0.01em;
 }
 
-.cabecalho__logo {
-    font-size: 1.25rem;
-    line-height: 1;
+.cabecalho__subtitulo {
+    display: none;
+    color: var(--cor-menu-texto-suave);
+    font-size: var(--texto-1);
 }
 
-/* ---------- Menu ---------- */
+/* Rodapé do menu lateral: só existe no desktop. */
+.cabecalho__rodape {
+    display: none;
+}
+
+/* ---------- Menu: barra inferior no celular ---------- */
 
 .menu {
     position: fixed;
@@ -55,13 +73,16 @@ body {
 }
 
 .menu > * {
-    flex: 1 1 auto;
+    flex: 1 1 0;
 }
 
 .menu__link {
+    position: relative;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 2px;
     padding: 0 var(--espaco-1);
     color: var(--cor-texto-suave);
     font-size: var(--texto-1);
@@ -75,6 +96,27 @@ body {
 
 .menu__link:hover {
     color: var(--cor-texto);
+}
+
+.menu__link:active {
+    opacity: 0.7;
+}
+
+.menu__icone {
+    flex: none;
+    width: 1.25rem;
+    height: 1.25rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.75;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: transform var(--duracao-media) var(--curva-mola);
+}
+
+/* O "+" do novo registro gira ao passar o mouse, com um leve efeito de mola. */
+.menu__link:hover .menu__icone--girar {
+    transform: rotate(90deg);
 }
 
 .menu__link[aria-current="page"],
@@ -101,6 +143,45 @@ body {
     box-shadow: none;
 }
 
+/* "Registro" na barra estreita; "Novo registro" no menu lateral. */
+.menu__texto--longo,
+.menu__link--lateral {
+    display: none;
+}
+
+/* Contadores do menu (seção 3.1): no celular, um selo sobre o ícone. */
+.menu__contador {
+    position: absolute;
+    top: 4px;
+    left: calc(50% + 4px);
+    min-width: 1.1rem;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: var(--cor-neutra-suave);
+    color: var(--cor-texto);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    line-height: 1.1rem;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+.menu__contador--alerta {
+    background: var(--cor-perigo);
+    color: var(--cor-texto-invertido);
+    animation: pulsar 2.4s ease-in-out infinite;
+}
+
+@keyframes pulsar {
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgb(168 35 27 / 0.45);
+    }
+    50% {
+        box-shadow: 0 0 0 5px rgb(168 35 27 / 0);
+    }
+}
+
 .menu__mais > summary {
     height: 100%;
     list-style: none;
@@ -111,7 +192,11 @@ body {
     display: none;
 }
 
-/* No celular, o submenu abre como painel acima da barra. */
+.menu__mais[open] > summary {
+    color: var(--cor-primaria);
+}
+
+/* No celular, o "Mais" abre como painel acima da barra. */
 .menu__submenu {
     position: absolute;
     right: var(--espaco-2);
@@ -123,15 +208,22 @@ body {
     border: 1px solid var(--cor-borda);
     border-radius: var(--raio-grande);
     box-shadow: var(--sombra-flutuante);
+    animation: menu-surgir var(--duracao-media) var(--curva-saida);
 }
 
 .menu__submenu .menu__link {
+    flex-direction: row;
     justify-content: flex-start;
+    gap: var(--espaco-3);
     min-height: var(--altura-toque);
     padding: 0 var(--espaco-3);
     border-radius: var(--raio);
     color: var(--cor-texto);
     font-size: var(--texto-3);
+}
+
+.menu__submenu .menu__link:hover {
+    background: var(--cor-neutra-suave);
 }
 
 .menu__submenu .menu__link[aria-current="page"] {
@@ -140,31 +232,18 @@ body {
     box-shadow: none;
 }
 
-.menu__submenu .menu__link:hover {
-    background: var(--cor-neutra-suave);
-}
-
-.menu__mais[open] > summary {
-    color: var(--cor-primaria);
-}
-
-.menu__link:active {
-    opacity: 0.7;
-}
-
-/* As opções do "Mais" surgem com um deslize curto: de baixo no celular, onde
-   o painel abre acima da barra, e de cima no menu lateral. */
-.menu__mais[open] .menu__submenu {
-    animation: menu-surgir var(--duracao-media) var(--curva-saida);
-}
-
 @keyframes menu-surgir {
     from {
         opacity: 0;
-        transform: translateY(var(--menu-entrada, 6px));
+        transform: translateY(6px);
     }
 }
 
+@media (prefers-reduced-motion: reduce) {
+    .menu__contador--alerta {
+        animation: none;
+    }
+}
 
 /* ---------- Página e seções ---------- */
 
@@ -226,16 +305,16 @@ body {
 /* Seção 9.2: os blocos sobem 12 px e aparecem em sequência. Só "backwards":
    depois de entrar, o elemento volta a obedecer às próprias transformações
    (como o cartão que sobe ao passar o mouse). */
-:is(.pagina, .grade-indicadores, .grade-tanques, .grade-graficos, .lista-alertas, .grupos-alertas) > * {
+:is(.pagina, .grade-indicadores, .grade-destaques, .grade-tanques, .grade-cultivo, .grade-graficos, .lista-alertas, .grupos-alertas) > * {
     animation: entrar var(--duracao-lenta) var(--curva-saida) backwards;
     animation-delay: calc(var(--ordem, 0) * var(--atraso-passo));
 }
 
-:is(.pagina, .grade-indicadores, .grade-tanques, .grade-graficos, .lista-alertas, .grupos-alertas) > :nth-child(2) { --ordem: 1; }
-:is(.pagina, .grade-indicadores, .grade-tanques, .grade-graficos, .lista-alertas, .grupos-alertas) > :nth-child(3) { --ordem: 2; }
-:is(.pagina, .grade-indicadores, .grade-tanques, .grade-graficos, .lista-alertas, .grupos-alertas) > :nth-child(4) { --ordem: 3; }
-:is(.pagina, .grade-indicadores, .grade-tanques, .grade-graficos, .lista-alertas, .grupos-alertas) > :nth-child(5) { --ordem: 4; }
-:is(.pagina, .grade-indicadores, .grade-tanques, .grade-graficos, .lista-alertas, .grupos-alertas) > :nth-child(n + 6) { --ordem: 5; }
+:is(.pagina, .grade-indicadores, .grade-destaques, .grade-tanques, .grade-cultivo, .grade-graficos, .lista-alertas, .grupos-alertas) > :nth-child(2) { --ordem: 1; }
+:is(.pagina, .grade-indicadores, .grade-destaques, .grade-tanques, .grade-cultivo, .grade-graficos, .lista-alertas, .grupos-alertas) > :nth-child(3) { --ordem: 2; }
+:is(.pagina, .grade-indicadores, .grade-destaques, .grade-tanques, .grade-cultivo, .grade-graficos, .lista-alertas, .grupos-alertas) > :nth-child(4) { --ordem: 3; }
+:is(.pagina, .grade-indicadores, .grade-destaques, .grade-tanques, .grade-cultivo, .grade-graficos, .lista-alertas, .grupos-alertas) > :nth-child(5) { --ordem: 4; }
+:is(.pagina, .grade-indicadores, .grade-destaques, .grade-tanques, .grade-cultivo, .grade-graficos, .lista-alertas, .grupos-alertas) > :nth-child(n + 6) { --ordem: 5; }
 
 @keyframes entrar {
     from {
@@ -269,6 +348,57 @@ body {
     gap: var(--espaco-6);
 }
 
+/* ---------- Dashboard ---------- */
+
+.painel {
+    display: grid;
+    gap: var(--espaco-6);
+}
+
+.painel__cabecalho {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--espaco-4);
+}
+
+.painel__titulos {
+    display: grid;
+    gap: var(--espaco-1);
+}
+
+.painel__data,
+.painel__resumo {
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-3);
+}
+
+.painel__acoes {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--espaco-3);
+}
+
+.grade-destaques {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(9.5rem, 100%), 1fr));
+    gap: var(--espaco-3);
+}
+
+.painel__grade {
+    display: grid;
+    gap: var(--espaco-4);
+    align-items: start;
+}
+
+.grade-cultivo {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(19rem, 100%), 1fr));
+    gap: var(--espaco-4);
+}
+
 /* ---------- Tablet ---------- */
 
 @media (min-width: 40rem) {
@@ -285,12 +415,12 @@ body {
     }
 }
 
-/* ---------- Desktop: menu lateral ---------- */
+/* ---------- Desktop: menu lateral escuro ---------- */
 
 @media (min-width: 60rem) {
     body {
         display: grid;
-        grid-template-columns: 15rem minmax(0, 1fr);
+        grid-template-columns: 15.5rem minmax(0, 1fr);
         padding-bottom: 0;
     }
 
@@ -309,8 +439,12 @@ body {
     }
 
     .cabecalho__marca {
-        padding: 0 var(--espaco-3);
+        padding: 0 var(--espaco-2);
         color: var(--cor-menu-texto);
+    }
+
+    .cabecalho__subtitulo {
+        display: block;
     }
 
     .menu {
@@ -328,7 +462,9 @@ body {
     }
 
     .menu__link {
+        flex-direction: row;
         justify-content: flex-start;
+        gap: var(--espaco-3);
         min-height: var(--altura-toque);
         padding: 0 var(--espaco-3);
         border-radius: var(--raio);
@@ -336,30 +472,37 @@ body {
         font-size: var(--texto-3);
     }
 
-    .menu__link:hover,
-    .menu__submenu .menu__link:hover {
+    .menu__link:hover {
         background: var(--cor-menu-hover);
         color: var(--cor-menu-texto);
     }
 
-    .menu__link[aria-current="page"],
-    .menu__submenu .menu__link[aria-current="page"],
-    .menu__mais:not([open]):has([aria-current="page"]) > .menu__link {
+    /* Ícones deslizam 2 px ao passar o mouse (seção 9.2). */
+    .menu__link:hover .menu__icone:not(.menu__icone--girar) {
+        transform: translateX(2px);
+    }
+
+    .menu__link[aria-current="page"] {
         background: rgb(95 208 180 / 0.14);
         color: var(--cor-menu-destaque);
         box-shadow: none;
     }
 
-    .menu__mais[open] > summary {
-        color: var(--cor-menu-texto);
+    /* No desktop todos os destinos aparecem direto; o "Mais" é só do celular. */
+    .menu__link--lateral {
+        display: flex;
     }
 
-    .menu__submenu .menu__link {
-        color: var(--cor-menu-texto-suave);
+    .menu__mais,
+    .menu__texto--curto {
+        display: none;
     }
 
-    /* A ação principal fica no topo do menu, como botão. Repete as cores
-       porque as regras de .menu__link acima têm a mesma especificidade. */
+    .menu__texto--longo {
+        display: inline;
+    }
+
+    /* A ação principal fica no topo, como botão (único "Novo registro" da tela). */
     .menu__link--destaque {
         order: -1;
         align-self: stretch;
@@ -367,6 +510,7 @@ body {
         margin: 0 0 var(--espaco-3);
         background: var(--cor-menu-destaque);
         color: var(--cor-menu-fundo);
+        font-weight: 700;
     }
 
     .menu__link--destaque:hover,
@@ -375,40 +519,74 @@ body {
         color: var(--cor-menu-fundo);
     }
 
-    .menu__mais > summary::after {
-        content: "";
-        width: 0.4rem;
-        height: 0.4rem;
-        margin-left: auto;
-        border-right: 1.5px solid currentColor;
-        border-bottom: 1.5px solid currentColor;
-        transform: translateY(-2px) rotate(45deg);
-        transition: transform var(--transicao);
-    }
-
-    .menu__mais[open] > summary::after {
-        transform: translateY(1px) rotate(-135deg);
-    }
-
-    /* A altura de 100% só serve para a barra do celular; aqui ela esticava o
-       "Mais" até a altura do grupo aberto. */
-    .menu__mais > summary {
-        height: auto;
-    }
-
-    .menu__submenu {
-        --menu-entrada: -4px;
+    .menu__contador {
         position: static;
-        gap: 2px;
-        min-width: 0;
-        padding: 2px 0 0 var(--espaco-3);
-        background: none;
+        margin-left: auto;
+        background: rgb(255 255 255 / 0.12);
+        color: var(--cor-menu-texto);
+    }
+
+    .menu__contador--alerta {
+        background: var(--cor-perigo);
+        color: var(--cor-texto-invertido);
+    }
+
+    .cabecalho__rodape {
+        display: grid;
+        gap: var(--espaco-1);
+        margin-top: auto;
+        padding: var(--espaco-4) var(--espaco-3) 0;
+        border-top: 1px solid rgb(255 255 255 / 0.1);
+        color: var(--cor-menu-texto-suave);
+        font-size: var(--texto-2);
+    }
+
+    .cabecalho__status {
+        display: flex;
+        align-items: center;
+        gap: var(--espaco-2);
+    }
+
+    .cabecalho__status::before {
+        content: "";
+        flex: none;
+        width: 0.5rem;
+        height: 0.5rem;
+        border-radius: 50%;
+        background: var(--cor-menu-texto-suave);
+    }
+
+    .cabecalho__status--pronto::before {
+        background: var(--cor-menu-destaque);
+    }
+
+    .cabecalho__backup--atrasado {
+        color: #f3c56b;
+    }
+
+    .cabecalho__acao {
+        justify-self: start;
+        min-height: var(--altura-toque);
+        padding: 0;
         border: 0;
-        border-radius: 0;
-        box-shadow: none;
+        background: none;
+        color: var(--cor-menu-destaque);
+        font: inherit;
+        font-weight: 600;
+        text-decoration: underline;
+        text-underline-offset: 0.2em;
+        cursor: pointer;
+    }
+
+    .cabecalho__acao:hover {
+        color: var(--cor-menu-texto);
     }
 
     .pagina {
         padding: var(--espaco-7) var(--espaco-8) var(--espaco-8);
+    }
+
+    .painel__grade {
+        grid-template-columns: minmax(0, 2fr) minmax(18rem, 1fr);
     }
 }

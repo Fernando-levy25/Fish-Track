@@ -10,6 +10,9 @@ export const CHAVE_DADOS = 'fishtrack:v1';
 export const VERSAO_DADOS = 2;
 
 const CHAVE_COPIA_ILEGIVEL = `${CHAVE_DADOS}:ilegivel`;
+// Preferências de tela (como o período do dashboard) ficam fora dos dados do
+// produtor: não entram no backup nem na migração.
+const CHAVE_PREFERENCIAS = 'fishtrack:preferencias';
 const COLECOES = ['tanques', 'ciclos', 'registros', 'lembretes'];
 const META_FCA_PADRAO = 1.6;
 
@@ -124,6 +127,24 @@ export function migrarDados(dados) {
         };
     }
     return atuais;
+}
+
+export function lerPreferencia(nome, padrao) {
+    try {
+        const preferencias = JSON.parse(localStorage.getItem(CHAVE_PREFERENCIAS) ?? '{}');
+        return nome in preferencias ? preferencias[nome] : padrao;
+    } catch {
+        return padrao;
+    }
+}
+
+export function salvarPreferencia(nome, valor) {
+    try {
+        const preferencias = JSON.parse(localStorage.getItem(CHAVE_PREFERENCIAS) ?? '{}');
+        localStorage.setItem(CHAVE_PREFERENCIAS, JSON.stringify({ ...preferencias, [nome]: valor }));
+    } catch {
+        // Preferência de tela não é dado do produtor: se não der para guardar, segue sem ela.
+    }
 }
 
 function guardarCopiaIlegivel(texto) {

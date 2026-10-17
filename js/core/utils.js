@@ -23,9 +23,13 @@ export function agoraISO() {
 }
 
 export function hojeISO() {
-    // toISOString usaria UTC: à noite, no Brasil, já seria o dia seguinte.
-    const agora = new Date();
-    return montarDataISO(agora.getFullYear(), agora.getMonth() + 1, agora.getDate());
+    return paraDataLocalISO(new Date());
+}
+
+// Data "AAAA-MM-DD" no fuso do aparelho. toISOString usaria UTC: à noite, no
+// Brasil, já seria o dia seguinte.
+export function paraDataLocalISO(data) {
+    return montarDataISO(data.getFullYear(), data.getMonth() + 1, data.getDate());
 }
 
 export function montarDataISO(ano, mes, dia) {

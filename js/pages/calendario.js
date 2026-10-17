@@ -2,13 +2,14 @@
 
 import { hojeISO } from '../core/utils.js';
 import { listarEventosCalendario } from '../domain/ciclos.js';
-import { iniciarNavegacao, montarUrl } from '../ui/nav.js';
+import { montarUrl } from '../ui/nav.js';
 import { mostrarErroPagina } from '../ui/componentes.js';
 import { iniciarCalendario } from '../ui/calendario.js';
+import { iniciarPagina } from './comum.js';
 
 const porId = (id) => document.getElementById(id);
 
-iniciarNavegacao();
+iniciarPagina();
 try {
     iniciarCalendario({
         grade: porId('calendario'),

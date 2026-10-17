@@ -6,14 +6,15 @@ import { formatarGramas, formatarInteiro } from '../core/format.js';
 import { obterSituacao } from '../domain/tanques.js';
 import { iniciarCiclo, registrarDespesca, verificarInicioCiclo } from '../domain/ciclos.js';
 import { calcularIndicadores } from '../domain/indicadores.js';
-import { iniciarNavegacao, irPara, lerParametro, montarUrl } from '../ui/nav.js';
+import { irPara, lerParametro, montarUrl } from '../ui/nav.js';
 import { iniciarFormulario, mostrarErroPagina, preencherCampos } from '../ui/componentes.js';
+import { iniciarPagina } from './comum.js';
 
 const tanqueId = lerParametro('tanqueId');
 const acao = lerParametro('acao') === 'despesca' ? 'despesca' : 'iniciar';
 const porId = (id) => document.getElementById(id);
 
-iniciarNavegacao();
+iniciarPagina();
 try {
     iniciar();
 } catch (erro) {

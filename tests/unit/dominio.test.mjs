@@ -400,6 +400,42 @@ describe('domain/indicadores (seção 9.4) com valores calculados à mão', () =
     });
 });
 
+describe('domain/indicadores: série diária e período (seção 9.4)', () => {
+    const r = (data, criadoEm, campos) => ({ data, criadoEm, pesoMedioG: null, racaoKg: null, mortalidade: null, natalidade: null, quantidadeContada: null, ...campos });
+    const cicloA = { dataInicio: '2026-01-01', quantidadeInicial: 100, pesoMedioInicialG: 10, dataDespesca: null };
+    const registrosA = [r('2026-01-03', '1', { racaoKg: 0.5, mortalidade: 2 }), r('2026-01-05', '2', { pesoMedioG: 20, racaoKg: 0.6 })];
+    const perto = (valor, esperado) => assert.ok(Math.abs(valor - esperado) < 1e-9, `${valor} != ${esperado}`);
+    it('repete o último valor entre registros e deixa null antes do povoamento', () => {
+        const serie = ind.calcularSerieDiaria(cicloA, registrosA, '2025-12-31', '2026-01-06');
+        assert.equal(serie[0], null);
+        assert.deepEqual(serie.slice(1).map((dia) => dia.quantidade), [100, 100, 98, 98, 98, 98]);
+        assert.deepEqual(serie.slice(1).map((dia) => dia.racaoDiaKg), [0, 0, 0.5, 0, 0.6, 0]);
+        perto(serie[5].biomassaKg, 1.96);
+        perto(serie[5].fca, 1.1 / 0.96);
+        assert.equal(serie[3].fca, null, 'sem ganho de biomassa, sem FCA');
+        perto(serie[6].taxaMortalidade, 2);
+    });
+    it('resume o período; tanque povoado no meio parte da biomassa do povoamento', () => {
+        const cicloB = { dataInicio: '2026-01-04', quantidadeInicial: 50, pesoMedioInicialG: 4, dataDespesca: null };
+        const resumo = ind.calcularResumoPeriodo([
+            { tanque: { id: 'a' }, ciclo: cicloA, registros: registrosA },
+            { tanque: { id: 'b' }, ciclo: cicloB, registros: [] },
+        ], { dataInicio: '2026-01-02', dataFim: '2026-01-06' });
+        assert.equal(resumo.datas.length, 5);
+        perto(resumo.biomassa.atual, 2.16);
+        perto(resumo.biomassa.variacao, 0.96);
+        perto(resumo.totais[2].biomassaKg, 1.18);
+        assert.equal(resumo.peixes.perdas, 2);
+        perto(resumo.fca.periodo, 1.1 / 0.96);
+        perto(resumo.racao.total, 1.1);
+        perto(resumo.racao.mediaPorDia, 1.1 / 4);
+        perto(resumo.mortalidade.taxa, (2 / 150) * 100);
+        const vazio = ind.calcularResumoPeriodo([], { dataInicio: '2026-01-01', dataFim: '2026-01-02' });
+        assert.equal(vazio.fca.geral, null);
+        assert.equal(vazio.mortalidade.taxa, null);
+    });
+});
+
 describe('domain/alertas (seção 9.5)', () => {
     // Carga máxima de 20 kg: 1.000 peixes de 10 g (10 kg) ocupam 50%.
     const tanque = { id: 't', nome: 'T', volumeM3: 100, densidadeMaximaKgM3: 0.2, limitesAlerta: null };
@@ -454,15 +490,20 @@ describe('domain/alertas (seção 9.5)', () => {
 describe('domain/configuracoes', () => {
     it('limites padrão: obrigatórios, positivos e dentro do máximo', () => {
         assert.deepEqual(config.obterLimitesPadrao(), alertas.LIMITES_PADRAO);
-        const valido = { ...alertas.LIMITES_PADRAO, capacidadePct: 80 };
+        const valido = { ...alertas.LIMITES_PADRAO, capacidadePct: 80, metaFca: 1.5 };
         recusa(() => config.salvarLimitesPadrao({ ...valido, capacidadePct: null }), 'capacidadePct', /Informe/);
         recusa(() => config.salvarLimitesPadrao({ ...valido, racaoDiariaPct: 101 }), 'racaoDiariaPct', /máximo/);
         recusa(() => config.salvarLimitesPadrao({ ...valido, diasSemRegistro: 2.5 }), 'diasSemRegistro', /inteiro/);
         recusa(() => config.salvarLimitesPadrao({ ...valido, pesoEsperadoPct: 0 }), 'pesoEsperadoPct');
+        recusa(() => config.salvarLimitesPadrao({ ...valido, metaFca: null }), 'metaFca', /Informe/);
         config.salvarLimitesPadrao(valido);
         assert.equal(config.obterLimitesPadrao().capacidadePct, 80);
+        assert.equal(config.obterMetaFca(), 1.5);
+        assert.ok(!('metaFca' in storage.lerDados().config.limitesAlerta), 'a meta fica em config.metaFca');
+        assert.equal(config.obterMetaFca({ limitesAlerta: { metaFca: 1.3 } }), 1.3, 'o tanque pode ter a sua');
         config.restaurarLimitesPadrao();
         assert.equal(config.obterLimitesPadrao().capacidadePct, 90);
+        assert.equal(config.obterMetaFca(), 1.6);
     });
     it('limites do tanque guardam só o que sobrescreve', () => {
         const tanque = tanqueBase();
