@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>Fish Track: peixe com linha de tendência</title>
+  <rect width="64" height="64" rx="16" fill="#5fd0b4"/>
+  <path d="M10 32c7-11 21-14 32-7l11-7v28l-11-7c-11 7-25 4-32-7Z" fill="none" stroke="#0c3c37" stroke-width="3.5" stroke-linejoin="round"/>
+  <circle cx="18" cy="30" r="2.2" fill="#0c3c37"/>
+  <path d="M20 39l6-5 5 3 8-8" fill="none" stroke="#0c3c37" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

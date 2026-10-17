@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>Fish Track: viveiro com peixe saltando em curva de crescimento</title>
+  <circle cx="32" cy="32" r="30" fill="#0c3c37"/>
+  <path d="M12 47q4.5-3 9 0t9 0 9 0 9 0 9 0" fill="none" stroke="#5fd0b4" stroke-width="2.5" stroke-linecap="round" opacity="0.55"/>
+  <path d="M16 53q4-2.5 8 0t8 0 8 0 8 0" fill="none" stroke="#5fd0b4" stroke-width="2.5" stroke-linecap="round" opacity="0.3"/>
+  <path d="M14 42Q22 25 35 25" fill="none" stroke="#5fd0b4" stroke-width="3" stroke-linecap="round" stroke-dasharray="0.1 6.5"/>
+  <path d="M34 26c3-5.5 10-7.5 15-4.5l4.5-4.5 1 11-5.5-1.5c-3.5 4.5-10.5 5-15 -0.5Z" fill="#5fd0b4"/>
+  <circle cx="40" cy="24.5" r="1.5" fill="#0c3c37"/>
+</svg>
