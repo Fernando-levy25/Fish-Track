@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fish Track - Teste de ponta a ponta</title>
+    <style>
+        body { margin: 0; font-family: system-ui, sans-serif; background: #f3f2ec; color: #1b2421; }
+        .painel { padding: 16px 24px; }
+        .painel h1 { margin: 0 0 8px; font-size: 1.25rem; }
+        .painel p { margin: 0 0 12px; max-width: 70ch; }
+        button { min-height: 44px; padding: 0 16px; border: 0; border-radius: 6px; background: #0e5a52; color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
+        #resumo { font-weight: 600; }
+        #falhas { margin: 8px 0 0; padding-left: 20px; color: #a8231b; }
+        iframe { display: block; width: 1280px; height: 900px; border: 1px solid #e3e1d8; background: #fff; }
+    </style>
+</head>
+<body>
+    <div class="painel">
+        <h1>Teste de ponta a ponta</h1>
+        <p>Usa o Fish Track de verdade, como o produtor usaria, e confere cada passo. Os dados atuais deste navegador são guardados antes e devolvidos ao final.</p>
+        <button id="iniciar" type="button">Iniciar teste</button>
+        <p id="resumo" role="status"></p>
+        <ol id="falhas"></ol>
+    </div>
+    <iframe id="app" title="Fish Track em teste"></iframe>
+    <script type="module" src="e2e.js"></script>
+</body>
+</html>

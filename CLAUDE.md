@@ -18,7 +18,7 @@ Se o código e o documento divergirem, avise antes de seguir um dos dois. Quando
 
 ## Como rodar
 
-Use um servidor local (ex.: Live Server do VS Code). ES Modules e service worker não funcionam abrindo o arquivo via `file://`. Não há build nem testes automatizados. Para ver o app com dados, use "Carregar dados de exemplo" em Configurações.
+Use um servidor local (ex.: Live Server do VS Code). ES Modules e service worker não funcionam abrindo o arquivo via `file://`. Não há build. Testes: `node --test` (regras e cálculos, sem dependências) e `tests/e2e/` aberto pelo servidor local (usa o app de verdade e devolve os dados do navegador ao final). Rode os dois antes de cada commit e atualize-os junto com o comportamento. Para ver o app com dados, use "Carregar dados de exemplo" em Configurações.
 
 O service worker (`sw.js`) busca na rede primeiro, então alterações aparecem ao recarregar. Ao criar, renomear ou remover arquivos do app, atualize a lista `ARQUIVOS` em `sw.js` e troque `VERSAO_CACHE`.
 
