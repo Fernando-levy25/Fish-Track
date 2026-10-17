@@ -275,15 +275,16 @@ Os valores são sempre armazenados nestas unidades e convertidos apenas na exibi
 
 ### 8.3 Armazenamento
 
-Uma única chave no `localStorage`:
+Uma única chave no `localStorage`. Ela continua se chamando `fishtrack:v1` na versão 2 do formato, para não perder os dados existentes; a versão do formato fica no campo `versao`.
 
 ```js
 // chave: "fishtrack:v1"
 {
-  versao: 1,
+  versao: 2,
   tanques: [],
   ciclos: [],
   registros: [],
+  lembretes: [],
   config: {
     limitesAlerta: {             // valores padrão da seção 9.5
       mortalidadeRegistroPct: 1,
@@ -292,7 +293,9 @@ Uma única chave no `localStorage`:
       capacidadePct: 90,
       pesoEsperadoPct: 85,
       diasSemRegistro: 7
-    }
+    },
+    metaFca: 1.6,                // meta de conversão alimentar
+    ultimoBackupEm: null         // data e hora do último backup (ISO)
   }
 }
 ```
@@ -300,7 +303,18 @@ Uma única chave no `localStorage`:
 O `limitesAlerta` de cada tanque usa as mesmas chaves e pode conter só as que forem sobrescritas.
 
 - IDs gerados com `crypto.randomUUID()`.
-- O campo `versao` permite migrar os dados quando o formato mudar.
+- O campo `versao` permite migrar os dados quando o formato mudar (seção 8.4).
+
+### 8.4 Migração entre versões
+
+`migrarDados` (em `core/storage.js`) converte os dados uma versão por vez. Ela roda na leitura, que grava o resultado para a conversão acontecer uma vez só, e na restauração de backup. Backups de versão maior que a suportada são recusados com mensagem clara.
+
+**Da versão 1 para a 2:**
+
+1. Cria `lembretes: []`.
+2. Em cada tanque, remove `capacidade` (número de peixes) e cria `densidadeMaximaKgM3: null`. O valor antigo fica em `capacidadePeixesLegado`, só como referência: não há conversão possível de peixes para kg/m³, então o produtor informa o novo valor.
+3. Cria `config.metaFca = 1.6` e `config.ultimoBackupEm = null`.
+4. Define `versao = 2`.
 
 ---
 
@@ -388,7 +402,7 @@ No calendário geral, tanques arquivados ficam de fora. A despesca prevista só 
 ### 9.7 Exportação e backup
 
 - **CSV:** um arquivo por tanque ou geral, com uma linha por registro e colunas para tanque, espécie, ciclo, data e todos os campos. Separador `;` e decimal com vírgula, para abrir corretamente no Excel em português. O arquivo começa com BOM UTF-8 para manter os acentos, e textos que começam com `=`, `+`, `-` ou `@` recebem um apóstrofo, para o Excel não tratá-los como fórmula.
-- **Backup JSON:** exporta o objeto completo do `localStorage`. A restauração valida a `versao` e pede confirmação antes de substituir os dados.
+- **Backup JSON:** exporta o objeto completo do `localStorage` e registra a data em `config.ultimoBackupEm`. A restauração valida a `versao`, migra backups antigos (seção 8.4) e pede confirmação antes de substituir os dados.
 
 ---
 

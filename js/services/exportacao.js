@@ -2,7 +2,7 @@
 // para disparar o download (seção 10).
 
 import { lerDados, salvarDados, validarEstrutura } from '../core/storage.js';
-import { compararTexto, criarSlug, hojeISO } from '../core/utils.js';
+import { agoraISO, compararTexto, criarSlug, hojeISO } from '../core/utils.js';
 import { formatarData } from '../core/format.js';
 import { ordenarRegistros } from '../domain/indicadores.js';
 import { falharRegra } from '../domain/validacao.js';
@@ -62,10 +62,19 @@ export function exportarCsv({ tanqueId = null } = {}) {
     return { quantidade, arquivo };
 }
 
-export function exportarBackup() {
+// Marca a data do backup, que o menu usa para lembrar o produtor de fazer
+// outro (seção 3.1), e devolve o conteúdo do arquivo.
+export function prepararBackup() {
     const dados = lerDados();
+    dados.config.ultimoBackupEm = agoraISO();
+    salvarDados(dados);
+    return { conteudo: JSON.stringify(dados, null, 2), dados };
+}
+
+export function exportarBackup() {
+    const { conteudo, dados } = prepararBackup();
     const arquivo = `fish-track-backup-${hojeISO()}.json`;
-    baixarArquivo(arquivo, JSON.stringify(dados, null, 2), 'application/json');
+    baixarArquivo(arquivo, conteudo, 'application/json');
     return { arquivo, dados };
 }
 

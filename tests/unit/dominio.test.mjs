@@ -131,6 +131,25 @@ describe('core/storage', () => {
         assert.deepEqual(storage.lerDados().tanques, []);
         assert.equal(localStorage.getItem('fishtrack:v1:ilegivel'), '{quebrado');
     });
+    it('migra dados da versão 1 para a 2 ao ler, e grava o resultado (seção 8.4)', () => {
+        const v1 = {
+            versao: 1,
+            tanques: [{ id: 't1', nome: 'A', capacidade: 3000, status: 'vazio' }],
+            ciclos: [],
+            registros: [],
+            config: { limitesAlerta: { capacidadePct: 95 } },
+        };
+        localStorage.setItem('fishtrack:v1', JSON.stringify(v1));
+        const dados = storage.lerDados();
+        assert.equal(dados.versao, 2);
+        assert.deepEqual(dados.lembretes, []);
+        assert.deepEqual(dados.config, { limitesAlerta: { capacidadePct: 95 }, metaFca: 1.6, ultimoBackupEm: null });
+        assert.ok(!('capacidade' in dados.tanques[0]));
+        assert.equal(dados.tanques[0].densidadeMaximaKgM3, null);
+        assert.equal(dados.tanques[0].capacidadePeixesLegado, 3000);
+        assert.equal(JSON.parse(localStorage.getItem('fishtrack:v1')).versao, 2, 'grava migrado');
+        assert.equal(v1.versao, 1, 'não altera o objeto original');
+    });
     it('valida a estrutura e recusa versão mais nova', () => {
         assert.throws(() => storage.validarEstrutura({ versao: 99, tanques: [], ciclos: [], registros: [] }), /versão 99/);
         assert.throws(() => storage.validarEstrutura({ versao: storage.VERSAO_DADOS, tanques: [] }), /ciclos/);

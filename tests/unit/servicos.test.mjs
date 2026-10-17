@@ -41,7 +41,22 @@ describe('services/exportacao (seção 9.7)', () => {
         exportacao.restaurarBackup(await exportacao.lerBackup(new Blob([texto])));
         assert.equal(tanques.listarTanques()[0].nome, 'X');
         await assert.rejects(exportacao.lerBackup(new Blob(['não é json'])), /JSON válido/);
+        const v1 = { versao: 1, tanques: [{ id: 'a', nome: 'Antigo', capacidade: 10 }], ciclos: [], registros: [], config: { limitesAlerta: {} } };
+        const migrados = await exportacao.lerBackup(new Blob([JSON.stringify(v1)]));
+        assert.equal(migrados.versao, 2, 'backup da versão 1 continua restaurável');
+        assert.equal(migrados.tanques[0].capacidadePeixesLegado, 10);
         await assert.rejects(exportacao.lerBackup(new Blob([JSON.stringify({ versao: 99, tanques: [], ciclos: [], registros: [] })])), /versão 99/);
+    });
+});
+
+describe('services/exportacao: data do último backup', () => {
+    it('o backup registra config.ultimoBackupEm e inclui lembretes', () => {
+        assert.equal(storage.lerDados().config.ultimoBackupEm, null);
+        const { conteudo } = exportacao.prepararBackup();
+        const dados = JSON.parse(conteudo);
+        assert.match(dados.config.ultimoBackupEm, /^\d{4}-\d{2}-\d{2}T/);
+        assert.deepEqual(dados.lembretes, []);
+        assert.equal(storage.lerDados().config.ultimoBackupEm, dados.config.ultimoBackupEm);
     });
 });
 
