@@ -4,10 +4,10 @@
 
 | | |
 |---|---|
-| **Versão do documento** | 1.0 |
-| **Fase** | MVP (planejamento) |
+| **Versão do documento** | 1.1 |
+| **Fase** | MVP (implementado, em validação) |
 | **Stack** | HTML, CSS e JavaScript puros, sem frameworks e sem backend |
-| **Atualizado em** | 16/10/2026 |
+| **Atualizado em** | 17/10/2026 |
 
 ## Sumário
 
@@ -143,14 +143,14 @@ Pequeno e médio produtor que:
 Visão geral de toda a produção.
 
 - Cartões de resumo: tanques ativos, total de peixes, biomassa total, ração acumulada, mortalidade média.
-- Lista de alertas ativos (os mais recentes, com link para a página de alertas).
-- Mini-cartões por tanque ativo: nome, espécie, peixes, biomassa, % de capacidade e indicador de status.
+- Lista de alertas ativos (os 5 mais graves e recentes, com link para a página de alertas).
+- Mini-cartões por tanque ativo: nome, espécie, peixes, biomassa, % de capacidade e indicador de status, que mostra a maior gravidade entre os alertas do tanque.
 - Botão de ação rápida: **Novo registro**.
 
 ### 7.2 Tanques (`tanques.html`)
 
 - Lista de todos os tanques com resumo (status, espécie, peixes, biomassa, último registro).
-- Filtro por status (ativo, vazio, manutenção, arquivado).
+- Filtro por status (ativo, vazio, manutenção, arquivado). Sem filtro, a lista mostra todos menos os arquivados.
 - Botão **Novo tanque**.
 
 ### 7.3 Detalhes do tanque (`tanque.html?id=...`)
@@ -158,10 +158,10 @@ Visão geral de toda a produção.
 Página própria de cada tanque, organizada em abas:
 
 - **Resumo:** indicadores do ciclo atual, gráficos (peso médio, biomassa e mortalidade ao longo do tempo), registros recentes e alertas do tanque.
-- **Histórico:** todos os registros do ciclo atual, com edição e exclusão. Permite consultar ciclos anteriores.
+- **Histórico:** todos os registros do ciclo atual, com edição e exclusão. Permite consultar ciclos anteriores, que ficam só para leitura (RN10).
 - **Calendário:** eventos do tanque (povoamento, registros, despesca prevista e realizada).
 
-Ações: editar tanque, iniciar ciclo, registrar despesca, novo registro, ajustar limites de alerta.
+Ações: editar tanque, iniciar ciclo, registrar despesca, novo registro, ajustar limites de alerta (num diálogo; campo vazio usa o limite padrão), arquivar e desarquivar (ou excluir, se o tanque nunca teve ciclo). Cada ação aparece só quando o status do tanque permite.
 
 ### 7.4 Formulário de tanque (`tanque-form.html`)
 
@@ -180,6 +180,8 @@ Formulário rápido, com poucos campos e otimizado para o celular:
 - Data (padrão: hoje);
 - Peso médio, consumo de ração, mortalidade, natalidade, quantidade contada (todos opcionais);
 - Observações.
+
+A edição usa o endereço `registro.html?id=...`, e o registro continua no mesmo tanque.
 
 ### 7.7 Alertas (`alertas.html`)
 
@@ -306,26 +308,26 @@ O `limitesAlerta` de cada tanque usa as mesmas chaves e pode conter só as que f
 
 ### 9.1 Tanques
 
-- **RN01.** Nome é obrigatório e único entre os tanques não arquivados.
+- **RN01.** Nome e espécie são obrigatórios. O nome é único entre os tanques não arquivados, sem diferenciar maiúsculas nem acentos.
 - **RN02.** Volume e capacidade devem ser números maiores que zero.
-- **RN03.** O status `ativo` é definido automaticamente quando há um ciclo ativo, e `vazio` quando não há. `manutencao` e `arquivado` são definidos pelo produtor.
-- **RN04.** Um tanque com histórico não é excluído, e sim **arquivado**. Só é possível excluir um tanque sem nenhum ciclo.
+- **RN03.** O status `ativo` é definido automaticamente quando há um ciclo ativo, e `vazio` quando não há. `manutencao` e `arquivado` são definidos pelo produtor. Um tanque com ciclo ativo não pode entrar em manutenção.
+- **RN04.** Um tanque com histórico não é excluído, e sim **arquivado**. Só é possível excluir um tanque sem nenhum ciclo, e arquivar um tanque sem ciclo ativo. Ao ser desarquivado, ele volta como `vazio`, desde que o nome não esteja em uso por outro tanque (RN01).
 
 ### 9.2 Ciclos
 
 - **RN05.** Cada tanque pode ter **no máximo um ciclo ativo**.
 - **RN06.** Só é possível iniciar ciclo em tanque `vazio`.
-- **RN07.** Quantidade inicial e peso médio inicial são obrigatórios e maiores que zero.
+- **RN07.** Quantidade inicial e peso médio inicial são obrigatórios e maiores que zero, e a quantidade é inteira. A data do povoamento não pode ser futura nem anterior à última despesca do tanque. O peso alvo, se informado, deve ser maior que o peso inicial, e a despesca prevista deve ser depois do povoamento.
 - **RN08.** Registrar a despesca encerra o ciclo, e o tanque volta a `vazio`.
-- **RN09.** A data de despesca não pode ser anterior à data de início nem ao último registro.
+- **RN09.** A data de despesca não pode ser anterior à data de início nem ao último registro, nem futura.
 
 ### 9.3 Registros
 
-- **RN10.** Todo registro pertence a um ciclo ativo. Não há registro em tanque vazio.
+- **RN10.** Todo registro pertence a um ciclo ativo. Não há registro em tanque vazio. Registros de ciclos encerrados ficam só para consulta: não podem ser alterados nem excluídos.
 - **RN11.** Apenas a **data** é obrigatória, mas pelo menos um campo de medição ou observação deve ser preenchido.
 - **RN12.** A data não pode ser futura nem anterior ao início do ciclo.
-- **RN13.** Valores numéricos não podem ser negativos.
-- **RN14.** A mortalidade de um registro não pode ser maior que a quantidade estimada de peixes naquela data.
+- **RN13.** Valores numéricos não podem ser negativos. Contagens são inteiras, e o peso médio, se informado, é maior que zero.
+- **RN14.** A mortalidade de um registro não pode ser maior que a quantidade estimada de peixes naquela data. A regra é conferida em todos os registros do ciclo a cada inclusão, alteração ou exclusão, porque um registro muda o estoque estimado dos que vêm depois dele.
 - **RN15.** Pode haver mais de um registro na mesma data. Os valores de ração, mortalidade e natalidade são somados.
 
 ### 9.4 Indicadores
@@ -334,7 +336,7 @@ Todos os indicadores são calculados a partir do ciclo e dos registros, ordenado
 
 | Indicador | Fórmula |
 |---|---|
-| **Quantidade de peixes** | Parte da última `quantidadeContada` (ou da `quantidadeInicial`) e aplica `− mortalidade + natalidade` dos registros posteriores. |
+| **Quantidade de peixes** | Parte da última `quantidadeContada` (ou da `quantidadeInicial`) e aplica `− mortalidade + natalidade` dos registros posteriores. A contagem é o estoque ao fim do registro em que foi informada. |
 | **Peso médio atual** | Último `pesoMedioG` informado. Se nenhum, usa `pesoMedioInicialG`. |
 | **Biomassa (kg)** | `quantidade × pesoMedio / 1000` |
 | **Ração acumulada (kg)** | Soma de `racaoKg` no ciclo. |
@@ -343,8 +345,8 @@ Todos os indicadores são calculados a partir do ciclo e dos registros, ordenado
 | **Taxa de mortalidade (%)** | `mortalidadeAcumulada / quantidadeInicial × 100` |
 | **Taxa de sobrevivência (%)** | `100 − taxaDeMortalidade` |
 | **Taxa de natalidade (%)** | `natalidadeAcumulada / quantidadeInicial × 100` |
-| **Taxa de crescimento (g/dia)** | `(pesoMedioAtual − pesoMedioAnterior) / dias entre as duas pesagens` |
-| **Crescimento no ciclo (g/dia)** | `(pesoMedioAtual − pesoMedioInicial) / dias desde o início` |
+| **Taxa de crescimento (g/dia)** | `(pesoMedioAtual − pesoMedioAnterior) / dias entre as duas pesagens`. A anterior é a última pesagem de outra data; o peso inicial conta como pesagem. |
+| **Crescimento no ciclo (g/dia)** | `(pesoMedioAtual − pesoMedioInicial) / dias do início até a última pesagem` |
 | **Densidade (kg/m³)** | `biomassa / volumeM3` |
 | **Capacidade utilizada (%)** | `quantidade / capacidade × 100` |
 | **Dias de cultivo** | Dias entre `dataInicio` e hoje (ou `dataDespesca`). |
@@ -368,6 +370,8 @@ Os alertas são calculados sempre que os dados mudam e não são armazenados. Ca
 
 \* O **peso esperado** é uma interpolação linear entre o peso inicial (na data de início) e o peso alvo (na data prevista de despesca). Esse alerta só é avaliado se o ciclo tiver peso alvo e data prevista.
 
+Os alertas só são avaliados para tanques com ciclo ativo. Os de registro (mortalidade no registro e ração) olham o último dia com registro, somando os registros da mesma data (RN15). O peso médio é comparado com o esperado na data da última pesagem; sem pesagem após o povoamento, esse alerta não é avaliado.
+
 > ⚠️ Os limites padrão são valores iniciais de referência e devem ser **validados com produtores** antes de serem considerados definitivos.
 
 ### 9.6 Calendário
@@ -379,9 +383,11 @@ Eventos exibidos:
 - despesca prevista;
 - despesca realizada.
 
+No calendário geral, tanques arquivados ficam de fora. A despesca prevista só aparece enquanto o ciclo está ativo.
+
 ### 9.7 Exportação e backup
 
-- **CSV:** um arquivo por tanque ou geral, com uma linha por registro e colunas para tanque, espécie, ciclo, data e todos os campos. Separador `;` e decimal com vírgula, para abrir corretamente no Excel em português.
+- **CSV:** um arquivo por tanque ou geral, com uma linha por registro e colunas para tanque, espécie, ciclo, data e todos os campos. Separador `;` e decimal com vírgula, para abrir corretamente no Excel em português. O arquivo começa com BOM UTF-8 para manter os acentos, e textos que começam com `=`, `+`, `-` ou `@` recebem um apóstrofo, para o Excel não tratá-los como fórmula.
 - **Backup JSON:** exporta o objeto completo do `localStorage`. A restauração valida a `versao` e pede confirmação antes de substituir os dados.
 
 ---
@@ -419,6 +425,7 @@ fish-track/
 │   │   ├── registros.js      # CRUD e regras de registro
 │   │   ├── indicadores.js    # Cálculos (funções puras)
 │   │   ├── alertas.js        # Avaliação de alertas (funções puras)
+│   │   ├── configuracoes.js  # Limites de alerta: padrão e por tanque
 │   │   └── validacao.js      # Validações compartilhadas
 │   ├── ui/
 │   │   ├── nav.js            # Navegação comum
@@ -474,6 +481,7 @@ fish-track/
 - Funções com verbo: `calcularBiomassa`, `listarTanques`, `salvarRegistro`.
 - **Indicadores e alertas são funções puras:** recebem dados e retornam valores, sem acessar o DOM nem o storage. Isso facilita testar.
 - **Todo acesso a dados passa por `storage.js`.**
+- Regras de negócio violadas lançam `ErroValidacao` (de `validacao.js`) com uma mensagem por campo, usando como chave o `name` do campo. A página mostra cada mensagem no seu campo.
 - Unidades no nome quando não forem óbvias: `pesoMedioG`, `racaoKg`, `volumeM3`.
 - Valores de formulário convertidos para número na entrada, e formatados apenas na exibição.
 - Inserir texto do usuário com `textContent`, nunca com `innerHTML`.
@@ -512,38 +520,38 @@ fish-track/
 ### Fase 0 — Preparação
 
 - [ ] Conversar com 3 a 5 piscicultores para validar indicadores, campos do registro e limites dos alertas.
-- [ ] Definir identidade visual básica (nome, cores, ícone).
-- [ ] Criar repositório e estrutura de pastas.
+- [ ] Definir identidade visual básica (nome, cores, ícone). Cores e ícone provisórios já aplicados.
+- [x] Criar repositório e estrutura de pastas.
 
 ### Fase 1 — Base
 
-- [ ] `storage.js`, `utils.js` e `format.js`.
-- [ ] Layout base, navegação e componentes visuais.
-- [ ] Dados de exemplo (`seed.js`).
+- [x] `storage.js`, `utils.js` e `format.js`.
+- [x] Layout base, navegação e componentes visuais.
+- [x] Dados de exemplo (`seed.js`).
 
 ### Fase 2 — Cadastros
 
-- [ ] Tanques: listar, criar, editar e arquivar.
-- [ ] Ciclos: iniciar e registrar despesca.
-- [ ] Registros: criar, editar e excluir.
+- [x] Tanques: listar, criar, editar e arquivar.
+- [x] Ciclos: iniciar e registrar despesca.
+- [x] Registros: criar, editar e excluir.
 
 ### Fase 3 — Inteligência dos dados
 
-- [ ] `indicadores.js` com todas as fórmulas da seção 9.4.
-- [ ] Página de detalhes do tanque (resumo e histórico).
-- [ ] Gráficos em SVG.
-- [ ] `alertas.js` e página de alertas.
+- [x] `indicadores.js` com todas as fórmulas da seção 9.4.
+- [x] Página de detalhes do tanque (resumo e histórico).
+- [x] Gráficos em SVG.
+- [x] `alertas.js` e página de alertas.
 
 ### Fase 4 — Visão geral
 
-- [ ] Dashboard.
-- [ ] Calendário (por tanque e geral).
+- [x] Dashboard.
+- [x] Calendário (por tanque e geral).
 
 ### Fase 5 — Dados e offline
 
-- [ ] Exportação CSV e backup/restauração JSON.
-- [ ] Página de configurações.
-- [ ] PWA: `manifest.json` e service worker.
+- [x] Exportação CSV e backup/restauração JSON.
+- [x] Página de configurações.
+- [x] PWA: `manifest.json` e service worker.
 
 ### Fase 6 — Validação
 
@@ -569,3 +577,4 @@ fish-track/
 | Incluir o peso dos peixes mortos no ganho de biomassa da FCA | Não incluir no MVP | Técnicos |
 | Campo de natalidade é relevante para a maioria dos produtores | Manter como opcional | Produtores |
 | Registrar parâmetros da água (oxigênio, pH, temperatura) | Fora do MVP | Produtores |
+| Corrigir ou cancelar um ciclo iniciado com dados errados | Não previsto no MVP: hoje só é possível registrar a despesca | Produtores |

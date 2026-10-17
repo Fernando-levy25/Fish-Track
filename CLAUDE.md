@@ -18,14 +18,17 @@ Se o código e o documento divergirem, avise antes de seguir um dos dois. Quando
 
 ## Como rodar
 
-Use um servidor local (ex.: Live Server do VS Code). ES Modules e service worker não funcionam abrindo o arquivo via `file://`. Não há build nem testes automatizados.
+Use um servidor local (ex.: Live Server do VS Code). ES Modules e service worker não funcionam abrindo o arquivo via `file://`. Não há build nem testes automatizados. Para ver o app com dados, use "Carregar dados de exemplo" em Configurações.
+
+O service worker (`sw.js`) busca na rede primeiro, então alterações aparecem ao recarregar. Ao criar, renomear ou remover arquivos do app, atualize a lista `ARQUIVOS` em `sw.js` e troque `VERSAO_CACHE`.
 
 ## Regras essenciais
 
 - Fluxo: Tanque → Ciclo (do povoamento à despesca) → Registro. Indicadores e alertas são sempre calculados, nunca digitados nem armazenados.
 - Unidades armazenadas: peso em g, ração e biomassa em kg, volume em m³, datas em `AAAA-MM-DD`. Converter só na exibição, em formato brasileiro (`1.234,5`). Unidade no nome quando não for óbvia (`pesoMedioG`, `racaoKg`, `volumeM3`).
 - Camadas: `core` não conhece DOM nem regras de negócio, `domain` não acessa o DOM, `ui` não lê nem grava dados, `pages` nunca acessa o `localStorage` direto. Todo acesso a dados passa por `js/core/storage.js`.
-- `indicadores.js` e `alertas.js` contêm apenas funções puras.
+- `indicadores.js` e `alertas.js` contêm apenas funções puras. Limites de alerta são gravados por `domain/configuracoes.js`.
+- Regra de negócio violada lança `ErroValidacao` com mensagens por campo (chave = `name` do campo); a página usa `iniciarFormulario` de `ui/componentes.js`, que mostra cada erro no seu campo.
 - Texto do usuário entra no DOM com `textContent`, nunca com `innerHTML`.
 - Identificadores em português e sem acentos, em `camelCase`, com verbo nas funções (`calcularBiomassa`). `const` por padrão, nunca `var`.
 - Comentários explicam o porquê. Fórmulas e validações citam a regra (`// RN14`).

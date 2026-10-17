@@ -107,16 +107,28 @@
     display: none;
 }
 
-/* Gerado pelo JS: um modificador por status do tanque.
-   "vazio" usa o estilo padrão do selo. */
-.selo--ativo {
+/* Gerado pelo JS: um modificador por status do tanque ("vazio" usa o estilo
+   padrão) e, no dashboard, pela maior gravidade entre os alertas do tanque. */
+.selo--ativo,
+.selo--sem-alerta {
     background: var(--cor-sucesso-suave);
     color: var(--cor-sucesso);
 }
 
-.selo--manutencao {
+.selo--manutencao,
+.selo--alerta-media {
     background: var(--cor-atencao-suave);
     color: var(--cor-atencao);
+}
+
+.selo--alerta-alta {
+    background: var(--cor-perigo-suave);
+    color: var(--cor-perigo);
+}
+
+.selo--alerta-baixa {
+    background: var(--cor-info-suave);
+    color: var(--cor-info);
 }
 
 .selo--arquivado {
@@ -265,15 +277,6 @@
     font-weight: 600;
 }
 
-.formulario__mensagem {
-    color: var(--cor-sucesso);
-    font-weight: 600;
-}
-
-.formulario__mensagem:empty {
-    display: none;
-}
-
 .formulario__acoes,
 .dialogo__acoes {
     display: flex;
@@ -315,6 +318,23 @@
     .dialogo__acoes > * {
         flex: none;
     }
+}
+
+/* ---------- Mensagem de status ---------- */
+
+/* Retorno de uma ação (salvar, exportar, restaurar). Fica num elemento com
+   role="status", que já existe vazio na página para o leitor de tela anunciar. */
+.mensagem {
+    color: var(--cor-sucesso);
+    font-weight: 600;
+}
+
+.mensagem:empty {
+    display: none;
+}
+
+.mensagem--erro {
+    color: var(--cor-perigo);
 }
 
 /* ---------- Cartões ---------- */
@@ -669,18 +689,20 @@
 
 .tabela th,
 .tabela td {
-    padding: var(--espaco-3) var(--espaco-4);
+    padding: var(--espaco-3);
     border-bottom: 1px solid var(--cor-borda);
     text-align: left;
     vertical-align: top;
 }
 
+/* Cabeçalhos podem quebrar ("Peso médio / (g)") para a tabela caber no
+   desktop sem rolagem; alinhados por baixo, as quebras não desalinham. */
 .tabela th {
     background: var(--cor-superficie-suave);
     color: var(--cor-texto-suave);
     font-size: var(--texto-2);
     font-weight: 600;
-    white-space: nowrap;
+    vertical-align: bottom;
 }
 
 .tabela td:last-child {
@@ -693,6 +715,12 @@
 
 .tabela tbody tr:hover {
     background: var(--cor-superficie-suave);
+}
+
+/* Gerado pelo JS: links de editar e excluir na última coluna. */
+.tabela__acoes {
+    display: flex;
+    gap: var(--espaco-4);
 }
 
 /* ---------- Diálogo ---------- */
@@ -711,10 +739,24 @@
     background: rgb(29 36 34 / 0.45);
 }
 
+.dialogo--formulario {
+    width: min(40rem, calc(100% - 2 * var(--espaco-4)));
+}
+
 .dialogo__conteudo {
     display: grid;
     gap: var(--espaco-5);
     padding: var(--espaco-5);
+}
+
+.dialogo__titulo {
+    font-size: var(--texto-5);
+}
+
+.dialogo__texto {
+    margin-top: calc(var(--espaco-3) * -1);
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-3);
 }
 
 /* ---------- Cabeçalho do tanque ---------- */
@@ -736,13 +778,20 @@
     color: var(--cor-texto-suave);
 }
 
-.cabecalho-tanque__ciclo {
+.cabecalho-tanque__ciclo,
+.cabecalho-tanque__observacoes {
     color: var(--cor-texto-suave);
     font-size: var(--texto-2);
 }
 
+.cabecalho-tanque__observacoes {
+    max-width: 60ch;
+    white-space: pre-line;
+}
+
 .cabecalho-tanque__especie:empty,
-.cabecalho-tanque__ciclo:empty {
+.cabecalho-tanque__ciclo:empty,
+.cabecalho-tanque__observacoes:empty {
     display: none;
 }
 

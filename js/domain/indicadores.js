@@ -1,0 +1,160 @@
+// Indicadores da seção 9.4. Funções puras: recebem tanque, ciclo e registros e
+// devolvem números, sem ler o storage nem tocar no DOM.
+
+import { diasEntre } from '../core/utils.js';
+
+function informado(valor) {
+    return valor !== null && valor !== undefined;
+}
+
+function valorOuZero(valor) {
+    return informado(valor) ? valor : 0;
+}
+
+function somar(registros, campo) {
+    return registros.reduce((total, registro) => total + valorOuZero(registro[campo]), 0);
+}
+
+export function ordenarRegistros(registros) {
+    // RN15 permite vários registros na mesma data; a ordem de criação desempata.
+    return [...registros].sort((a, b) => a.data.localeCompare(b.data) || a.criadoEm.localeCompare(b.criadoEm));
+}
+
+// Estoque antes e depois de cada registro, em ordem. A contagem é a quantidade
+// real ao fim daquele registro: substitui a estimativa, e a mortalidade e a
+// natalidade passam a valer só para os registros posteriores (seção 9.4).
+export function calcularEstoquePorRegistro(ciclo, registros) {
+    let quantidade = ciclo.quantidadeInicial;
+    return ordenarRegistros(registros).map((registro) => {
+        const quantidadeAntes = quantidade;
+        quantidade = informado(registro.quantidadeContada)
+            ? registro.quantidadeContada
+            : quantidadeAntes - valorOuZero(registro.mortalidade) + valorOuZero(registro.natalidade);
+        return { registro, quantidadeAntes, quantidadeDepois: quantidade };
+    });
+}
+
+// RN14: devolve o primeiro registro cuja mortalidade passa do estoque estimado.
+export function encontrarMortalidadeAcimaDoEstoque(ciclo, registros) {
+    return calcularEstoquePorRegistro(ciclo, registros)
+        .find(({ registro, quantidadeAntes }) => valorOuZero(registro.mortalidade) > quantidadeAntes) ?? null;
+}
+
+// Situação do ciclo ao fim de cada dia com registro, começando pelo povoamento.
+// Base dos gráficos e dos alertas que olham o dia (RN15: valores da mesma data
+// são somados).
+export function calcularLinhaDoTempo(ciclo, registros) {
+    const dias = [{
+        data: ciclo.dataInicio,
+        quantidadeInicioDia: ciclo.quantidadeInicial,
+        quantidade: ciclo.quantidadeInicial,
+        pesoMedioG: ciclo.pesoMedioInicialG,
+        pesou: false,
+        racaoDiaKg: 0,
+        racaoAcumuladaKg: 0,
+        mortalidadeDia: 0,
+        mortalidadeAcumulada: 0,
+    }];
+    for (const { registro, quantidadeAntes, quantidadeDepois } of calcularEstoquePorRegistro(ciclo, registros)) {
+        let dia = dias.at(-1);
+        if (registro.data !== dia.data) {
+            dia = { ...dia, data: registro.data, quantidadeInicioDia: quantidadeAntes, pesou: false, racaoDiaKg: 0, mortalidadeDia: 0 };
+            dias.push(dia);
+        }
+        dia.quantidade = quantidadeDepois;
+        if (informado(registro.pesoMedioG)) {
+            dia.pesoMedioG = registro.pesoMedioG;
+            dia.pesou = true;
+        }
+        dia.racaoDiaKg += valorOuZero(registro.racaoKg);
+        dia.racaoAcumuladaKg += valorOuZero(registro.racaoKg);
+        dia.mortalidadeDia += valorOuZero(registro.mortalidade);
+        dia.mortalidadeAcumulada += valorOuZero(registro.mortalidade);
+    }
+    return dias.map((dia) => ({ ...dia, biomassaKg: (dia.quantidade * dia.pesoMedioG) / 1000 }));
+}
+
+export function calcularIndicadores({ tanque, ciclo, registros, hoje }) {
+    const ordenados = ordenarRegistros(registros);
+    const estoque = calcularEstoquePorRegistro(ciclo, ordenados);
+    const quantidade = estoque.length > 0 ? estoque.at(-1).quantidadeDepois : ciclo.quantidadeInicial;
+
+    const pesagens = [
+        { data: ciclo.dataInicio, pesoMedioG: ciclo.pesoMedioInicialG },
+        ...ordenados.filter((registro) => informado(registro.pesoMedioG)),
+    ];
+    const pesagemAtual = pesagens.at(-1);
+    const pesoMedioG = pesagemAtual.pesoMedioG;
+
+    const biomassaKg = (quantidade * pesoMedioG) / 1000;
+    const biomassaInicialKg = (ciclo.quantidadeInicial * ciclo.pesoMedioInicialG) / 1000;
+    const ganhoBiomassaKg = biomassaKg - biomassaInicialKg;
+    const racaoAcumuladaKg = somar(ordenados, 'racaoKg');
+    const mortalidadeAcumulada = somar(ordenados, 'mortalidade');
+    const natalidadeAcumulada = somar(ordenados, 'natalidade');
+    const taxaMortalidade = (mortalidadeAcumulada / ciclo.quantidadeInicial) * 100;
+
+    return {
+        quantidade,
+        pesoMedioG,
+        dataPesoAtual: pesagemAtual.data,
+        biomassaKg,
+        racaoAcumuladaKg,
+        ganhoBiomassaKg,
+        // A FCA só faz sentido com ganho de biomassa; sem ele, a tela mostra "—".
+        fca: ganhoBiomassaKg > 0 ? racaoAcumuladaKg / ganhoBiomassaKg : null,
+        mortalidadeAcumulada,
+        taxaMortalidade,
+        taxaSobrevivencia: 100 - taxaMortalidade,
+        natalidadeAcumulada,
+        taxaNatalidade: (natalidadeAcumulada / ciclo.quantidadeInicial) * 100,
+        taxaCrescimentoGDia: calcularTaxaCrescimento(pesagens),
+        crescimentoCicloGDia: calcularCrescimentoCiclo(ciclo, pesagemAtual),
+        densidadeKgM3: biomassaKg / tanque.volumeM3,
+        capacidadeUtilizada: (quantidade / tanque.capacidade) * 100,
+        diasCultivo: diasEntre(ciclo.dataInicio, ciclo.dataDespesca ?? hoje),
+        ultimoRegistro: ordenados.at(-1) ?? null,
+    };
+}
+
+function calcularTaxaCrescimento(pesagens) {
+    const atual = pesagens.at(-1);
+    // A pesagem anterior é a última de outra data; duas no mesmo dia não medem crescimento.
+    const anterior = pesagens.findLast((pesagem) => pesagem.data < atual.data);
+    return anterior ? (atual.pesoMedioG - anterior.pesoMedioG) / diasEntre(anterior.data, atual.data) : null;
+}
+
+function calcularCrescimentoCiclo(ciclo, pesagemAtual) {
+    // Conta os dias até a última pesagem, e não até hoje: o peso atual vale para
+    // aquela data, e dividir por mais dias subestimaria o crescimento.
+    const dias = diasEntre(ciclo.dataInicio, pesagemAtual.data);
+    return dias > 0 ? (pesagemAtual.pesoMedioG - ciclo.pesoMedioInicialG) / dias : null;
+}
+
+export function calcularSeries(ciclo, registros) {
+    const dias = calcularLinhaDoTempo(ciclo, registros);
+    return {
+        pesoMedio: dias
+            .filter((dia, indice) => indice === 0 || dia.pesou)
+            .map((dia) => ({ data: dia.data, valor: dia.pesoMedioG })),
+        biomassa: dias.map((dia) => ({ data: dia.data, valor: dia.biomassaKg })),
+        mortalidade: dias.map((dia) => ({ data: dia.data, valor: (dia.mortalidadeAcumulada / ciclo.quantidadeInicial) * 100 })),
+    };
+}
+
+// Totais do dashboard (seção 9.4), a partir de [{ ciclo, indicadores }] dos tanques com ciclo ativo.
+export function calcularResumoProducao(itens) {
+    const somarItens = (obterValor) => itens.reduce((total, item) => total + obterValor(item), 0);
+    const quantidadeInicialTotal = somarItens((item) => item.ciclo.quantidadeInicial);
+    return {
+        tanquesAtivos: itens.length,
+        totalPeixes: somarItens((item) => item.indicadores.quantidade),
+        biomassaTotalKg: somarItens((item) => item.indicadores.biomassaKg),
+        racaoAcumuladaKg: somarItens((item) => item.indicadores.racaoAcumuladaKg),
+        // A média das taxas ponderada pela quantidade inicial de cada ciclo é a
+        // soma das mortalidades dividida pela soma das quantidades iniciais.
+        mortalidadeMedia: quantidadeInicialTotal > 0
+            ? (somarItens((item) => item.indicadores.mortalidadeAcumulada) / quantidadeInicialTotal) * 100
+            : null,
+    };
+}

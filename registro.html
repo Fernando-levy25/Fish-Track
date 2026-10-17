@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fish Track - Novo registro</title>
+    <meta name="theme-color" content="#0e5a52">
+    <link rel="icon" href="assets/icons/icone.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="assets/icons/icone-192.png">
+    <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/layout.css">
     <link rel="stylesheet" href="css/components.css">
@@ -19,7 +23,7 @@
             <a class="menu__link" href="tanques.html">Tanques</a>
             <a class="menu__link menu__link--destaque" href="registro.html" aria-current="page">+ Registro</a>
             <a class="menu__link" href="alertas.html">Alertas</a>
-            <details class="menu__mais">
+            <details class="menu__mais" id="menu-mais">
                 <summary class="menu__link">Mais</summary>
                 <div class="menu__submenu">
                     <a class="menu__link" href="calendario.html">Calendário</a>
@@ -33,6 +37,11 @@
         <p class="aviso-vazio" id="aviso-sem-ciclo-ativo" hidden>
             Nenhum tanque com ciclo ativo. Inicie um ciclo em um tanque para fazer registros.
             <a class="link" href="tanques.html">Ir para os tanques</a>
+        </p>
+
+        <p class="aviso-vazio" id="aviso-registro-indisponivel" hidden>
+            <span id="texto-registro-indisponivel"></span>
+            <a class="link" id="link-voltar-registro" href="index.html">Voltar</a>
         </p>
 
         <section class="secao" id="secao-formulario-registro" aria-labelledby="titulo-pagina-registro">

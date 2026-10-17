@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fish Track - Tanques</title>
+    <meta name="theme-color" content="#0e5a52">
+    <link rel="icon" href="assets/icons/icone.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="assets/icons/icone-192.png">
+    <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/layout.css">
     <link rel="stylesheet" href="css/components.css">
@@ -19,7 +23,7 @@
             <a class="menu__link" href="tanques.html" aria-current="page">Tanques</a>
             <a class="menu__link menu__link--destaque" href="registro.html">+ Registro</a>
             <a class="menu__link" href="alertas.html">Alertas</a>
-            <details class="menu__mais">
+            <details class="menu__mais" id="menu-mais">
                 <summary class="menu__link">Mais</summary>
                 <div class="menu__submenu">
                     <a class="menu__link" href="calendario.html">Calendário</a>
@@ -56,36 +60,6 @@
         </section>
     </main>
 
-    <template id="template-cartao-tanque">
-        <article class="cartao-tanque">
-            <div class="cartao-tanque__cabecalho">
-                <h2 class="cartao-tanque__nome" data-campo="nome"></h2>
-                <span class="selo" data-campo="status"></span>
-            </div>
-
-            <p class="cartao-tanque__especie" data-campo="especie"></p>
-
-            <dl class="cartao-tanque__metricas">
-                <div class="cartao-tanque__metrica">
-                    <dt>Peixes</dt>
-                    <dd data-campo="quantidade"></dd>
-                </div>
-                <div class="cartao-tanque__metrica">
-                    <dt>Biomassa</dt>
-                    <dd data-campo="biomassa"></dd>
-                </div>
-                <div class="cartao-tanque__metrica">
-                    <dt>Último registro</dt>
-                    <dd data-campo="ultimoRegistro"></dd>
-                </div>
-            </dl>
-
-            <div class="cartao-tanque__acoes">
-                <a class="link" data-campo="linkDetalhes" href="tanque.html">Ver detalhes</a>
-                <a class="link" data-campo="linkEditar" href="tanque-form.html">Editar</a>
-            </div>
-        </article>
-    </template>
 
     <script type="module" src="js/pages/tanques.js"></script>
 </body>

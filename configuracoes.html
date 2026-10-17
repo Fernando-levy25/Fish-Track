@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fish Track - Configurações</title>
+    <meta name="theme-color" content="#0e5a52">
+    <link rel="icon" href="assets/icons/icone.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="assets/icons/icone-192.png">
+    <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/layout.css">
     <link rel="stylesheet" href="css/components.css">
@@ -19,7 +23,7 @@
             <a class="menu__link" href="tanques.html">Tanques</a>
             <a class="menu__link menu__link--destaque" href="registro.html">+ Registro</a>
             <a class="menu__link" href="alertas.html">Alertas</a>
-            <details class="menu__mais">
+            <details class="menu__mais" id="menu-mais">
                 <summary class="menu__link">Mais</summary>
                 <div class="menu__submenu">
                     <a class="menu__link" href="calendario.html">Calendário</a>
@@ -80,7 +84,7 @@
                 </div>
 
                 <p class="formulario__erro-geral" id="erro-geral-limites" role="alert" hidden></p>
-                <p class="formulario__mensagem" id="mensagem-limites" role="status"></p>
+                <p class="mensagem" id="mensagem-limites" role="status"></p>
 
                 <div class="formulario__acoes">
                     <button class="botao botao--secundario" id="botao-restaurar-limites" type="button">Restaurar padrões</button>
@@ -103,6 +107,8 @@
             <div class="secao__acoes">
                 <button class="botao botao--primario" id="botao-exportar-csv" type="button">Exportar CSV</button>
             </div>
+
+            <p class="mensagem" id="mensagem-exportar" role="status"></p>
         </section>
 
         <section class="secao" aria-labelledby="titulo-backup">
@@ -122,6 +128,8 @@
             <div class="secao__acoes">
                 <button class="botao botao--secundario" id="botao-restaurar-backup" type="button">Restaurar backup</button>
             </div>
+
+            <p class="mensagem" id="mensagem-backup" role="status"></p>
         </section>
 
         <section class="secao" aria-labelledby="titulo-dados">
@@ -132,6 +140,8 @@
                 <button class="botao botao--secundario" id="botao-carregar-exemplo" type="button">Carregar dados de exemplo</button>
                 <button class="botao botao--perigo" id="botao-apagar-dados" type="button">Apagar todos os dados</button>
             </div>
+
+            <p class="mensagem" id="mensagem-dados" role="status"></p>
         </section>
     </main>
 

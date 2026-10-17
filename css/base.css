@@ -30,6 +30,7 @@
     --cor-perigo-suave: #fbeae7;
     --cor-perigo-borda: #ebc0ba;
     --cor-info: #52617a;
+    --cor-info-suave: #e9edf2;
     --cor-neutra-suave: #ecebe5;
 
     --cor-foco: var(--cor-primaria);
@@ -151,4 +152,15 @@ table {
 ::selection {
     background: var(--cor-primaria-suave);
     color: var(--cor-texto);
+}
+
+/* Texto lido por leitores de tela e invisível na tela, para informações
+   que a interface só mostra por cor (como a gravidade de um alerta). */
+.visualmente-oculto {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
 }

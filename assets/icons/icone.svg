@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+    <!-- Fundo inteiro e peixe dentro do círculo central de 80%: serve também
+         como ícone "maskable", que o Android recorta em vários formatos. -->
+    <rect width="512" height="512" fill="#0e5a52"/>
+    <ellipse cx="228" cy="256" rx="112" ry="72" fill="#f5f4ef"/>
+    <path d="M318 256 L394 192 L394 320 Z" fill="#f5f4ef"/>
+    <circle cx="178" cy="240" r="13" fill="#0e5a52"/>
+</svg>

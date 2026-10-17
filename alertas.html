@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fish Track - Alertas</title>
+    <meta name="theme-color" content="#0e5a52">
+    <link rel="icon" href="assets/icons/icone.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="assets/icons/icone-192.png">
+    <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/layout.css">
     <link rel="stylesheet" href="css/components.css">
@@ -19,7 +23,7 @@
             <a class="menu__link" href="tanques.html">Tanques</a>
             <a class="menu__link menu__link--destaque" href="registro.html">+ Registro</a>
             <a class="menu__link" href="alertas.html" aria-current="page">Alertas</a>
-            <details class="menu__mais">
+            <details class="menu__mais" id="menu-mais">
                 <summary class="menu__link">Mais</summary>
                 <div class="menu__submenu">
                     <a class="menu__link" href="calendario.html">Calendário</a>
@@ -42,15 +46,6 @@
         </section>
     </main>
 
-    <template id="template-grupo-alertas">
-        <section class="grupo-alertas">
-            <h2 class="grupo-alertas__titulo">
-                <a class="link" data-campo="linkTanque" href="tanque.html"></a>
-            </h2>
-            <p class="grupo-alertas__especie" data-campo="especie"></p>
-            <ul class="lista-alertas" data-campo="listaAlertas"></ul>
-        </section>
-    </template>
 
     <script type="module" src="js/pages/alertas.js"></script>
 </body>
