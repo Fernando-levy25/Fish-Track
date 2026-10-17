@@ -1,0 +1,10 @@
+{
+    "name": "Fish Track",
+    "short_name": "Fish Track",
+    "description": "Registro e acompanhamento de cultivos de peixes.",
+    "lang": "pt-BR",
+    "start_url": "./index.html",
+    "scope": "./",
+    "display": "standalone",
+    "icons": []
+}

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fish Track - Calendário</title>
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+    <header class="cabecalho">
+        <a class="cabecalho__marca" href="index.html">
+            <span class="cabecalho__logo" aria-hidden="true">🐟</span>
+            <span class="cabecalho__titulo">Fish Track</span>
+        </a>
+        <nav class="menu" aria-label="Navegação principal">
+            <a class="menu__link" href="index.html">Dashboard</a>
+            <a class="menu__link" href="tanques.html">Tanques</a>
+            <a class="menu__link menu__link--destaque" href="registro.html">+ Registro</a>
+            <a class="menu__link" href="alertas.html">Alertas</a>
+            <details class="menu__mais">
+                <summary class="menu__link">Mais</summary>
+                <a class="menu__link" href="calendario.html" aria-current="page">Calendário</a>
+                <a class="menu__link" href="configuracoes.html">Configurações</a>
+            </details>
+        </nav>
+    </header>
+
+    <main class="pagina">
+        <section class="secao" aria-labelledby="titulo-calendario">
+            <div class="secao__cabecalho">
+                <h1 class="pagina__titulo" id="titulo-calendario">Calendário</h1>
+            </div>
+
+            <div class="navegacao-mes">
+                <button class="botao botao--secundario" id="botao-mes-anterior" type="button" aria-label="Mês anterior">‹</button>
+                <h2 class="navegacao-mes__titulo" id="titulo-mes" aria-live="polite">—</h2>
+                <button class="botao botao--secundario" id="botao-mes-seguinte" type="button" aria-label="Próximo mês">›</button>
+                <button class="botao botao--secundario" id="botao-mes-atual" type="button">Hoje</button>
+            </div>
+
+            <div class="calendario" id="calendario"></div>
+
+            <ul class="legenda-calendario" aria-label="Legenda">
+                <li class="legenda-calendario__item legenda-calendario__item--povoamento">Povoamento</li>
+                <li class="legenda-calendario__item legenda-calendario__item--registro">Registro</li>
+                <li class="legenda-calendario__item legenda-calendario__item--despesca-prevista">Despesca prevista</li>
+                <li class="legenda-calendario__item legenda-calendario__item--despesca-realizada">Despesca realizada</li>
+            </ul>
+        </section>
+
+        <section class="secao" aria-labelledby="titulo-eventos-dia">
+            <h2 class="secao__titulo" id="titulo-eventos-dia">Eventos do dia</h2>
+
+            <ul class="lista-eventos" id="lista-eventos-dia">
+                <li class="lista-eventos__vazio">Selecione um dia para ver os eventos.</li>
+            </ul>
+        </section>
+    </main>
+
+    <script type="module" src="js/pages/calendario.js"></script>
+</body>
+</html>

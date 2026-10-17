@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fish Track - Configurações</title>
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+    <header class="cabecalho">
+        <a class="cabecalho__marca" href="index.html">
+            <span class="cabecalho__logo" aria-hidden="true">🐟</span>
+            <span class="cabecalho__titulo">Fish Track</span>
+        </a>
+        <nav class="menu" aria-label="Navegação principal">
+            <a class="menu__link" href="index.html">Dashboard</a>
+            <a class="menu__link" href="tanques.html">Tanques</a>
+            <a class="menu__link menu__link--destaque" href="registro.html">+ Registro</a>
+            <a class="menu__link" href="alertas.html">Alertas</a>
+            <details class="menu__mais">
+                <summary class="menu__link">Mais</summary>
+                <a class="menu__link" href="calendario.html">Calendário</a>
+                <a class="menu__link" href="configuracoes.html" aria-current="page">Configurações</a>
+            </details>
+        </nav>
+    </header>
+
+    <main class="pagina">
+        <h1 class="pagina__titulo">Configurações</h1>
+
+        <section class="secao" aria-labelledby="titulo-limites">
+            <h2 class="secao__titulo" id="titulo-limites">Limites padrão dos alertas</h2>
+            <p class="secao__descricao">Valem para todos os tanques que não tiverem limites próprios.</p>
+
+            <form class="formulario" id="formulario-limites" novalidate>
+                <div class="formulario__grade">
+                    <div class="campo">
+                        <label class="campo__rotulo" for="campo-mortalidade-registro">Mortalidade em um registro (% dos peixes)</label>
+                        <input class="campo__input" id="campo-mortalidade-registro" name="mortalidadeRegistroPct" type="number" inputmode="decimal" min="0.1" max="100" step="0.1" required aria-describedby="erro-mortalidade-registro">
+                        <p class="campo__erro" id="erro-mortalidade-registro"></p>
+                    </div>
+
+                    <div class="campo">
+                        <label class="campo__rotulo" for="campo-mortalidade-acumulada">Mortalidade acumulada no ciclo (%)</label>
+                        <input class="campo__input" id="campo-mortalidade-acumulada" name="mortalidadeAcumuladaPct" type="number" inputmode="decimal" min="0.1" max="100" step="0.1" required aria-describedby="erro-mortalidade-acumulada">
+                        <p class="campo__erro" id="erro-mortalidade-acumulada"></p>
+                    </div>
+                </div>
+
+                <div class="formulario__grade">
+                    <div class="campo">
+                        <label class="campo__rotulo" for="campo-racao-diaria">Ração do dia (% da biomassa)</label>
+                        <input class="campo__input" id="campo-racao-diaria" name="racaoDiariaPct" type="number" inputmode="decimal" min="0.1" max="100" step="0.1" required aria-describedby="erro-racao-diaria">
+                        <p class="campo__erro" id="erro-racao-diaria"></p>
+                    </div>
+
+                    <div class="campo">
+                        <label class="campo__rotulo" for="campo-capacidade">Capacidade utilizada (%)</label>
+                        <input class="campo__input" id="campo-capacidade" name="capacidadePct" type="number" inputmode="decimal" min="0.1" max="100" step="0.1" required aria-describedby="erro-capacidade">
+                        <p class="campo__erro" id="erro-capacidade"></p>
+                    </div>
+                </div>
+
+                <div class="formulario__grade">
+                    <div class="campo">
+                        <label class="campo__rotulo" for="campo-peso-esperado">Peso médio mínimo (% do esperado)</label>
+                        <input class="campo__input" id="campo-peso-esperado" name="pesoEsperadoPct" type="number" inputmode="decimal" min="0.1" max="100" step="0.1" required aria-describedby="erro-peso-esperado">
+                        <p class="campo__erro" id="erro-peso-esperado"></p>
+                    </div>
+
+                    <div class="campo">
+                        <label class="campo__rotulo" for="campo-dias-sem-registro">Dias sem registro</label>
+                        <input class="campo__input" id="campo-dias-sem-registro" name="diasSemRegistro" type="number" inputmode="numeric" min="1" step="1" required aria-describedby="erro-dias-sem-registro">
+                        <p class="campo__erro" id="erro-dias-sem-registro"></p>
+                    </div>
+                </div>
+
+                <p class="formulario__erro-geral" id="erro-geral-limites" role="alert" hidden></p>
+                <p class="formulario__mensagem" id="mensagem-limites" role="status"></p>
+
+                <div class="formulario__acoes">
+                    <button class="botao botao--secundario" id="botao-restaurar-limites" type="button">Restaurar padrões</button>
+                    <button class="botao botao--primario" type="submit">Salvar limites</button>
+                </div>
+            </form>
+        </section>
+
+        <section class="secao" aria-labelledby="titulo-exportar">
+            <h2 class="secao__titulo" id="titulo-exportar">Exportar registros (CSV)</h2>
+            <p class="secao__descricao">Planilha com uma linha por registro, pronta para abrir no Excel.</p>
+
+            <div class="campo">
+                <label class="campo__rotulo" for="campo-exportar-tanque">Tanque</label>
+                <select class="campo__select" id="campo-exportar-tanque">
+                    <option value="" selected>Todos os tanques</option>
+                </select>
+            </div>
+
+            <div class="secao__acoes">
+                <button class="botao botao--primario" id="botao-exportar-csv" type="button">Exportar CSV</button>
+            </div>
+        </section>
+
+        <section class="secao" aria-labelledby="titulo-backup">
+            <h2 class="secao__titulo" id="titulo-backup">Backup</h2>
+            <p class="secao__descricao">Guarde uma cópia de todos os dados ou restaure uma cópia salva antes. Restaurar substitui os dados atuais.</p>
+
+            <div class="secao__acoes">
+                <button class="botao botao--secundario" id="botao-fazer-backup" type="button">Fazer backup (JSON)</button>
+            </div>
+
+            <div class="campo">
+                <label class="campo__rotulo" for="campo-arquivo-backup">Arquivo de backup</label>
+                <input class="campo__input" id="campo-arquivo-backup" type="file" accept=".json,application/json" aria-describedby="erro-arquivo-backup">
+                <p class="campo__erro" id="erro-arquivo-backup"></p>
+            </div>
+
+            <div class="secao__acoes">
+                <button class="botao botao--secundario" id="botao-restaurar-backup" type="button">Restaurar backup</button>
+            </div>
+        </section>
+
+        <section class="secao" aria-labelledby="titulo-dados">
+            <h2 class="secao__titulo" id="titulo-dados">Dados</h2>
+            <p class="secao__descricao">Os dados de exemplo ajudam a conhecer o sistema. Apagar remove tudo deste aparelho e não pode ser desfeito.</p>
+
+            <div class="secao__acoes">
+                <button class="botao botao--secundario" id="botao-carregar-exemplo" type="button">Carregar dados de exemplo</button>
+                <button class="botao botao--perigo" id="botao-apagar-dados" type="button">Apagar todos os dados</button>
+            </div>
+        </section>
+    </main>
+
+    <dialog class="dialogo" id="dialogo-confirmacao" aria-labelledby="mensagem-confirmacao">
+        <form class="dialogo__conteudo" method="dialog">
+            <p class="dialogo__mensagem" id="mensagem-confirmacao"></p>
+            <div class="dialogo__acoes">
+                <button class="botao botao--secundario" value="cancelar">Cancelar</button>
+                <button class="botao botao--perigo" id="botao-confirmar" value="confirmar">Confirmar</button>
+            </div>
+        </form>
+    </dialog>
+
+    <script type="module" src="js/pages/configuracoes.js"></script>
+</body>
+</html>

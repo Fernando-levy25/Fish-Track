@@ -187,7 +187,7 @@ Lista de todos os alertas ativos, agrupados por tanque e ordenados por gravidade
 
 ### 7.8 Calendário geral (`calendario.html`)
 
-Visão mensal com os eventos de todos os tanques.
+Visão mensal com os eventos de todos os tanques. Ao tocar em um dia, a lista abaixo do calendário mostra os eventos daquele dia, porque no celular não há espaço para os nomes dentro da grade.
 
 ### 7.9 Configurações (`configuracoes.html`)
 
@@ -198,7 +198,7 @@ Visão mensal com os eventos de todos os tanques.
 
 ### 7.10 Navegação
 
-Barra inferior fixa no celular (Dashboard, Tanques, **+ Registro**, Alertas, Mais) e menu lateral em telas largas.
+Barra inferior fixa no celular (Dashboard, Tanques, **+ Registro**, Alertas, Mais) e menu lateral em telas largas. O item **Mais** abre Calendário e Configurações.
 
 ---
 
@@ -282,9 +282,20 @@ Uma única chave no `localStorage`:
   tanques: [],
   ciclos: [],
   registros: [],
-  config: { limitesAlerta: { /* ver 9.5 */ } }
+  config: {
+    limitesAlerta: {             // valores padrão da seção 9.5
+      mortalidadeRegistroPct: 1,
+      mortalidadeAcumuladaPct: 10,
+      racaoDiariaPct: 5,
+      capacidadePct: 90,
+      pesoEsperadoPct: 85,
+      diasSemRegistro: 7
+    }
+  }
 }
 ```
+
+O `limitesAlerta` de cada tanque usa as mesmas chaves e pode conter só as que forem sobrescritas.
 
 - IDs gerados com `crypto.randomUUID()`.
 - O campo `versao` permite migrar os dados quando o formato mudar.
