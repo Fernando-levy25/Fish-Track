@@ -1,5 +1,5 @@
 // Partes comuns a todas as páginas (seção 3.1): a navegação, os contadores do
-// menu lateral, o lembrete de backup e o estado do uso offline. Fica em pages
+// menu lateral, os lembretes de hoje, o lembrete de backup e o estado do uso offline. Fica em pages
 // porque junta domínio, services e ui, o que só esta camada pode fazer.
 
 import { diasEntre, hojeISO, paraDataLocalISO } from '../core/utils.js';
@@ -7,15 +7,22 @@ import { pluralizar } from '../core/format.js';
 import { listarSituacoes } from '../domain/tanques.js';
 import { analisarTanque } from '../domain/alertas.js';
 import { obterLimitesPadrao, obterUltimoBackupEm } from '../domain/configuracoes.js';
+import { alternarConclusao, listarAtrasados, listarOcorrencias } from '../domain/lembretes.js';
 import { exportarBackup } from '../services/exportacao.js';
+import { criarElemento, criarSelo } from '../ui/componentes.js';
 import { iniciarNavegacao, montarUrl } from '../ui/nav.js';
 
 // Passado esse prazo sem backup, o aviso do menu fica âmbar.
 const DIAS_PARA_LEMBRAR_BACKUP = 7;
+// O menu mostra poucos lembretes; o resto fica a um clique, na agenda.
+const MAXIMO_LEMBRETES_MENU = 5;
+// Disparado quando um lembrete é concluído no menu, para a agenda aberta se atualizar.
+export const EVENTO_LEMBRETES = 'fishtrack:lembretes';
 
 export function iniciarPagina() {
     iniciarNavegacao();
     document.getElementById('botao-backup-rapido')?.addEventListener('click', fazerBackupRapido);
+    document.getElementById('lista-lembretes-hoje')?.addEventListener('change', concluirDoMenu);
     mostrarEstadoOffline();
     atualizarMenu();
 }
@@ -52,6 +59,7 @@ export function atualizarMenu() {
         definirContador('tanques', situacoes.length);
         definirContador('alertas', alertas.length);
         mostrarUltimoBackup(obterUltimoBackupEm(), hoje);
+        mostrarLembretesDeHoje(hoje);
     } catch (erro) {
         // O menu não derruba a página: ela mesma mostra o erro de armazenamento.
         console.error(erro);
@@ -79,6 +87,58 @@ function mostrarUltimoBackup(ultimoBackupEm, hoje) {
     }
     aviso.textContent = texto;
     aviso.classList.toggle('cabecalho__backup--atrasado', atrasado);
+}
+
+// Seção 7.4: os de hoje e os atrasados, com conclusão direto no menu.
+function mostrarLembretesDeHoje(hoje) {
+    const lista = document.getElementById('lista-lembretes-hoje');
+    if (!lista) {
+        return;
+    }
+    const deHoje = listarOcorrencias({ inicio: hoje, fim: hoje, hoje });
+    const atrasados = listarAtrasados({ hoje });
+    const itens = [...atrasados.map((item) => ({ ...item, atrasado: true })), ...deHoje];
+    const concluidos = deHoje.filter((item) => item.concluida).length;
+    document.getElementById('contador-lembretes-hoje').textContent = deHoje.length > 0 ? `${concluidos} de ${deHoje.length}` : '';
+
+    const visiveis = itens.slice(0, MAXIMO_LEMBRETES_MENU);
+    lista.replaceChildren(...visiveis.map(criarItemDoMenu));
+    if (itens.length === 0) {
+        lista.append(criarElemento('li', { classe: 'lembretes-hoje__vazio', texto: 'Nada para hoje.' }));
+    } else if (itens.length > visiveis.length) {
+        lista.append(criarElemento('li', { classe: 'lembretes-hoje__vazio' }, [
+            criarElemento('a', { classe: 'lembretes-hoje__link', texto: `e mais ${itens.length - visiveis.length} na agenda`, atributos: { href: 'calendario.html' } }),
+        ]));
+    }
+}
+
+function criarItemDoMenu(item) {
+    const id = `menu-lembrete-${item.lembreteId}-${item.data}`;
+    return criarElemento('li', { classe: `lembretes-hoje__item${item.concluida ? ' lembretes-hoje__item--concluido' : ''}` }, [
+        criarElemento('input', {
+            classe: 'lembretes-hoje__caixa',
+            atributos: { type: 'checkbox', id, checked: item.concluida, 'data-concluir': item.lembreteId, 'data-ocorrencia': item.data },
+        }),
+        criarElemento('label', { classe: 'lembretes-hoje__texto', atributos: { for: id } }, [
+            item.titulo,
+            item.tanqueNome && criarElemento('span', { classe: 'lembretes-hoje__tanque', texto: item.tanqueNome }),
+        ]),
+        item.atrasado && criarSelo('Atrasado', 'atencao'),
+    ]);
+}
+
+function concluirDoMenu(evento) {
+    const caixa = evento.target.closest('[data-concluir]');
+    if (!caixa) {
+        return;
+    }
+    try {
+        alternarConclusao(caixa.dataset.concluir, caixa.dataset.ocorrencia);
+    } catch (erro) {
+        console.error(erro);
+    }
+    atualizarMenu();
+    document.dispatchEvent(new CustomEvent(EVENTO_LEMBRETES));
 }
 
 function fazerBackupRapido() {

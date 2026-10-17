@@ -12,6 +12,7 @@ const ciclos = await import(RAIZ + 'domain/ciclos.js');
 const registros = await import(RAIZ + 'domain/registros.js');
 const { analisarTanque } = await import(RAIZ + 'domain/alertas.js');
 const { obterLimitesPadrao } = await import(RAIZ + 'domain/configuracoes.js');
+const lembretes = await import(RAIZ + 'domain/lembretes.js');
 const exportacao = await import(RAIZ + 'services/exportacao.js');
 const seed = await import(RAIZ + 'services/seed.js');
 
@@ -33,6 +34,20 @@ describe('services/exportacao (seção 9.7)', () => {
         assert.equal(linhas[1], "Tanque A;Pacu;02/09/2026;05/09/2026;;;2;;;'=1+1");
         assert.equal(linhas[2], 'Tanque B;Tilápia;01/09/2026;10/09/2026;12,5;1,25;;;;"Água ""turva""; ok"');
         assert.equal(exportacao.gerarCsvRegistros({ tanqueId: a.id }).quantidade, 1);
+    });
+    it('CSV de lembretes: uma linha por lembrete, com as conclusões', () => {
+        const tanque = tanques.salvarTanque({ nome: 'Tanque A', especie: 'Pacu', volumeM3: 1, densidadeMaximaKgM3: 5 });
+        const repetido = lembretes.salvarLembrete({ titulo: 'Biometria', data: '2026-09-01', tanqueId: tanque.id, repetirDias: 15 });
+        lembretes.salvarLembrete({ titulo: '+ ração', data: '2026-08-20', observacao: 'Sacos; 25 kg' });
+        lembretes.alternarConclusao(repetido.id, '2026-09-16');
+        lembretes.alternarConclusao(repetido.id, '2026-09-01');
+        const { conteudo, quantidade } = exportacao.gerarCsvLembretes();
+        assert.equal(quantidade, 2);
+        const linhas = conteudo.slice(1).trimEnd().split('\r\n');
+        assert.equal(linhas[0], 'Título;Tanque;Data;Repetir;Concluído em;Observação');
+        assert.equal(linhas[1], "'+ ração;Geral;20/08/2026;Não repete;;\"Sacos; 25 kg\"");
+        assert.equal(linhas[2], 'Biometria;Tanque A;01/09/2026;A cada 15 dias;01/09/2026, 16/09/2026;');
+        assert.equal(exportacao.gerarCsvLembretes({ tanqueId: tanque.id }).quantidade, 1);
     });
     it('backup: lê, valida a versão e restaura', async () => {
         tanques.salvarTanque({ nome: 'X', especie: 'Y', volumeM3: 1, densidadeMaximaKgM3: 5 });
@@ -83,6 +98,12 @@ describe('services/seed (dados de exemplo)', () => {
         const viveiro = tanques.listarSituacoes().find((s) => s.tanque.nome === 'Viveiro Norte');
         assert.equal(viveiro.ciclos[0].status, 'encerrado');
         assert.equal(viveiro.ultimoRegistro.data, somarDias(hoje, -150));
+
+        // Lembretes: três hoje (um concluído), repetidos e um atrasado.
+        const deHoje = lembretes.listarOcorrencias({ inicio: hoje, fim: hoje });
+        assert.deepEqual([deHoje.length, deHoje.filter((o) => o.concluida).length], [3, 1]);
+        assert.ok(dados.lembretes.some((l) => l.repetirDias));
+        assert.deepEqual(lembretes.listarAtrasados({ hoje }).map((o) => o.titulo), ['Revisar o aerador']);
 
         const segunda = seed.carregarDadosExemplo();
         assert.deepEqual(segunda.registros.map((r) => r.racaoKg), dados.registros.map((r) => r.racaoKg));

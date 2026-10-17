@@ -40,7 +40,7 @@ O uso segue um fluxo simples:
 * **Tanques:** lista com filtro por status (ativo, vazio, em manutenção, arquivado).
 * **Página do tanque:** indicadores, gráficos de evolução, histórico de registros e calendário do tanque.
 * **Alertas:** todos os alertas, agrupados por tanque e ordenados por gravidade.
-* **Calendário:** povoamentos, registros e despescas de todos os tanques.
+* **Agenda:** povoamentos, registros, despescas, alertas do dia e lembretes (com repetição) de todos os tanques, com quadro do dia e "Lembretes de hoje" no menu lateral.
 * **Configurações:** limites dos alertas, exportação em CSV (abre no Excel), backup e restauração dos dados, e dados de exemplo.
 
 ## ▶️ Como usar

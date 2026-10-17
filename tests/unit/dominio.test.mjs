@@ -14,6 +14,7 @@ const registros = await import(RAIZ + 'domain/registros.js');
 const ind = await import(RAIZ + 'domain/indicadores.js');
 const alertas = await import(RAIZ + 'domain/alertas.js');
 const config = await import(RAIZ + 'domain/configuracoes.js');
+const lembretes = await import(RAIZ + 'domain/lembretes.js');
 
 const hoje = utils.hojeISO();
 const dia = (n) => utils.somarDias(hoje, n);
@@ -509,5 +510,88 @@ describe('domain/configuracoes', () => {
         const tanque = tanqueBase();
         assert.deepEqual(config.salvarLimitesTanque(tanque.id, { capacidadePct: 95, diasSemRegistro: null }), { capacidadePct: 95 });
         assert.equal(config.salvarLimitesTanque(tanque.id, {}), null);
+    });
+});
+
+describe('domain/lembretes (seção 7, RN16 a RN18)', () => {
+    const novo = (extra = {}) => lembretes.salvarLembrete({ titulo: 'Biometria', data: hoje, ...extra });
+    const datas = (lista) => lista.map((item) => item.data);
+
+    it('RN16: título obrigatório, até 80 caracteres; observação até 300', () => {
+        recusa(() => novo({ titulo: '   ' }), 'titulo', /título/);
+        recusa(() => novo({ titulo: 'x'.repeat(81) }), 'titulo', /80/);
+        recusa(() => novo({ observacao: 'x'.repeat(301) }), 'observacao', /300/);
+        recusa(() => novo({ data: '2026-02-30' }), 'data');
+        assert.equal(novo({ titulo: '  Comprar ração ' }).titulo, 'Comprar ração');
+    });
+    it('RN17: tanque precisa existir e não estar arquivado; vazio é Geral', () => {
+        recusa(() => novo({ tanqueId: 'nao-existe' }), 'tanqueId', /arquivado/);
+        recusa(() => novo({ tanqueId: comCicloArquivado() }), 'tanqueId');
+        const tanque = tanqueBase();
+        assert.equal(novo({ tanqueId: tanque.id }).tanqueId, tanque.id);
+        assert.equal(novo({ tanqueId: '' }).tanqueId, null);
+    });
+    it('RN18: repetição só a cada 7, 15 ou 30 dias', () => {
+        recusa(() => novo({ repetirDias: 10 }), 'repetirDias', /7, 15 ou 30/);
+        assert.equal(novo({ repetirDias: 15 }).repetirDias, 15);
+    });
+    it('aceita qualquer data, passada ou futura, e edita mantendo as conclusões', () => {
+        const passado = novo({ data: dia(-400) });
+        novo({ data: dia(400) });
+        lembretes.alternarConclusao(passado.id, dia(-400));
+        const editado = lembretes.salvarLembrete({ id: passado.id, titulo: 'Outro', data: dia(-400) });
+        assert.equal(editado.titulo, 'Outro');
+        assert.deepEqual(lembretes.obterLembrete(passado.id).concluidas, [dia(-400)]);
+        recusa(() => lembretes.salvarLembrete({ id: 'nao-existe', titulo: 'X', data: hoje }));
+    });
+    it('ocorrências: a partir da data, de N em N dias, sem as removidas (seção 7.5)', () => {
+        const repetido = novo({ data: dia(-10), repetirDias: 7 });
+        novo({ titulo: 'Único', data: dia(3) });
+        const todas = lembretes.listarOcorrencias({ inicio: dia(-20), fim: dia(20) });
+        assert.deepEqual(datas(todas.filter((o) => o.lembreteId === repetido.id)), [dia(-10), dia(-3), dia(4), dia(11), dia(18)]);
+        assert.deepEqual(datas(lembretes.listarOcorrencias({ inicio: dia(0), fim: dia(5) })), [dia(3), dia(4)]);
+
+        lembretes.removerOcorrencia(repetido.id, dia(4));
+        assert.deepEqual(datas(lembretes.listarOcorrencias({ inicio: dia(0), fim: dia(12) })), [dia(3), dia(11)]);
+        lembretes.removerLembrete(repetido.id);
+        assert.equal(lembretes.obterLembrete(repetido.id), null);
+    });
+    it('remover "só esta vez" um lembrete que não se repete apaga o lembrete', () => {
+        const unico = novo();
+        lembretes.removerOcorrencia(unico.id, hoje);
+        assert.equal(lembretes.obterLembrete(unico.id), null);
+    });
+    it('conclusão por ocorrência e atrasados dos últimos 30 dias', () => {
+        const repetido = novo({ data: dia(-45), repetirDias: 15 });
+        assert.equal(lembretes.alternarConclusao(repetido.id, dia(-15)), true);
+        assert.deepEqual(datas(lembretes.listarAtrasados({ hoje })), [dia(-30)]);
+        assert.equal(lembretes.alternarConclusao(repetido.id, dia(-15)), false);
+        assert.deepEqual(datas(lembretes.listarAtrasados({ hoje })), [dia(-30), dia(-15)]);
+        const deHoje = lembretes.listarOcorrencias({ inicio: hoje, fim: hoje });
+        assert.equal(deHoje[0].concluida, false);
+    });
+    it('filtro por tanque inclui os gerais; tanque arquivado não gera ocorrências futuras', () => {
+        const a = tanqueBase();
+        const b = tanques.salvarTanque({ nome: 'Tanque 02', especie: 'X', volumeM3: 1, densidadeMaximaKgM3: 5 });
+        novo({ titulo: 'Geral' });
+        novo({ titulo: 'Do A', tanqueId: a.id });
+        const doB = novo({ titulo: 'Do B', tanqueId: b.id, data: dia(-7), repetirDias: 7 });
+        const titulos = (tanqueId) => lembretes.listarOcorrencias({ inicio: hoje, fim: hoje, tanqueId }).map((o) => o.titulo);
+        assert.deepEqual(titulos(a.id), ['Do A', 'Geral']);
+        tanques.arquivarTanque(b.id);
+        const doArquivado = lembretes.listarOcorrencias({ inicio: dia(-7), fim: dia(14), tanqueId: b.id }).filter((o) => o.lembreteId === doB.id);
+        assert.deepEqual(datas(doArquivado), [dia(-7)]);
+    });
+    it('a agenda recebe lembretes e alertas do dia, na ordem das etiquetas (seção 7.1)', () => {
+        const tanque = comCiclo();
+        registros.salvarRegistro({ tanqueId: tanque.id, data: dia(-2), racaoKg: 0.2, mortalidade: 50 });
+        novo({ titulo: 'Conferir', tanqueId: tanque.id, data: dia(-2) });
+        novo({ titulo: 'Geral', data: dia(-2) });
+        const doDia = ciclos.listarEventosCalendario({ inicio: dia(-2), fim: dia(-2), tanqueId: tanque.id });
+        assert.deepEqual(doDia.map((e) => e.tipo), ['alerta', 'lembrete', 'lembrete', 'registro']);
+        assert.equal(doDia[0].titulo, 'Mortalidade alta');
+        assert.equal(doDia[0].gravidade, 'alta');
+        assert.equal(doDia[1].tanqueNome, null, 'o geral vem antes, sem tanque');
+        assert.equal(doDia[3].editavel, true);
     });
 });

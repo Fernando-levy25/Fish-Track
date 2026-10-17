@@ -5,14 +5,18 @@ import { lerDados, salvarDados } from '../core/storage.js';
 import { agoraISO, compararTexto, gerarId, hojeISO, somarDias } from '../core/utils.js';
 import { formatarData, formatarGramas, pluralizar } from '../core/format.js';
 import { ordenarRegistros } from './indicadores.js';
+import { avaliarAlertasDosDias, resolverLimites } from './alertas.js';
+import { listarOcorrencias } from './lembretes.js';
 import { resumirRegistro } from './registros.js';
 import { falharRegra, lancarSeHouverErros, validarData, validarNumero } from './validacao.js';
 
 export const ROTULOS_EVENTO = Object.freeze({
+    alerta: 'Alerta',
     povoamento: 'Povoamento',
-    registro: 'Registro',
     'despesca-prevista': 'Despesca prevista',
     'despesca-realizada': 'Despesca realizada',
+    lembrete: 'Lembrete',
+    registro: 'Registro',
 });
 const ORDEM_EVENTOS = Object.keys(ROTULOS_EVENTO);
 
@@ -149,16 +153,19 @@ export function registrarDespesca(tanqueId, entrada) {
     return ciclo;
 }
 
-// Eventos entre duas datas (inclusive), de um tanque ou de todos os não arquivados.
+// Eventos entre duas datas (inclusive), de um tanque ou de todos os não
+// arquivados. A ordem é a das etiquetas na agenda (seção 7.1): alertas,
+// ciclo, lembretes e registros.
 export function listarEventosCalendario({ inicio, fim, tanqueId = null }) {
     const dados = lerDados();
+    const hoje = hojeISO();
     const tanques = new Map(dados.tanques
         .filter((tanque) => (tanqueId ? tanque.id === tanqueId : tanque.status !== 'arquivado'))
         .map((tanque) => [tanque.id, tanque]));
     const noPeriodo = (data) => Boolean(data) && data >= inicio && data <= fim;
     const eventos = [];
-    const adicionar = (data, tipo, tanque, descricao) => {
-        eventos.push({ data, tipo, rotulo: ROTULOS_EVENTO[tipo], tanqueId: tanque.id, tanqueNome: tanque.nome, descricao });
+    const adicionar = (data, tipo, tanque, descricao, extra = {}) => {
+        eventos.push({ data, tipo, rotulo: ROTULOS_EVENTO[tipo], tanqueId: tanque?.id ?? null, tanqueNome: tanque?.nome ?? null, descricao, ...extra });
     };
 
     for (const ciclo of dados.ciclos) {
@@ -180,13 +187,43 @@ export function listarEventosCalendario({ inicio, fim, tanqueId = null }) {
                 `${pluralizar(ciclo.quantidadeDespescada, 'peixe', 'peixes')} com ${formatarGramas(ciclo.pesoMedioFinalG)}`);
         }
     }
+    const ciclosAtivos = new Set(dados.ciclos.filter((ciclo) => ciclo.status === 'ativo').map((ciclo) => ciclo.id));
     for (const registro of ordenarRegistros(dados.registros)) {
         const tanque = tanques.get(registro.tanqueId);
         if (tanque && noPeriodo(registro.data)) {
-            adicionar(registro.data, 'registro', tanque, resumirRegistro(registro));
+            adicionar(registro.data, 'registro', tanque, resumirRegistro(registro), {
+                registroId: registro.id,
+                editavel: ciclosAtivos.has(registro.cicloId),
+            });
         }
+    }
+    for (const ciclo of dados.ciclos) {
+        const tanque = tanques.get(ciclo.tanqueId);
+        if (!tanque) {
+            continue;
+        }
+        const limites = resolverLimites(dados.config.limitesAlerta, tanque.limitesAlerta);
+        const registros = dados.registros.filter((registro) => registro.cicloId === ciclo.id);
+        for (const alerta of avaliarAlertasDosDias({ ciclo, registros, limites })) {
+            if (noPeriodo(alerta.data)) {
+                adicionar(alerta.data, 'alerta', tanque, alerta.descricao, { titulo: alerta.titulo, gravidade: alerta.gravidade });
+            }
+        }
+    }
+    for (const ocorrencia of listarOcorrencias({ inicio, fim, tanqueId, dados, hoje })) {
+        // Lembretes de tanques fora do filtro (ou arquivados no calendário geral) ficam de fora; os gerais sempre entram.
+        if (ocorrencia.tanqueId && !tanques.has(ocorrencia.tanqueId) && ocorrencia.data >= hoje) {
+            continue;
+        }
+        const tanque = ocorrencia.tanqueId ? (tanques.get(ocorrencia.tanqueId) ?? { id: ocorrencia.tanqueId, nome: ocorrencia.tanqueNome }) : null;
+        adicionar(ocorrencia.data, 'lembrete', tanque, ocorrencia.observacao, {
+            titulo: ocorrencia.titulo,
+            lembreteId: ocorrencia.lembreteId,
+            concluida: ocorrencia.concluida,
+            repetirDias: ocorrencia.repetirDias,
+        });
     }
     return eventos.sort((a, b) => a.data.localeCompare(b.data)
         || ORDEM_EVENTOS.indexOf(a.tipo) - ORDEM_EVENTOS.indexOf(b.tipo)
-        || compararTexto(a.tanqueNome, b.tanqueNome));
+        || compararTexto(a.tanqueNome ?? '', b.tanqueNome ?? ''));
 }

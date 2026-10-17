@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fish Track - Calendário</title>
+    <title>Fish Track - Agenda</title>
     <meta name="theme-color" content="#0e5a52">
     <link rel="icon" href="assets/icons/icone.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="assets/icons/icone-192.png">
@@ -36,6 +36,14 @@
                 </div>
             </details>
         </nav>
+        <section class="lembretes-hoje" aria-labelledby="titulo-lembretes-hoje">
+            <div class="lembretes-hoje__cabecalho">
+                <h2 class="lembretes-hoje__titulo" id="titulo-lembretes-hoje">Lembretes de hoje</h2>
+                <span class="lembretes-hoje__contador" id="contador-lembretes-hoje"></span>
+            </div>
+            <ul class="lembretes-hoje__lista" id="lista-lembretes-hoje"></ul>
+            <a class="lembretes-hoje__link" href="calendario.html?lembrete=novo">Adicionar lembrete</a>
+        </section>
         <div class="cabecalho__rodape">
             <p class="cabecalho__status" id="status-offline">Preparando o uso offline…</p>
             <p class="cabecalho__backup" id="status-backup"></p>
@@ -44,34 +52,12 @@
     </header>
 
     <main class="pagina">
-        <section class="secao" aria-labelledby="titulo-calendario">
+        <section class="secao" aria-labelledby="titulo-agenda">
             <div class="secao__cabecalho">
-                <h1 class="pagina__titulo" id="titulo-calendario">Calendário</h1>
+                <h1 class="pagina__titulo" id="titulo-agenda">Agenda</h1>
             </div>
 
-            <div class="navegacao-mes">
-                <button class="botao botao--secundario" id="botao-mes-anterior" type="button" aria-label="Mês anterior">‹</button>
-                <h2 class="navegacao-mes__titulo" id="titulo-mes" aria-live="polite">—</h2>
-                <button class="botao botao--secundario" id="botao-mes-seguinte" type="button" aria-label="Próximo mês">›</button>
-                <button class="botao botao--secundario" id="botao-mes-atual" type="button">Hoje</button>
-            </div>
-
-            <div class="calendario" id="calendario"></div>
-
-            <ul class="legenda-calendario" aria-label="Legenda">
-                <li class="legenda-calendario__item legenda-calendario__item--povoamento">Povoamento</li>
-                <li class="legenda-calendario__item legenda-calendario__item--registro">Registro</li>
-                <li class="legenda-calendario__item legenda-calendario__item--despesca-prevista">Despesca prevista</li>
-                <li class="legenda-calendario__item legenda-calendario__item--despesca-realizada">Despesca realizada</li>
-            </ul>
-        </section>
-
-        <section class="secao" aria-labelledby="titulo-eventos-dia">
-            <h2 class="secao__titulo" id="titulo-eventos-dia">Eventos do dia</h2>
-
-            <ul class="lista-eventos" id="lista-eventos-dia">
-                <li class="lista-eventos__vazio">Selecione um dia para ver os eventos.</li>
-            </ul>
+            <div class="agenda" id="agenda"></div>
         </section>
     </main>
 

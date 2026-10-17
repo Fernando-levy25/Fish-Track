@@ -532,7 +532,6 @@
 .grupos-alertas__vazio,
 .lista-alertas__vazio,
 .lista-registros__vazio,
-.lista-eventos__vazio,
 .tabela__vazio,
 .aviso-pendente {
     padding: var(--espaco-4) var(--espaco-5);
@@ -549,9 +548,7 @@
 /* ---------- Listas ---------- */
 
 .lista-alertas,
-.lista-registros,
-.lista-eventos,
-.legenda-calendario {
+.lista-registros {
     margin: 0;
     padding: 0;
     list-style: none;
@@ -671,10 +668,8 @@
     font-size: var(--texto-2);
 }
 
-/* Gerado pelo JS: linhas de registros recentes (__item, __data, __resumo)
-   e de eventos do dia (__item com o tipo do evento, __tanque, __tipo). */
-.lista-registros__item,
-.lista-eventos__item {
+/* Gerado pelo JS: linhas de registros recentes (__item, __data, __resumo). */
+.lista-registros__item {
     padding: var(--espaco-3) 0;
     border-bottom: 1px solid var(--cor-borda);
 }
@@ -686,26 +681,12 @@
     gap: var(--espaco-1) var(--espaco-4);
 }
 
-/* Mesma estrutura dos alertas: marcador à esquerda, texto em duas linhas. */
-.lista-eventos__item {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    align-items: start;
-    column-gap: var(--espaco-3);
-}
-
-.lista-eventos__tipo {
-    grid-column: 2;
-}
-
-.lista-registros__data,
-.lista-eventos__tanque {
+.lista-registros__data {
     font-weight: 600;
     font-variant-numeric: tabular-nums;
 }
 
-.lista-registros__resumo,
-.lista-eventos__tipo {
+.lista-registros__resumo {
     color: var(--cor-texto-suave);
     font-size: var(--texto-2);
 }
@@ -827,6 +808,12 @@
     font-size: var(--texto-5);
 }
 
+/* Pergunta dos diálogos de confirmação. */
+.dialogo__mensagem {
+    font-size: var(--texto-4);
+    font-weight: 600;
+}
+
 .dialogo__texto {
     margin-top: calc(var(--espaco-3) * -1);
     color: var(--cor-texto-suave);
@@ -876,25 +863,53 @@
     margin-top: var(--espaco-3);
 }
 
-/* ---------- Calendário ---------- */
+/* ---------- Agenda ---------- */
 
-.navegacao-mes {
+/* Gerado por js/ui/calendario.js (seção 7): topo com mês e navegação,
+   filtros, grade do mês e quadro do dia. */
+.agenda {
+    display: grid;
+    gap: var(--espaco-4);
+}
+
+.agenda__topo {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
+    justify-content: space-between;
+    gap: var(--espaco-3);
+}
+
+.agenda__mes {
+    font-family: var(--fonte-titulo);
+    font-size: var(--texto-6);
+}
+
+.agenda__resumo {
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-2);
+}
+
+.agenda__navegacao {
+    display: flex;
     gap: var(--espaco-2);
 }
 
-.navegacao-mes__titulo {
-    flex: 1 1 auto;
-    min-width: 8rem;
-    font-size: var(--texto-5);
-    text-align: center;
+.agenda__navegacao .botao {
+    min-width: var(--altura-toque);
+    min-height: var(--altura-toque);
+    padding: 0 var(--espaco-3);
 }
 
-.navegacao-mes .botao {
-    min-width: var(--altura-toque);
-    padding: 0 var(--espaco-3);
+.agenda__filtros {
+    display: grid;
+    gap: var(--espaco-2);
+}
+
+.agenda__corpo {
+    display: grid;
+    gap: var(--espaco-4);
+    align-items: start;
 }
 
 .calendario {
@@ -904,9 +919,6 @@
     background: var(--cor-superficie);
 }
 
-/* Gerado por js/ui/calendario.js: .calendario__semana (nomes dos dias),
-   .calendario__grade com botões .calendario__dia, cada um com
-   .calendario__numero e .calendario__marcadores. */
 .calendario__semana,
 .calendario__grade {
     display: grid;
@@ -928,15 +940,19 @@
     flex-direction: column;
     align-items: center;
     gap: var(--espaco-1);
-    min-height: 3.25rem;
+    min-width: 0;
+    min-height: 3.5rem;
     padding: var(--espaco-1);
     border: 0;
     border-right: 1px solid var(--cor-borda);
     border-bottom: 1px solid var(--cor-borda);
     background: none;
     color: var(--cor-texto);
+    font: inherit;
     font-variant-numeric: tabular-nums;
+    text-align: left;
     cursor: pointer;
+    transition: background-color var(--transicao);
 }
 
 .calendario__dia:nth-child(7n) {
@@ -956,12 +972,17 @@
     color: var(--cor-borda-forte);
 }
 
+.calendario__dia--fora-do-mes .calendario__etiquetas {
+    opacity: 0.55;
+}
+
 .calendario__dia[aria-pressed="true"] {
     box-shadow: inset 0 0 0 2px var(--cor-primaria);
 }
 
 .calendario__numero {
     display: grid;
+    flex: none;
     place-items: center;
     width: 1.75rem;
     height: 1.75rem;
@@ -975,88 +996,372 @@
     font-weight: 700;
 }
 
-.calendario__marcadores {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 3px;
+.calendario__etiquetas {
+    display: grid;
+    gap: 2px;
+    width: 100%;
 }
 
-.calendario__marcador {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--cor-evento);
+.calendario__mais {
+    display: none;
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-1);
+    font-weight: 600;
+}
+
+/* Etiqueta resumida de um evento (seção 7.1): texto curto + cor, nunca só cor.
+   No celular a célula é estreita demais para texto: vira uma faixa colorida,
+   e o texto completo fica no quadro do dia e no nome acessível do botão. */
+.etiqueta {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+    height: 4px;
+    overflow: hidden;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    background: var(--cor-neutra-suave);
+    color: var(--cor-texto);
+    font-size: var(--texto-1);
+    font-weight: 600;
+    line-height: 1.35;
+    white-space: nowrap;
+}
+
+.etiqueta__texto,
+.etiqueta__icone,
+.etiqueta__ponto {
+    display: none;
+}
+
+.etiqueta--alerta {
+    background: var(--cor-perigo-suave);
+    border-color: var(--cor-perigo-borda);
+    color: var(--cor-perigo);
+}
+
+.etiqueta--povoamento {
+    background: var(--cor-evento-povoamento);
+    color: var(--cor-texto-invertido);
+}
+
+.etiqueta--despesca-prevista {
+    background: var(--cor-superficie);
+    border-color: var(--cor-evento-despesca);
+    color: var(--cor-evento-despesca);
+}
+
+.etiqueta--despesca-realizada {
+    background: var(--cor-evento-despesca);
+    color: var(--cor-texto-invertido);
+}
+
+.etiqueta--lembrete {
+    background: var(--cor-superficie);
+    border-color: var(--cor-borda-forte);
+}
+
+.etiqueta--concluida {
+    color: var(--cor-texto-suave);
+}
+
+.etiqueta--concluida .etiqueta__texto {
+    text-decoration: line-through;
+}
+
+/* O lembrete recém-salvo entra com um pequeno salto (seção 7.3). */
+.etiqueta--nova {
+    animation: etiqueta-entrar var(--duracao-media) var(--curva-mola) backwards;
+}
+
+@keyframes etiqueta-entrar {
+    from {
+        opacity: 0;
+        transform: scale(0.6);
+    }
 }
 
 @media (min-width: 40rem) {
     .calendario__dia {
-        align-items: flex-start;
-        min-height: 5rem;
-        padding: var(--espaco-2);
+        align-items: stretch;
+        min-height: 6.5rem;
+        padding: var(--espaco-1) var(--espaco-1) var(--espaco-2);
     }
 
-    .calendario__marcadores {
-        justify-content: flex-start;
+    .calendario__mais {
+        display: block;
+        padding: 0 6px;
+    }
+
+    .etiqueta {
+        height: auto;
+        padding: 1px 6px;
+    }
+
+    .etiqueta__texto {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .etiqueta__icone {
+        display: block;
+        flex: none;
+        width: 0.75rem;
+        height: 0.75rem;
+    }
+
+    .etiqueta__ponto {
+        display: block;
+        flex: none;
+        width: 0.4375rem;
+        height: 0.4375rem;
+        border-radius: 50%;
+        background: var(--cor-serie);
+    }
+
+    .etiqueta__ponto + .etiqueta__ponto {
+        margin-left: -2px;
     }
 }
 
-.legenda-calendario {
+/* ---------- Quadro do dia ---------- */
+
+/* No celular é uma folha em tela cheia que sobe por baixo; no computador,
+   um painel ao lado da grade, que encolhe para caber (seção 7.2). */
+.quadro {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
     display: flex;
-    flex-wrap: wrap;
-    gap: var(--espaco-2) var(--espaco-5);
+    flex-direction: column;
+    background: var(--cor-superficie);
+    animation: quadro-subir var(--duracao-media) var(--curva-saida);
+}
+
+@keyframes quadro-subir {
+    from {
+        transform: translateY(100%);
+    }
+}
+
+.quadro__cabecalho {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--espaco-3);
+    padding: var(--espaco-4);
+    border-bottom: 1px solid var(--cor-borda);
+}
+
+.quadro__titulo {
+    font-family: var(--fonte-titulo);
+    font-size: var(--texto-5);
+}
+
+.quadro__contagem {
+    display: flex;
+    align-items: center;
+    gap: var(--espaco-2);
+    margin-top: var(--espaco-1);
     color: var(--cor-texto-suave);
     font-size: var(--texto-2);
 }
 
-.legenda-calendario__item {
-    display: inline-flex;
+.quadro__fechar {
+    flex: none;
+    width: var(--altura-toque);
+    height: var(--altura-toque);
+    border: 0;
+    border-radius: var(--raio);
+    background: none;
+    color: var(--cor-texto-suave);
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: background-color var(--transicao), color var(--transicao);
+}
+
+.quadro__fechar:hover,
+.quadro__fechar:active {
+    background: var(--cor-superficie-suave);
+    color: var(--cor-texto);
+}
+
+.quadro__conteudo {
+    display: grid;
+    flex: 1 1 auto;
+    align-content: start;
+    gap: var(--espaco-5);
+    padding: var(--espaco-4);
+    overflow-y: auto;
+}
+
+.quadro__secao {
+    display: grid;
+    gap: var(--espaco-2);
+}
+
+.quadro__secao-titulo {
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-1);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.quadro__lista {
+    display: grid;
+    gap: var(--espaco-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.quadro__item {
+    display: grid;
+    gap: var(--espaco-1);
+    padding: var(--espaco-3);
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio);
+    background: var(--cor-superficie);
+}
+
+.quadro__item--alerta {
+    border-left: 3px solid var(--cor-perigo);
+}
+
+.quadro__item--povoamento {
+    border-left: 3px solid var(--cor-evento-povoamento);
+}
+
+.quadro__item--despesca-prevista,
+.quadro__item--despesca-realizada {
+    border-left: 3px solid var(--cor-evento-despesca);
+}
+
+.quadro__linha {
+    display: flex;
     align-items: center;
     gap: var(--espaco-2);
 }
 
-.legenda-calendario__item::before,
-.lista-eventos__item::before {
+.quadro__item-titulo {
+    display: flex;
+    flex: 1 1 auto;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--espaco-2);
+    font-weight: 600;
+}
+
+.quadro__item--concluido .quadro__item-titulo {
+    color: var(--cor-texto-suave);
+    text-decoration: line-through;
+}
+
+.quadro__item-detalhe {
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-2);
+}
+
+.quadro__tanque {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+}
+
+.quadro__tanque[href]::before {
     content: "";
-    flex: none;
-    width: 0.625rem;
-    height: 0.625rem;
+    width: 0.5rem;
+    height: 0.5rem;
     border-radius: 50%;
-    background: var(--cor-evento, var(--cor-texto-suave));
+    background: var(--cor-serie);
 }
 
-.lista-eventos__item::before {
-    grid-row: span 2;
-    margin-top: 0.45em;
+.quadro__acoes {
+    display: flex;
+    gap: var(--espaco-4);
 }
 
-/* Cor de cada tipo de evento, compartilhada por legenda, marcadores e lista. */
-.legenda-calendario__item--povoamento,
-.calendario__marcador--povoamento,
-.lista-eventos__item--povoamento {
-    --cor-evento: var(--cor-evento-povoamento);
+/* Ações soltas precisam da área mínima de toque. */
+.quadro__acoes .link,
+.quadro__acoes.link {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--altura-toque);
 }
 
-.legenda-calendario__item--registro,
-.calendario__marcador--registro,
-.lista-eventos__item--registro {
-    --cor-evento: var(--cor-evento-registro);
+.link--perigo {
+    color: var(--cor-perigo);
 }
 
-.legenda-calendario__item--despesca-prevista,
-.calendario__marcador--despesca-prevista,
-.lista-eventos__item--despesca-prevista,
-.legenda-calendario__item--despesca-realizada,
-.calendario__marcador--despesca-realizada,
-.lista-eventos__item--despesca-realizada {
-    --cor-evento: var(--cor-evento-despesca);
+.link--perigo:hover {
+    color: var(--cor-perigo);
 }
 
-.legenda-calendario__item--despesca-prevista::before,
-.calendario__marcador--despesca-prevista,
-.lista-eventos__item--despesca-prevista::before {
-    background: none;
-    box-shadow: inset 0 0 0 1.5px var(--cor-evento);
+.quadro__vazio {
+    padding: var(--espaco-4) var(--espaco-5);
+    border: 1px dashed var(--cor-borda-forte);
+    border-radius: var(--raio-grande);
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-3);
+}
+
+.quadro__rodape {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--espaco-2);
+    padding: var(--espaco-4);
+    padding-bottom: calc(var(--espaco-4) + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--cor-borda);
+    background: var(--cor-superficie);
+}
+
+.quadro__rodape .botao {
+    flex: 1 1 auto;
+}
+
+.quadro__formulario {
+    display: grid;
+    gap: var(--espaco-4);
+}
+
+@media (min-width: 60rem) {
+    .agenda__filtros {
+        grid-template-columns: auto auto;
+        justify-content: space-between;
+    }
+
+    .agenda__corpo--com-quadro {
+        grid-template-columns: minmax(0, 1fr) 20rem;
+        gap: var(--espaco-3);
+    }
+
+    .quadro {
+        position: sticky;
+        top: var(--espaco-4);
+        z-index: auto;
+        max-height: calc(100dvh - 2 * var(--espaco-4));
+        overflow: hidden;
+        border: 1px solid var(--cor-borda);
+        border-radius: var(--raio-grande);
+        box-shadow: var(--sombra-elevada);
+        animation-name: quadro-deslizar;
+    }
+
+    @keyframes quadro-deslizar {
+        from {
+            opacity: 0;
+            transform: translateX(1rem);
+        }
+    }
+
+    .quadro__rodape {
+        padding-bottom: var(--espaco-4);
+    }
 }
 
 /* ---------- Controle segmentado ---------- */
@@ -1390,6 +1695,8 @@
 }
 
 .chip {
+    display: inline-flex;
+    align-items: center;
     min-height: 2.25rem;
     padding: 0 var(--espaco-3);
     border: 1px solid var(--cor-borda-forte);

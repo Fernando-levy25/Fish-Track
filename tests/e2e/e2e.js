@@ -365,8 +365,7 @@ async function roteiro() {
     doc().querySelector('[data-periodo="30"]').click();
     await abrir('alertas.html');
     verificar('2 grupos de alertas', doc().querySelectorAll('#grupos-alertas .grupo-alertas').length === 2);
-    await abrir('calendario.html');
-    verificar('eventos de hoje', doc().querySelectorAll('#lista-eventos-dia .lista-eventos__item').length >= 2, texto('lista-eventos-dia'));
+    await testarAgenda();
     await abrir('tanques.html');
     verificar('5 tanques na lista padrão', doc().querySelectorAll('.cartao-tanque').length === 5);
 
@@ -405,6 +404,148 @@ async function roteiro() {
     verificar('tanque não encontrado', !porId('aviso-tanque-nao-encontrado').hidden);
     await abrir('registro.html?id=inexistente');
     verificar('registro não encontrado', !porId('aviso-registro-indisponivel').hidden);
+}
+
+// Seção 7: grade com etiquetas, filtros, quadro do dia, lembretes e menu lateral.
+// Roda com os dados de exemplo carregados.
+async function testarAgenda() {
+    etapa = 'Lembretes de hoje no menu';
+    await abrir('index.html');
+    verificar('contador "1 de 3"', texto('contador-lembretes-hoje') === '1 de 3', texto('contador-lembretes-hoje'));
+    const itensMenu = [...porId('lista-lembretes-hoje').querySelectorAll('.lembretes-hoje__item')];
+    verificar('atrasado com selo no menu', itensMenu[0]?.textContent.includes('Revisar o aerador') && itensMenu[0].querySelector('.selo')?.textContent === 'Atrasado',
+        itensMenu.map((item) => item.textContent).join(' | '));
+    const caixaMenu = itensMenu.find((item) => item.textContent.includes('Biometria'))?.querySelector('input');
+    caixaMenu.click();
+    await esperar(60);
+    verificar('conclui direto no menu', texto('contador-lembretes-hoje') === '2 de 3', texto('contador-lembretes-hoje'));
+    [...porId('lista-lembretes-hoje').querySelectorAll('.lembretes-hoje__item')].find((item) => item.textContent.includes('Biometria')).querySelector('input').click();
+    await esperar(60);
+    verificar('desmarca no menu', texto('contador-lembretes-hoje') === '1 de 3', texto('contador-lembretes-hoje'));
+
+    etapa = 'Agenda: grade e etiquetas';
+    await abrir('calendario.html');
+    const grade = () => doc().querySelector('.calendario__grade');
+    const celula = (data) => grade().querySelector(`[data-data="${data}"]`);
+    const etiquetas = (data) => [...celula(data).querySelectorAll('.etiqueta')].map((item) => item.textContent);
+    const quadroDia = () => doc().querySelector('.quadro');
+    verificar('6 semanas fixas', grade().children.length === 42);
+    verificar('resumo do mês', /^\d+ registros? · \d+ lembretes?$/.test(doc().querySelector('.agenda__resumo').textContent),
+        doc().querySelector('.agenda__resumo').textContent);
+    verificar('hoje marcado', celula(HOJE).classList.contains('calendario__dia--hoje'));
+    verificar('quadro já aberto em hoje', !quadroDia().hidden && celula(HOJE).getAttribute('aria-pressed') === 'true'
+        && quadroDia().querySelector('.quadro__contagem .selo')?.textContent === 'Hoje');
+    const ontem = somarDias(HOJE, -1);
+    verificar('vários registros viram uma etiqueta com as bolinhas', etiquetas(ontem).includes('2 registros')
+        && celula(ontem).querySelectorAll('.etiqueta--registro .etiqueta__ponto').length === 2, etiquetas(ontem).join(' | '));
+    const alertaT02 = grade().querySelector('.etiqueta--alerta');
+    verificar('alerta do dia com o tanque abreviado', alertaT02?.textContent === 'Mortalidade alta · T02' && alertaT02.title === 'Mortalidade alta: Tanque 02',
+        alertaT02?.textContent);
+    const ordemHoje = [...celula(HOJE).querySelectorAll('.etiqueta')].map((item) => item.className.match(/etiqueta--([a-z-]+)/)[1]);
+    verificar('no máximo 3 etiquetas e "+N mais", alertas primeiro', ordemHoje.length === 3 && ordemHoje[0] === 'alerta'
+        && /^\+\d+ mais$/.test(celula(HOJE).querySelector('.calendario__mais')?.textContent ?? ''), ordemHoje.join(','));
+    verificar('lembrete concluído riscado', celula(HOJE).querySelector('.etiqueta--lembrete.etiqueta--concluida')?.textContent === 'Comprar ração');
+
+    etapa = 'Agenda: filtros';
+    const chipTanque = (nome) => [...doc().querySelectorAll('[data-filtro-tanque]')].find((chip) => chip.textContent === nome);
+    chipTanque('Tanque 01').click();
+    await esperar(40);
+    verificar('filtro por tanque', !grade().textContent.includes('T02') && grade().textContent.includes('Comprar ração'), 'T02 visível ou geral sumiu');
+    chipTanque('Todos').click();
+    doc().querySelector('[data-filtro-tipo="registros"]').click();
+    await esperar(40);
+    verificar('filtro por tipo', !grade().querySelector('.etiqueta--registro')
+        && doc().querySelector('[data-filtro-tipo="registros"]').getAttribute('aria-pressed') === 'false');
+    doc().querySelector('[data-filtro-tipo="registros"]').click();
+    await esperar(40);
+
+    etapa = 'Agenda: quadro do dia';
+    const secoes = () => [...quadroDia().querySelectorAll('.quadro__secao-titulo')].map((titulo) => titulo.textContent);
+    verificar('seções de hoje', secoes().join(',') === 'Atrasados,Lembretes,Registros,Alertas', secoes().join(','));
+    verificar('atrasado no quadro de hoje', quadroDia().querySelector('.quadro__secao')?.textContent.includes('Revisar o aerador')
+        && quadroDia().querySelector('.quadro__secao .selo')?.textContent === 'Atrasado');
+    verificar('aviso de repetição', quadroDia().textContent.includes('repete a cada 15 dias'));
+    verificar('registro com resumo e link de edição', quadroDia().querySelector('a[href^="registro.html?id="]')?.textContent === 'Editar registro');
+    verificar('"Registro neste dia" em hoje', quadroDia().querySelector('a[href*="registro.html"][href*="data="]')?.getAttribute('href').includes(`data=${HOJE}`));
+    const amanha = somarDias(HOJE, 1);
+    celula(amanha).click();
+    await esperar(40);
+    verificar('dia sem nada', quadroDia().querySelector('.quadro__vazio')?.textContent === 'Nada marcado para este dia.', quadroDia().textContent);
+    verificar('sem "Registro neste dia" no futuro (RN12)', !quadroDia().querySelector('a[href*="data="]'));
+    celula(amanha).dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+    await esperar(40);
+    verificar('setas mudam o dia e levam o foco', doc().activeElement === celula(HOJE));
+    celula(HOJE).click();
+    await esperar(40);
+
+    etapa = 'Agenda: lembretes';
+    quadroDia().querySelector('[data-acao-quadro="novo-lembrete"]').click();
+    await esperar(40);
+    verificar('formulário com a data do dia', porId('lembrete-data')?.value === HOJE && doc().activeElement === porId('lembrete-titulo'));
+    verificar('aviso de que não há notificação com o app fechado', texto('ajuda-lembrete-observacao')?.includes('app fechado'));
+    quadroDia().querySelector('form').id = 'form-lembrete-teste';
+    preencher({ 'lembrete-titulo': '   ' });
+    await enviarSemSair('form-lembrete-teste');
+    verificar('RN16 no campo', texto('erro-lembrete-titulo') === 'Informe o título do lembrete.', texto('erro-lembrete-titulo'));
+    const tanque01 = dados().tanques.find((tanque) => tanque.nome === 'Tanque 01').id;
+    preencher({ 'lembrete-titulo': 'Teste da agenda', 'lembrete-tanque': tanque01, 'lembrete-repetir': '7', 'lembrete-data': amanha });
+    await enviarSemSair('form-lembrete-teste');
+    const salvo = dados().lembretes.find((item) => item.titulo === 'Teste da agenda');
+    verificar('lembrete salvo', salvo?.repetirDias === 7 && salvo.tanqueId === tanque01 && salvo.data === amanha, JSON.stringify(salvo));
+    verificar('aparece na hora, com animação de entrada', celula(amanha).querySelector('.etiqueta--nova')?.textContent === 'Teste da agenda · T01'
+        && celula(amanha).getAttribute('aria-pressed') === 'true');
+    const itemSalvo = () => [...quadroDia().querySelectorAll('.quadro__item--lembrete')].find((item) => item.textContent.includes('Teste da agenda'));
+    itemSalvo().querySelector('[data-concluir]').click();
+    await esperar(40);
+    verificar('concluir pelo quadro', dados().lembretes.find((item) => item.id === salvo.id).concluidas.includes(amanha) && itemSalvo().classList.contains('quadro__item--concluido'));
+    itemSalvo().querySelector('[data-editar-lembrete]').click();
+    await esperar(40);
+    verificar('editar abre o formulário preenchido', porId('lembrete-titulo').value === 'Teste da agenda' && porId('lembrete-repetir').value === '7');
+    quadroDia().querySelector('[data-acao-quadro="cancelar"]').click();
+    await esperar(40);
+    itemSalvo().querySelector('[data-remover-lembrete]').click();
+    await esperar(40);
+    const pergunta = doc().querySelector('dialog[open]');
+    verificar('remover repetido pergunta', pergunta?.textContent.includes('Só esta vez') && pergunta.textContent.includes('Todas as repetições'));
+    pergunta.querySelector('button[value="ocorrencia"]').click();
+    await esperar(60);
+    verificar('"Só esta vez" remove a ocorrência', dados().lembretes.find((item) => item.id === salvo.id)?.excluidas.includes(amanha) && !itemSalvo());
+    doc().querySelector('.agenda').dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await esperar(40);
+    verificar('Esc fecha o quadro', quadroDia().hidden && grade().querySelector('[aria-pressed="true"]') === null);
+
+    etapa = 'Agenda: menu, registro e tanque';
+    [...porId('lista-lembretes-hoje').querySelectorAll('.lembretes-hoje__item')].find((item) => item.textContent.includes('Biometria')).querySelector('input').click();
+    await esperar(60);
+    verificar('conclusão no menu atualiza a agenda aberta', texto('contador-lembretes-hoje') === '2 de 3'
+        && [...celula(HOJE).querySelectorAll('.etiqueta--concluida')].some((item) => item.textContent.startsWith('Biometria')));
+    await abrir('calendario.html?lembrete=novo');
+    verificar('"Adicionar lembrete" do menu abre o formulário', porId('lembrete-titulo') && doc().activeElement === porId('lembrete-titulo'));
+    await abrir(`registro.html?data=${ontem}`);
+    verificar('registro com a data da agenda', porId('campo-data').value === ontem, porId('campo-data').value);
+    await abrir(`registro.html?data=${amanha}`);
+    verificar('data futura no endereço é ignorada', porId('campo-data').value === HOJE);
+    const tanque05 = dados().tanques.find((tanque) => tanque.nome === 'Tanque 05').id;
+    await abrir(`tanque.html?id=${tanque05}#calendario`);
+    verificar('aba Calendário do tanque usa a agenda', porId('agenda-tanque').querySelector('.calendario__grade')
+        && !porId('agenda-tanque').querySelector('[data-filtro-tanque]'));
+    verificar('só eventos do tanque e gerais', !porId('agenda-tanque').querySelector('.calendario__grade').textContent.includes('T01')
+        && porId('agenda-tanque').textContent.includes('Revisar o aerador'));
+    verificar('títulos no nível certo', porId('agenda-tanque').querySelector('h3.agenda__mes') && porId('agenda-tanque').querySelector('h4.quadro__titulo'));
+
+    etapa = 'Agenda no celular';
+    quadro.style.width = '390px';
+    await abrir('calendario.html');
+    verificar('no celular o quadro só abre ao tocar', quadroDia().hidden);
+    verificar('sem rolagem horizontal', doc().documentElement.scrollWidth <= doc().documentElement.clientWidth,
+        `${doc().documentElement.scrollWidth} > ${doc().documentElement.clientWidth}`);
+    celula(HOJE).click();
+    await esperar(60);
+    verificar('quadro em tela cheia', doc().defaultView.getComputedStyle(quadroDia()).position === 'fixed' && doc().activeElement === quadroDia().querySelector('.quadro__fechar'));
+    quadroDia().querySelector('.quadro__fechar').click();
+    await esperar(40);
+    verificar('fechar devolve o foco ao dia', quadroDia().hidden && doc().activeElement === celula(HOJE));
+    quadro.style.width = '';
 }
 
 async function executar() {

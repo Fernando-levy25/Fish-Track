@@ -1,4 +1,4 @@
-// Configurações (seção 7.9): limites padrão dos alertas, exportação CSV,
+// Configurações (seção 7.9): limites padrão dos alertas, exportação CSV (registros e lembretes),
 // backup e restauração, dados de exemplo e limpeza dos dados.
 
 import { paraNumero } from '../core/utils.js';
@@ -6,7 +6,7 @@ import { apagarDados, lerDados } from '../core/storage.js';
 import { pluralizar } from '../core/format.js';
 import { listarTanques, ROTULOS_STATUS } from '../domain/tanques.js';
 import { obterLimitesPadrao, obterMetaFca, restaurarLimitesPadrao, salvarLimitesPadrao } from '../domain/configuracoes.js';
-import { exportarBackup, exportarCsv, lerBackup, restaurarBackup } from '../services/exportacao.js';
+import { exportarBackup, exportarCsv, exportarCsvLembretes, lerBackup, restaurarBackup } from '../services/exportacao.js';
 import { carregarDadosExemplo } from '../services/seed.js';
 
 import {
@@ -77,19 +77,23 @@ function configurarLimites() {
 }
 
 function configurarExportacao() {
-    porId('botao-exportar-csv').addEventListener('click', () => {
+    const exportar = (exportador, vazio, singular, plural) => () => {
         const saida = porId('mensagem-exportar');
         try {
-            const { quantidade, arquivo } = exportarCsv({ tanqueId: seletorExportacao.value || null });
+            const { quantidade, arquivo } = exportador({ tanqueId: seletorExportacao.value || null });
             if (quantidade === 0) {
-                mostrarMensagem(saida, 'Não há registros para exportar.', { erro: true });
+                mostrarMensagem(saida, vazio, { erro: true });
                 return;
             }
-            mostrarMensagem(saida, `${pluralizar(quantidade, 'registro exportado', 'registros exportados')} para ${arquivo}.`);
+            mostrarMensagem(saida, `${pluralizar(quantidade, singular, plural)} para ${arquivo}.`);
         } catch (erro) {
             mostrarErro(saida, erro);
         }
-    });
+    };
+    porId('botao-exportar-csv').addEventListener('click',
+        exportar(exportarCsv, 'Não há registros para exportar.', 'registro exportado', 'registros exportados'));
+    porId('botao-exportar-lembretes').addEventListener('click',
+        exportar(exportarCsvLembretes, 'Não há lembretes para exportar.', 'lembrete exportado', 'lembretes exportados'));
 }
 
 function configurarBackup() {

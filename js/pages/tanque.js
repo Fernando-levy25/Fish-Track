@@ -16,7 +16,6 @@ import {
     pluralizar,
 } from '../core/format.js';
 import { arquivarTanque, desarquivarTanque, excluirTanque, obterSituacao, ROTULOS_STATUS } from '../domain/tanques.js';
-import { listarEventosCalendario } from '../domain/ciclos.js';
 import { excluirRegistro, listarRegistrosDoCiclo, resumirRegistro } from '../domain/registros.js';
 import { calcularCargaMaximaKg, calcularSeries } from '../domain/indicadores.js';
 import { analisarTanque, resolverLimites } from '../domain/alertas.js';
@@ -38,7 +37,7 @@ import {
     renderizarAlertas,
 } from '../ui/componentes.js';
 import { desenharGraficoLinha } from '../ui/graficos.js';
-import { iniciarCalendario } from '../ui/calendario.js';
+import { montarAgenda } from './agenda.js';
 import { atualizarMenu, iniciarPagina, obterAcaoDoAlerta } from './comum.js';
 
 const MAXIMO_REGISTROS_RECENTES = 5;
@@ -70,22 +69,7 @@ function iniciar() {
     }
     porId('conteudo-tanque').hidden = false;
     abas = iniciarAbas(porId('abas-tanque'));
-    calendario = iniciarCalendario({
-        grade: porId('calendario'),
-        titulo: porId('titulo-mes'),
-        botaoAnterior: porId('botao-mes-anterior'),
-        botaoSeguinte: porId('botao-mes-seguinte'),
-        botaoHoje: porId('botao-mes-atual'),
-        lista: porId('lista-eventos-dia'),
-        tituloLista: porId('titulo-eventos-dia'),
-        hoje: hojeISO(),
-        carregarEventos: (inicio, fim) => listarEventosCalendario({ inicio, fim, tanqueId }).map((evento) => ({
-            data: evento.data,
-            tipo: evento.tipo,
-            titulo: evento.rotulo,
-            descricao: evento.descricao,
-        })),
-    });
+    calendario = montarAgenda(porId('agenda-tanque'), { tanqueId, nivelTitulo: 3 });
     configurarAcoes();
     configurarHistorico();
     configurarLimites();

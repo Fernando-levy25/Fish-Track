@@ -8,6 +8,7 @@ import { hojeISO, somarDias } from '../core/utils.js';
 import { arquivarTanque, salvarTanque } from '../domain/tanques.js';
 import { iniciarCiclo, registrarDespesca } from '../domain/ciclos.js';
 import { salvarRegistro } from '../domain/registros.js';
+import { alternarConclusao, salvarLembrete } from '../domain/lembretes.js';
 
 const SEMENTE = 20261016;
 const OBSERVACOES = [
@@ -78,6 +79,19 @@ function criarExemplo(hoje) {
         despesca: { perda: 10 }, sortear,
     });
     arquivarTanque(antigo.id);
+
+    // Lembretes (seção 7): três para hoje, um já concluído; repetidos com as
+    // ocorrências passadas em dia; e um atrasado.
+    const lembrete = (entrada, concluidas = []) => {
+        const { id } = salvarLembrete({ observacao: '', tanqueId: null, repetirDias: null, ...entrada });
+        concluidas.forEach((data) => alternarConclusao(id, data));
+    };
+    lembrete({ titulo: 'Biometria quinzenal', tanqueId: tanque01.id, data: dia(-30), repetirDias: 15 }, [dia(-30), dia(-15)]);
+    lembrete({ titulo: 'Medir oxigênio ao amanhecer', tanqueId: tanque02.id, data: dia(-14), repetirDias: 7 }, [dia(-14), dia(-7)]);
+    lembrete({ titulo: 'Comprar ração', data: hoje, observacao: '20 sacos de 25 kg, ração 32% de proteína.' }, [hoje]);
+    lembrete({ titulo: 'Revisar o aerador', tanqueId: tanque05.id, data: dia(-2), observacao: 'Fazendo barulho na partida.' });
+    lembrete({ titulo: 'Limpar as telas de entrada', tanqueId: viveiro.id, data: dia(5) });
+    lembrete({ titulo: 'Avisar o comprador sobre a despesca', data: dia(12) });
 }
 
 // Um ciclo com registro diário de ração, pesagem semanal, mortalidade baixa e

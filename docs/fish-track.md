@@ -160,7 +160,7 @@ Visão geral de toda a produção. A versão principal é a de computador; no ce
 
 ### 7.11 Menu lateral
 
-Em telas largas, coluna escura com a marca, o botão "Novo registro", a navegação com ícones (Visão geral, Tanques e Alertas com contadores, Agenda, Configurações) e um rodapé com o estado do uso offline e o tempo desde o último backup (em âmbar depois de 7 dias, com o link "Fazer backup agora"). No celular, vira a barra inferior com "Mais".
+Em telas largas, coluna escura com a marca, o botão "Novo registro", a navegação com ícones (Visão geral, Tanques e Alertas com contadores, Agenda, Configurações), os **Lembretes de hoje** (seção 7.8: checkbox para concluir, contador "1 de 3", atrasados com o selo "Atrasado", até cinco itens e o link "Adicionar lembrete") e um rodapé com o estado do uso offline e o tempo desde o último backup (em âmbar depois de 7 dias, com o link "Fazer backup agora"). No celular, vira a barra inferior com "Mais".
 
 ### 7.2 Tanques (`tanques.html`)
 
@@ -174,7 +174,7 @@ Página própria de cada tanque, organizada em abas:
 
 - **Resumo:** carga do tanque (barra de capacidade da seção 9.8 e densidade de povoamento), indicadores do ciclo atual, gráficos (peso médio, biomassa e mortalidade ao longo do tempo), registros recentes e alertas do tanque.
 - **Histórico:** todos os registros do ciclo atual, com edição e exclusão. Permite consultar ciclos anteriores, que ficam só para leitura (RN10).
-- **Calendário:** eventos do tanque (povoamento, registros, despesca prevista e realizada).
+- **Calendário:** a mesma agenda da seção 7.8, filtrada pelo tanque (sem os chips de tanque e sem a abreviação do tanque nas etiquetas), com o quadro do dia. Lembretes gerais também aparecem.
 
 Ações: editar tanque, iniciar ciclo, registrar despesca, novo registro, ajustar limites de alerta (num diálogo; campo vazio usa o limite padrão), arquivar e desarquivar (ou excluir, se o tanque nunca teve ciclo). Cada ação aparece só quando o status do tanque permite.
 
@@ -192,7 +192,7 @@ Cria ou edita um tanque (nome, espécie, volume, capacidade máxima, status, obs
 Formulário rápido, com poucos campos e otimizado para o celular:
 
 - Tanque (pré-selecionado quando vier da página do tanque);
-- Data (padrão: hoje);
+- Data (padrão: hoje; vindo da agenda, `registro.html?data=AAAA-MM-DD` preenche o dia escolhido, e uma data futura é ignorada);
 - Peso médio, consumo de ração, mortalidade, natalidade, quantidade contada (todos opcionais);
 - Observações.
 
@@ -202,20 +202,54 @@ A edição usa o endereço `registro.html?id=...`, e o registro continua no mesm
 
 Lista de todos os alertas ativos, agrupados por tanque e ordenados por gravidade.
 
-### 7.8 Calendário geral (`calendario.html`)
+### 7.8 Agenda (`calendario.html`)
 
-Visão mensal com os eventos de todos os tanques. Ao tocar em um dia, a lista abaixo do calendário mostra os eventos daquele dia, porque no celular não há espaço para os nomes dentro da grade.
+Visão mensal com os eventos de todos os tanques e os lembretes. O mesmo componente (`ui/calendario.js`, ligado ao domínio por `pages/agenda.js`) é usado na aba Calendário do tanque.
+
+**Grade do mês**
+
+- Semana começando no domingo, 6 linhas fixas; dias de outros meses esmaecidos. Navegação: mês anterior, próximo e "Hoje".
+- Resumo abaixo do título do mês: "39 registros · 11 lembretes" (contagens do mês, respeitando os filtros).
+- Cada dia mostra até **3 etiquetas** e "+N mais". Ordem: alertas, ciclo, lembretes, registros. Etiqueta é texto curto + cor, nunca só cor:
+
+| Tipo | Estilo | Exemplo |
+|---|---|---|
+| Alerta | fundo vermelho suave | "Mortalidade alta · T02" |
+| Povoamento | verde-petróleo | "Povoamento · T02" |
+| Despesca prevista | contorno verde | "Despesca prevista · T01" |
+| Despesca realizada | verde preenchido | "Despesca · T01" |
+| Lembrete | fundo branco, borda e sino; riscado se concluído | "Biometria · T05" |
+| Registro | fundo neutro com a bolinha da cor do tanque | "Registro · T01" |
+| Vários registros no dia | uma etiqueta só, com as bolinhas dos tanques | "3 registros" |
+
+- Abreviação do tanque: "T" + número quando o nome termina em número ("Tanque 01" → "T01"); senão, os 3 primeiros caracteres significativos ("Viveiro Norte" → "Viv"). Texto que não cabe é cortado com reticências, com o nome completo no `title`.
+- No celular a célula é estreita demais para texto: as etiquetas viram faixas coloridas, e o texto completo fica no quadro do dia e no nome acessível do botão do dia.
+- Hoje com o número em círculo; dia selecionado com borda verde-petróleo. Setas do teclado percorrem os dias.
+- **Filtros** em chips liga/desliga: por tanque (Todos / cada tanque não arquivado) e por tipo (Registros, Lembretes, Ciclo, Alertas; pelo menos um fica ligado). Lembretes gerais aparecem com qualquer filtro de tanque.
+- Os alertas da agenda são os gerados pelos registros daquele dia: mortalidade no registro e ração acima do limite (seção 9.6).
+
+**Quadro do dia**
+
+- Abre ao clicar num dia, ao lado da grade, que encolhe para caber. No computador, a página já abre com o quadro em **hoje**. No celular, o quadro é uma folha em tela cheia que sobe por baixo, e só abre ao tocar num dia (abrir sozinho esconderia a grade). Fecha pelo "×" ou com Esc, e o foco volta ao dia.
+- Cabeçalho: data por extenso, selo "Hoje" quando for o caso e contagem de itens.
+- Seções, só as que tiverem conteúdo: **Atrasados** (só no quadro de hoje: ocorrências dos últimos 30 dias não concluídas), **Lembretes** (checkbox para concluir, tanque, "repete a cada 15 dias", editar e remover; remover um lembrete repetido pergunta "Só esta vez" ou "Todas as repetições"), **Registros** (tanque com a cor, resumo e link para editar, quando o ciclo está ativo), **Ciclo** e **Alertas**.
+- Dia vazio: "Nada marcado para este dia."
+- Rodapé: **"+ Adicionar lembrete"** e **"+ Registro neste dia"** (só para hoje ou datas passadas, RN12; leva a `registro.html?data=...`).
+
+**Formulário de lembrete** (dentro do quadro): título (obrigatório, até 80 caracteres), data (padrão: dia selecionado; qualquer data, passada ou futura), tanque ("Geral" ou um tanque não arquivado), repetir (não repete, a cada 7, 15 ou 30 dias) e observação (opcional, até 300). Erros por campo com `ErroValidacao`. Ao salvar, o lembrete aparece na hora na grade, com uma pequena animação de entrada. O texto de ajuda avisa que, sem servidor, o celular não notifica com o app fechado: o lembrete aparece só dentro do app.
+
+O link "Adicionar lembrete" do menu lateral abre `calendario.html?lembrete=novo`, que já mostra o formulário em hoje.
 
 ### 7.9 Configurações (`configuracoes.html`)
 
 - Limites padrão dos alertas e meta de conversão alimentar.
-- Exportar CSV (por tanque ou geral).
+- Exportar CSV de registros ou de lembretes (por tanque ou geral).
 - Fazer backup e restaurar dados (JSON).
 - Carregar dados de exemplo e apagar todos os dados.
 
 ### 7.10 Navegação
 
-Barra inferior fixa no celular (Dashboard, Tanques, **+ Registro**, Alertas, Mais) e menu lateral em telas largas. O item **Mais** abre Calendário e Configurações.
+Barra inferior fixa no celular (Dashboard, Tanques, **+ Registro**, Alertas, Mais) e menu lateral em telas largas. O item **Mais** abre Agenda e Configurações.
 
 ---
 
@@ -288,6 +322,27 @@ Os valores são sempre armazenados nestas unidades e convertidos apenas na exibi
 }
 ```
 
+**Lembrete** (seção 7.8)
+
+```js
+{
+  id: "uuid",
+  data: "2026-10-17",           // primeira ocorrência
+  titulo: "Biometria quinzenal",
+  tanqueId: null,               // null = Geral
+  repetirDias: 15,              // null | 7 | 15 | 30
+  observacao: "",
+  concluidas: ["2026-10-17"],   // datas das ocorrências concluídas
+  excluidas: [],                // datas das ocorrências removidas ("só esta vez")
+  criadoEm: "2026-10-17T12:00:00.000Z",
+  atualizadoEm: "2026-10-17T12:00:00.000Z"
+}
+```
+
+- **Ocorrência num dia D:** `D >= data`, `D` não está em `excluidas` e, se houver `repetirDias`, `diasEntre(data, D)` é múltiplo de `repetirDias`.
+- Remover "só esta vez" um lembrete que não se repete apaga o lembrete.
+- Ao arquivar um tanque, seus lembretes ficam no histórico, mas deixam de gerar ocorrências a partir de hoje.
+
 ### 8.3 Armazenamento
 
 Uma única chave no `localStorage`. Ela continua se chamando `fishtrack:v1` na versão 2 do formato, para não perder os dados existentes; a versão do formato fica no campo `versao`.
@@ -359,6 +414,12 @@ O `limitesAlerta` de cada tanque usa as mesmas chaves e pode conter só as que f
 - **RN14.** A mortalidade de um registro não pode ser maior que a quantidade estimada de peixes naquela data. A regra é conferida em todos os registros do ciclo a cada inclusão, alteração ou exclusão, porque um registro muda o estoque estimado dos que vêm depois dele.
 - **RN15.** Pode haver mais de um registro na mesma data. Os valores de ração, mortalidade e natalidade são somados.
 
+### 9.3.1 Lembretes
+
+- **RN16.** O título do lembrete é obrigatório e tem até 80 caracteres.
+- **RN17.** O tanque do lembrete, quando informado, precisa existir e não estar arquivado.
+- **RN18.** A repetição só aceita 7, 15 ou 30 dias.
+
 ### 9.4 Indicadores
 
 Todos os indicadores são calculados a partir do ciclo e dos registros, ordenados por data.
@@ -408,20 +469,24 @@ Os alertas só são avaliados para tanques com ciclo ativo. Os de registro (mort
 
 > ⚠️ Os limites padrão são valores iniciais de referência e devem ser **validados com produtores** antes de serem considerados definitivos.
 
-### 9.6 Calendário
+### 9.6 Agenda
 
-Eventos exibidos:
+Eventos exibidos (`listarEventosCalendario` em `domain/ciclos.js`):
 
 - início do ciclo (povoamento);
 - cada registro;
 - despesca prevista;
-- despesca realizada.
+- despesca realizada;
+- alertas do dia, calculados a partir dos registros daquela data (somados, RN15): mortalidade no registro acima do limite (gravidade alta) e ração acima do limite (média), com os limites do tanque (`avaliarAlertasDosDias` em `domain/alertas.js`);
+- ocorrências de lembretes (seção 8.2).
 
-No calendário geral, tanques arquivados ficam de fora. A despesca prevista só aparece enquanto o ciclo está ativo.
+Na agenda geral, tanques arquivados ficam de fora. A despesca prevista só aparece enquanto o ciclo está ativo. Os eventos de um dia vêm na ordem das etiquetas: alertas, ciclo, lembretes, registros.
 
 ### 9.7 Exportação e backup
 
-- **CSV:** um arquivo por tanque ou geral, com uma linha por registro e colunas para tanque, espécie, ciclo, data e todos os campos. Separador `;` e decimal com vírgula, para abrir corretamente no Excel em português. O arquivo começa com BOM UTF-8 para manter os acentos, e textos que começam com `=`, `+`, `-` ou `@` recebem um apóstrofo, para o Excel não tratá-los como fórmula.
+- **CSV de registros:** um arquivo por tanque ou geral, com uma linha por registro e colunas para tanque, espécie, ciclo, data e todos os campos.
+- **CSV de lembretes:** uma linha por lembrete (não por ocorrência): título, tanque ("Geral" quando não tem), primeira data, repetição, datas concluídas e observação.
+- Nos dois: separador `;` e decimal com vírgula, para abrir corretamente no Excel em português. O arquivo começa com BOM UTF-8 para manter os acentos, e textos que começam com `=`, `+`, `-` ou `@` recebem um apóstrofo, para o Excel não tratá-los como fórmula.
 - **Backup JSON:** exporta o objeto completo do `localStorage` e registra a data em `config.ultimoBackupEm`. A restauração valida a `versao`, migra backups antigos (seção 8.4) e pede confirmação antes de substituir os dados.
 
 
@@ -477,6 +542,7 @@ fish-track/
 │   │   ├── registros.js      # CRUD e regras de registro
 │   │   ├── indicadores.js    # Cálculos (funções puras)
 │   │   ├── alertas.js        # Avaliação de alertas (funções puras)
+│   │   ├── lembretes.js      # Lembretes da agenda e suas ocorrências (RN16 a RN18)
 │   │   ├── configuracoes.js  # Limites de alerta: padrão e por tanque
 │   │   └── validacao.js      # Validações compartilhadas
 │   ├── ui/
@@ -484,12 +550,13 @@ fish-track/
 │   │   ├── componentes.js    # Cartões, badges, mensagens, modais
 │   │   ├── graficos.js       # Gráficos em SVG e cor fixa por tanque
 │   │   ├── icones.js         # Ícones em traço
-│   │   └── calendario.js     # Componente de calendário
+│   │   └── calendario.js     # Agenda: grade com etiquetas, quadro do dia e formulário de lembrete
 │   ├── services/
 │   │   ├── exportacao.js     # CSV e backup JSON
 │   │   └── seed.js           # Dados de exemplo
 │   └── pages/
-│       ├── comum.js          # Menu lateral, contadores, backup e ações dos alertas
+│       ├── agenda.js         # Liga a agenda ao domínio (página Agenda e aba do tanque)
+│       ├── comum.js          # Menu lateral, contadores, lembretes de hoje, backup e ações dos alertas
 │       ├── dashboard.js
 │       ├── tanques.js
 │       ├── tanque.js
@@ -609,7 +676,7 @@ fish-track/
 ### Fase 4 — Visão geral
 
 - [x] Dashboard.
-- [x] Calendário (por tanque e geral).
+- [x] Agenda (por tanque e geral), com etiquetas, quadro do dia e lembretes.
 
 ### Fase 5 — Dados e offline
 

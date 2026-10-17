@@ -54,7 +54,8 @@ body {
 }
 
 /* Rodapé do menu lateral: só existe no desktop. */
-.cabecalho__rodape {
+.cabecalho__rodape,
+.lembretes-hoje {
     display: none;
 }
 
@@ -529,6 +530,99 @@ body {
     .menu__contador--alerta {
         background: var(--cor-perigo);
         color: var(--cor-texto-invertido);
+    }
+
+    /* Lembretes de hoje (seção 7.4): concluídos direto no menu. */
+    .lembretes-hoje {
+        display: grid;
+        gap: var(--espaco-2);
+        padding: var(--espaco-4) var(--espaco-3) 0;
+        border-top: 1px solid rgb(255 255 255 / 0.1);
+        color: var(--cor-menu-texto);
+        font-size: var(--texto-2);
+    }
+
+    .lembretes-hoje__cabecalho {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: var(--espaco-2);
+    }
+
+    .lembretes-hoje__titulo {
+        color: var(--cor-menu-texto-suave);
+        font-family: var(--fonte);
+        font-size: var(--texto-1);
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+    }
+
+    .lembretes-hoje__contador {
+        color: var(--cor-menu-texto-suave);
+        font-size: var(--texto-1);
+        font-variant-numeric: tabular-nums;
+    }
+
+    .lembretes-hoje__lista {
+        display: grid;
+        gap: var(--espaco-1);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .lembretes-hoje__item {
+        display: flex;
+        align-items: center;
+        gap: var(--espaco-2);
+        min-height: var(--altura-toque);
+    }
+
+    .lembretes-hoje__caixa {
+        flex: none;
+        width: 1.125rem;
+        height: 1.125rem;
+        margin: 0;
+        accent-color: var(--cor-menu-destaque);
+    }
+
+    .lembretes-hoje__texto {
+        display: grid;
+        flex: 1 1 auto;
+        min-width: 0;
+        cursor: pointer;
+    }
+
+    .lembretes-hoje__item--concluido .lembretes-hoje__texto {
+        color: var(--cor-menu-texto-suave);
+        text-decoration: line-through;
+    }
+
+    .lembretes-hoje__tanque {
+        overflow: hidden;
+        color: var(--cor-menu-texto-suave);
+        font-size: var(--texto-1);
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .lembretes-hoje__vazio {
+        color: var(--cor-menu-texto-suave);
+    }
+
+    .lembretes-hoje__link {
+        justify-self: start;
+        display: inline-flex;
+        align-items: center;
+        min-height: var(--altura-toque);
+        color: var(--cor-menu-destaque);
+        font-weight: 600;
+        text-underline-offset: 0.2em;
+    }
+
+    .lembretes-hoje__link:hover {
+        color: var(--cor-menu-texto);
     }
 
     .cabecalho__rodape {

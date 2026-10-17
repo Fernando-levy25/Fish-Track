@@ -125,6 +125,30 @@ export function avaliarAlertas({ tanque, ciclo, registros, indicadores, limites,
     return ordenarAlertas(alertas);
 }
 
+// Alertas gerados pelos registros de cada dia, para a agenda (seção 7.1):
+// mortalidade elevada e ração acima do limite, avaliados dia a dia, e não só
+// no último dia como nos alertas ativos.
+export function avaliarAlertasDosDias({ ciclo, registros, limites }) {
+    const alertas = [];
+    for (const dia of calcularLinhaDoTempo(ciclo, registros).slice(1)) {
+        if (dia.mortalidadeDia > 0 && dia.quantidadeInicioDia > 0) {
+            const percentual = (dia.mortalidadeDia / dia.quantidadeInicioDia) * 100;
+            if (percentual > limites.mortalidadeRegistroPct) {
+                alertas.push({ data: dia.data, tipo: 'mortalidade-registro', gravidade: 'alta', titulo: 'Mortalidade alta',
+                    descricao: `${pluralizar(dia.mortalidadeDia, 'peixe morto', 'peixes mortos')}: ${formatarPercentual(percentual)} do estoque.` });
+            }
+        }
+        if (dia.racaoDiaKg > 0 && dia.biomassaKg > 0) {
+            const percentual = (dia.racaoDiaKg / dia.biomassaKg) * 100;
+            if (percentual > limites.racaoDiariaPct) {
+                alertas.push({ data: dia.data, tipo: 'racao', gravidade: 'media', titulo: 'Ração acima do limite',
+                    descricao: `${formatarKg(dia.racaoDiaKg)}: ${formatarPercentual(percentual)} da biomassa.` });
+            }
+        }
+    }
+    return alertas;
+}
+
 // Interpolação linear entre o peso inicial, no povoamento, e o peso alvo, na
 // despesca prevista (seção 9.5). Depois da data prevista, o esperado é o alvo.
 export function calcularPesoEsperado(ciclo, data) {

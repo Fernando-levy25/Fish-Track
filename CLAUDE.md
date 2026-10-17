@@ -8,7 +8,7 @@ A especificação completa está em [docs/fish-track.md](docs/fish-track.md) e �
 
 - Páginas e o que cada uma mostra: seção 7
 - Modelo de dados e formato do `localStorage`: seção 8
-- Regras de negócio (RN01 a RN15), fórmulas dos indicadores e alertas: seção 9
+- Regras de negócio (RN01 a RN18), fórmulas dos indicadores e alertas: seção 9
 - Estrutura de pastas e responsabilidades por camada: seção 10
 - Padrões de código: seção 11
 - Fases de desenvolvimento: seção 12

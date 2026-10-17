@@ -1,7 +1,7 @@
 // Novo registro e edição (seção 7.6). registro.html?tanqueId=... já vem com o
 // tanque escolhido; registro.html?id=... edita um registro existente.
 
-import { hojeISO, paraNumero } from '../core/utils.js';
+import { ehDataISO, hojeISO, paraNumero } from '../core/utils.js';
 import { formatarInteiro } from '../core/format.js';
 import { listarSituacoes, obterSituacao } from '../domain/tanques.js';
 import { obterRegistro, salvarRegistro } from '../domain/registros.js';
@@ -14,6 +14,8 @@ const AJUDA_CONTAGEM = 'Só se você contou os peixes. Corrige a quantidade esti
 
 const registroId = lerParametro('id');
 const tanqueDoEndereco = lerParametro('tanqueId');
+// "Registro neste dia", da agenda, chega com a data do dia escolhido.
+const dataDoEndereco = lerParametro('data');
 const porId = (id) => document.getElementById(id);
 const formulario = porId('formulario-registro');
 const seletorTanque = porId('campo-tanque');
@@ -55,7 +57,8 @@ function prepararNovo(hoje) {
     if (escolhido) {
         seletorTanque.value = escolhido.tanque.id;
     }
-    campoData.value = hoje;
+    // RN12: data futura no endereço é ignorada; fica hoje.
+    campoData.value = ehDataISO(dataDoEndereco) && dataDoEndereco <= hoje ? dataDoEndereco : hoje;
     porId('link-cancelar-registro').href = doEndereco ? montarUrl('tanque.html', { id: doEndereco.tanque.id }) : 'index.html';
     return true;
 }

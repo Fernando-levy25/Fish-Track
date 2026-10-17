@@ -36,6 +36,14 @@
                 </div>
             </details>
         </nav>
+        <section class="lembretes-hoje" aria-labelledby="titulo-lembretes-hoje">
+            <div class="lembretes-hoje__cabecalho">
+                <h2 class="lembretes-hoje__titulo" id="titulo-lembretes-hoje">Lembretes de hoje</h2>
+                <span class="lembretes-hoje__contador" id="contador-lembretes-hoje"></span>
+            </div>
+            <ul class="lembretes-hoje__lista" id="lista-lembretes-hoje"></ul>
+            <a class="lembretes-hoje__link" href="calendario.html?lembrete=novo">Adicionar lembrete</a>
+        </section>
         <div class="cabecalho__rodape">
             <p class="cabecalho__status" id="status-offline">Preparando o uso offline…</p>
             <p class="cabecalho__backup" id="status-backup"></p>
@@ -112,8 +120,8 @@
         </section>
 
         <section class="secao" aria-labelledby="titulo-exportar">
-            <h2 class="secao__titulo" id="titulo-exportar">Exportar registros (CSV)</h2>
-            <p class="secao__descricao">Planilha com uma linha por registro, pronta para abrir no Excel.</p>
+            <h2 class="secao__titulo" id="titulo-exportar">Exportar planilhas (CSV)</h2>
+            <p class="secao__descricao">Planilhas prontas para abrir no Excel: uma linha por registro ou uma linha por lembrete.</p>
 
             <div class="campo">
                 <label class="campo__rotulo" for="campo-exportar-tanque">Tanque</label>
@@ -123,7 +131,8 @@
             </div>
 
             <div class="secao__acoes">
-                <button class="botao botao--primario" id="botao-exportar-csv" type="button">Exportar CSV</button>
+                <button class="botao botao--primario" id="botao-exportar-csv" type="button">Exportar registros</button>
+                <button class="botao botao--secundario" id="botao-exportar-lembretes" type="button">Exportar lembretes</button>
             </div>
 
             <p class="mensagem" id="mensagem-exportar" role="status"></p>

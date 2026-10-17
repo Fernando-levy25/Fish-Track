@@ -9,7 +9,7 @@ import { falharRegra } from '../domain/validacao.js';
 
 // Separador ";" e vírgula decimal: é o que o Excel em português espera.
 const SEPARADOR = ';';
-const COLUNAS = [
+const COLUNAS_REGISTROS = [
     ['Tanque', ({ tanque }) => texto(tanque.nome)],
     ['Espécie', ({ tanque }) => texto(tanque.especie)],
     ['Ciclo (povoamento)', ({ ciclo }) => formatarData(ciclo.dataInicio)],
@@ -20,6 +20,15 @@ const COLUNAS = [
     ['Natalidade', ({ registro }) => numero(registro.natalidade)],
     ['Quantidade contada', ({ registro }) => numero(registro.quantidadeContada)],
     ['Observações', ({ registro }) => texto(registro.observacoes)],
+];
+// Uma linha por lembrete (não por ocorrência): as datas concluídas vão juntas.
+const COLUNAS_LEMBRETES = [
+    ['Título', ({ lembrete }) => texto(lembrete.titulo)],
+    ['Tanque', ({ tanque }) => (tanque ? texto(tanque.nome) : 'Geral')],
+    ['Data', ({ lembrete }) => formatarData(lembrete.data)],
+    ['Repetir', ({ lembrete }) => (lembrete.repetirDias ? `A cada ${lembrete.repetirDias} dias` : 'Não repete')],
+    ['Concluído em', ({ lembrete }) => lembrete.concluidas.map(formatarData).join(', ')],
+    ['Observação', ({ lembrete }) => texto(lembrete.observacao)],
 ];
 
 function numero(valor) {
@@ -45,19 +54,40 @@ export function gerarCsvRegistros({ tanqueId = null } = {}) {
         .filter((linha) => linha.tanque && linha.ciclo)
         .sort((a, b) => compararTexto(a.tanque.nome, b.tanque.nome));
 
-    const cabecalho = COLUNAS.map(([titulo]) => celula(titulo)).join(SEPARADOR);
-    const corpo = linhas.map((linha) => COLUNAS.map(([, valor]) => celula(valor(linha))).join(SEPARADOR));
+    return montarCsv(COLUNAS_REGISTROS, linhas);
+}
+
+export function gerarCsvLembretes({ tanqueId = null } = {}) {
+    const dados = lerDados();
+    const tanques = new Map(dados.tanques.map((tanque) => [tanque.id, tanque]));
+    const linhas = dados.lembretes
+        .filter((lembrete) => !tanqueId || lembrete.tanqueId === tanqueId)
+        .map((lembrete) => ({ lembrete, tanque: tanques.get(lembrete.tanqueId) ?? null }))
+        .sort((a, b) => a.lembrete.data.localeCompare(b.lembrete.data) || compararTexto(a.lembrete.titulo, b.lembrete.titulo));
+    return montarCsv(COLUNAS_LEMBRETES, linhas);
+}
+
+function montarCsv(colunas, linhas) {
+    const cabecalho = colunas.map(([titulo]) => celula(titulo)).join(SEPARADOR);
+    const corpo = linhas.map((linha) => colunas.map(([, valor]) => celula(valor(linha))).join(SEPARADOR));
     // O BOM no início faz o Excel ler o arquivo como UTF-8 e manter os acentos.
     return { conteudo: `﻿${[cabecalho, ...corpo].join('\r\n')}\r\n`, quantidade: linhas.length };
 }
 
 export function exportarCsv({ tanqueId = null } = {}) {
-    const { conteudo, quantidade } = gerarCsvRegistros({ tanqueId });
+    return baixarCsv(gerarCsvRegistros({ tanqueId }), tanqueId, 'registros');
+}
+
+export function exportarCsvLembretes({ tanqueId = null } = {}) {
+    return baixarCsv(gerarCsvLembretes({ tanqueId }), tanqueId, 'lembretes');
+}
+
+function baixarCsv({ conteudo, quantidade }, tanqueId, assunto) {
     if (quantidade === 0) {
         return { quantidade, arquivo: null };
     }
     const tanque = tanqueId ? lerDados().tanques.find((item) => item.id === tanqueId) : null;
-    const arquivo = `fish-track-${tanque ? criarSlug(tanque.nome) : 'registros'}-${hojeISO()}.csv`;
+    const arquivo = `fish-track-${assunto}${tanque ? `-${criarSlug(tanque.nome)}` : ''}-${hojeISO()}.csv`;
     baixarArquivo(arquivo, conteudo, 'text/csv;charset=utf-8');
     return { quantidade, arquivo };
 }

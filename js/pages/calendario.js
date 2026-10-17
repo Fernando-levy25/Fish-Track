@@ -1,34 +1,17 @@
-// Calendário geral com os eventos de todos os tanques (seção 7.8).
+// Agenda geral, com os eventos e lembretes de todos os tanques (seção 7).
 
-import { hojeISO } from '../core/utils.js';
-import { listarEventosCalendario } from '../domain/ciclos.js';
-import { montarUrl } from '../ui/nav.js';
+import { lerParametro } from '../ui/nav.js';
 import { mostrarErroPagina } from '../ui/componentes.js';
-import { iniciarCalendario } from '../ui/calendario.js';
+import { montarAgenda } from './agenda.js';
 import { iniciarPagina } from './comum.js';
-
-const porId = (id) => document.getElementById(id);
 
 iniciarPagina();
 try {
-    iniciarCalendario({
-        grade: porId('calendario'),
-        titulo: porId('titulo-mes'),
-        botaoAnterior: porId('botao-mes-anterior'),
-        botaoSeguinte: porId('botao-mes-seguinte'),
-        botaoHoje: porId('botao-mes-atual'),
-        lista: porId('lista-eventos-dia'),
-        tituloLista: porId('titulo-eventos-dia'),
-        hoje: hojeISO(),
-        // Aqui vários tanques dividem o mesmo dia: o título do evento é o tanque.
-        carregarEventos: (inicio, fim) => listarEventosCalendario({ inicio, fim }).map((evento) => ({
-            data: evento.data,
-            tipo: evento.tipo,
-            titulo: evento.tanqueNome,
-            descricao: `${evento.rotulo} · ${evento.descricao}`,
-            href: montarUrl('tanque.html', { id: evento.tanqueId }),
-        })),
-    });
+    const agenda = montarAgenda(document.getElementById('agenda'));
+    // "Adicionar lembrete" do menu lateral chega aqui com ?lembrete=novo.
+    if (lerParametro('lembrete') === 'novo') {
+        agenda.abrirFormularioNovo();
+    }
 } catch (erro) {
     mostrarErroPagina(erro);
 }
