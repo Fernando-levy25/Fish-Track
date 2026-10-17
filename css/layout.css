@@ -136,6 +136,37 @@ body {
     box-shadow: none;
 }
 
+.menu__submenu .menu__link:hover {
+    background: var(--cor-neutra-suave);
+}
+
+.menu__mais[open] > summary {
+    color: var(--cor-primaria);
+}
+
+.menu__link:active {
+    opacity: 0.7;
+}
+
+/* As opções do "Mais" surgem com um deslize curto: de baixo no celular, onde
+   o painel abre acima da barra, e de cima no menu lateral. */
+.menu__mais[open] .menu__submenu {
+    animation: menu-surgir 180ms ease-out;
+}
+
+@keyframes menu-surgir {
+    from {
+        opacity: 0;
+        transform: translateY(var(--menu-entrada, 6px));
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .menu__mais[open] .menu__submenu {
+        animation: none;
+    }
+}
+
 /* ---------- Página e seções ---------- */
 
 .pagina {
@@ -325,7 +356,14 @@ body {
         transform: translateY(1px) rotate(-135deg);
     }
 
+    /* A altura de 100% só serve para a barra do celular; aqui ela esticava o
+       "Mais" até a altura do grupo aberto. */
+    .menu__mais > summary {
+        height: auto;
+    }
+
     .menu__submenu {
+        --menu-entrada: -4px;
         position: static;
         gap: 2px;
         min-width: 0;

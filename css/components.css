@@ -24,7 +24,12 @@
     text-decoration: none;
     white-space: nowrap;
     cursor: pointer;
-    transition: background-color var(--transicao), border-color var(--transicao), color var(--transicao);
+    transition: background-color var(--transicao), border-color var(--transicao), color var(--transicao), transform var(--transicao);
+}
+
+/* Um leve afundar ao tocar confirma o clique, principalmente no celular. */
+.botao:active:not(:disabled) {
+    transform: translateY(1px);
 }
 
 .botao:disabled,
@@ -374,6 +379,11 @@
     align-content: start;
     gap: var(--espaco-3);
     padding: var(--espaco-4);
+    transition: border-color var(--transicao);
+}
+
+.cartao-tanque:hover {
+    border-color: var(--cor-borda-forte);
 }
 
 .cartao-tanque__cabecalho {

@@ -491,7 +491,7 @@ fish-track/
 
 - HTML semântico: `header`, `nav`, `main`, `section`, `button`, `label`.
 - Todo campo de formulário tem `label` associado.
-- Campos numéricos com `inputmode="decimal"` (valores com casas decimais) ou `inputmode="numeric"` (contagens de peixes) para abrir o teclado numérico no celular.
+- Campos numéricos usam `type="text"` com `inputmode="decimal"` (valores com casas decimais) ou `inputmode="numeric"` (contagens de peixes), para abrir o teclado numérico no celular. Não use `type="number"`: dependendo do navegador e do teclado, ele descarta a vírgula antes de o JavaScript ver o valor ("2,5" vira 25). A conversão é feita por `paraNumero` (`core/utils.js`), no padrão brasileiro: vírgula decimal e ponto de milhar.
 - O `name` de cada campo é igual à propriedade do modelo de dados (`pesoMedioG`, `racaoKg`), e cada campo aponta para sua mensagem de erro com `aria-describedby`.
 - Ganchos para o JavaScript usam `data-campo` e `data-indicador` com o nome da propriedade em `camelCase`, nunca classes de estilo.
 - O link da página atual no menu é marcado com `aria-current="page"`.

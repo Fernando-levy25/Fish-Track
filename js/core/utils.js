@@ -70,17 +70,24 @@ export function diasNoMes(ano, mes) {
 
 export function paraNumero(valor) {
     // Campo vazio vira null (não informado). Texto que não é número vira NaN,
-    // para a validação avisar em vez de gravar zero. A vírgula é aceita porque
-    // alguns teclados não a trocam por ponto.
+    // para a validação avisar em vez de gravar outro valor.
     if (valor === null || valor === undefined) {
         return null;
     }
     if (typeof valor === 'number') {
         return Number.isFinite(valor) ? valor : NaN;
     }
-    const texto = String(valor).trim().replace(',', '.');
+    let texto = String(valor).replace(/\s/g, '');
     if (texto === '') {
         return null;
+    }
+    // Padrão brasileiro: vírgula decimal e ponto de milhar ("1.234,5"). Sem
+    // vírgula, ponto seguido de grupos de três dígitos também é milhar
+    // ("1.000"); qualquer outro ponto é decimal, como em teclados sem vírgula ("2.5").
+    if (texto.includes(',')) {
+        texto = texto.replaceAll('.', '').replace(',', '.');
+    } else if (/^-?\d{1,3}(\.\d{3})+$/.test(texto)) {
+        texto = texto.replaceAll('.', '');
     }
     return /^-?\d+(\.\d+)?$/.test(texto) ? Number(texto) : NaN;
 }

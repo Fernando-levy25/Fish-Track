@@ -60,13 +60,13 @@
                 <div class="formulario__grade">
                     <div class="campo">
                         <label class="campo__rotulo" for="campo-volume">Volume (m³)</label>
-                        <input class="campo__input" id="campo-volume" name="volumeM3" type="number" inputmode="decimal" min="0.01" step="0.01" required aria-describedby="erro-volume">
+                        <input class="campo__input" id="campo-volume" name="volumeM3" type="text" autocomplete="off" inputmode="decimal" required aria-describedby="erro-volume">
                         <p class="campo__erro" id="erro-volume"></p>
                     </div>
 
                     <div class="campo">
                         <label class="campo__rotulo" for="campo-capacidade">Capacidade (nº de peixes)</label>
-                        <input class="campo__input" id="campo-capacidade" name="capacidade" type="number" inputmode="numeric" min="1" step="1" required aria-describedby="ajuda-capacidade erro-capacidade">
+                        <input class="campo__input" id="campo-capacidade" name="capacidade" type="text" autocomplete="off" inputmode="numeric" required aria-describedby="ajuda-capacidade erro-capacidade">
                         <p class="campo__ajuda" id="ajuda-capacidade">Quantidade máxima de peixes que o tanque comporta.</p>
                         <p class="campo__erro" id="erro-capacidade"></p>
                     </div>

@@ -150,10 +150,6 @@ export function lerFormulario(formulario) {
         }
         if (campo.type === 'checkbox') {
             valores[campo.name] = campo.checked;
-        } else if (campo.type === 'number' && campo.validity.badInput) {
-            // O navegador devolve "" para texto que não é número; o marcador
-            // faz a validação acusar o erro em vez de tratar como vazio.
-            valores[campo.name] = 'invalido';
         } else {
             valores[campo.name] = campo.value;
         }
@@ -169,6 +165,9 @@ export function preencherFormulario(formulario, valores) {
         }
         if (campo.type === 'checkbox') {
             campo.checked = Boolean(valor);
+        } else if (typeof valor === 'number') {
+            // Números voltam ao campo com vírgula decimal, como o produtor digita.
+            campo.value = String(valor).replace('.', ',');
         } else {
             campo.value = valor ?? '';
         }

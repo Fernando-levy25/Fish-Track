@@ -33,7 +33,7 @@ O service worker (`sw.js`) busca na rede primeiro, então alterações aparecem 
 - Identificadores em português e sem acentos, em `camelCase`, com verbo nas funções (`calcularBiomassa`). `const` por padrão, nunca `var`.
 - Comentários explicam o porquê. Fórmulas e validações citam a regra (`// RN14`).
 - Gráficos em SVG próprio, sem bibliotecas.
-- HTML semântico, todo campo com `label`, campos numéricos com `inputmode="decimal"` (ou `numeric` para contagens). O `name` do campo é a propriedade do modelo (`pesoMedioG`). Ganchos de JS via `data-campo`/`data-indicador` em `camelCase`, nunca por classes de estilo.
+- HTML semântico, todo campo com `label`, campos numéricos com `type="text"` e `inputmode="decimal"` (ou `numeric` para contagens), nunca `type="number"`, que descarta a vírgula decimal em alguns celulares; `paraNumero` converte. O `name` do campo é a propriedade do modelo (`pesoMedioG`). Ganchos de JS via `data-campo`/`data-indicador` em `camelCase`, nunca por classes de estilo.
 - CSS mobile-first, variáveis em `css/base.css`, classes BEM em kebab-case (`.card__titulo`, `.card--alerta`), sem seletores por ID nem `!important`. Área de toque mínima de 44 × 44 px.
 - Commits em Conventional Commits, em português (`feat: cadastro de tanques`), uma funcionalidade por branch.
 - Fora do escopo do MVP: login, nuvem, financeiro, IA, sensores e campos específicos por espécie.
