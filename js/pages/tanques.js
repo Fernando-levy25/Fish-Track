@@ -54,8 +54,8 @@ function criarCartao({ tanque, cicloAtivo, registros, ultimoRegistro }, hoje, li
         especie: tanque.especie,
         selo: { texto: ROTULOS_STATUS[tanque.status], variante: tanque.status },
         metricas: [
-            { rotulo: 'Peixes', valor: formatarInteiro(indicadores?.quantidade) },
-            { rotulo: 'Biomassa', valor: formatarKg(indicadores?.biomassaKg) },
+            { rotulo: 'Peixes (estimado)', valor: formatarInteiro(indicadores?.quantidade) },
+            { rotulo: 'Biomassa (estimada)', valor: formatarKg(indicadores?.biomassaKg) },
             { rotulo: 'Último registro', valor: formatarData(ultimoRegistro?.data) },
         ],
         extra: criarBarra(tanque, indicadores, limitesPadrao),

@@ -3,8 +3,8 @@
 
 import { lerDados, salvarDados } from '../core/storage.js';
 import { agoraISO, compararTexto, gerarId, hojeISO, somarDias } from '../core/utils.js';
-import { formatarData, formatarGramas, pluralizar } from '../core/format.js';
-import { ordenarRegistros } from './indicadores.js';
+import { formatarData, formatarGramas, formatarKg, pluralizar } from '../core/format.js';
+import { calcularResultadoCiclo, ordenarRegistros } from './indicadores.js';
 import { avaliarAlertasDosDias, resolverLimites } from './alertas.js';
 import { listarOcorrencias } from './lembretes.js';
 import { resumirRegistro } from './registros.js';
@@ -19,9 +19,29 @@ export const ROTULOS_EVENTO = Object.freeze({
     registro: 'Registro',
 });
 const ORDEM_EVENTOS = Object.keys(ROTULOS_EVENTO);
+// RN20: diferença aceita entre quantidade × peso médio e a biomassa pesada.
+const LIMITE_DIFERENCA_DESPESCA = 0.2;
 
 export function obterCiclo(id) {
     return lerDados().ciclos.find((ciclo) => ciclo.id === id) ?? null;
+}
+
+// Resultados reais dos ciclos encerrados do tanque, do mais recente ao mais
+// antigo, cada um com o resultado do ciclo anterior para comparação.
+export function listarResultadosCiclos(tanqueId) {
+    const dados = lerDados();
+    const tanque = dados.tanques.find((item) => item.id === tanqueId);
+    if (!tanque) {
+        return [];
+    }
+    const encerrados = dados.ciclos
+        .filter((ciclo) => ciclo.tanqueId === tanqueId && ciclo.status === 'encerrado')
+        .sort((a, b) => a.dataInicio.localeCompare(b.dataInicio))
+        .map((ciclo) => ({
+            ciclo,
+            resultado: calcularResultadoCiclo({ tanque, ciclo, registros: dados.registros.filter((registro) => registro.cicloId === ciclo.id) }),
+        }));
+    return encerrados.map((item, indice) => ({ ...item, anterior: encerrados[indice - 1]?.resultado ?? null })).reverse();
 }
 
 // Motivo pelo qual o tanque não pode iniciar um ciclo agora, ou null se pode.
@@ -100,6 +120,7 @@ export function iniciarCiclo(tanqueId, entrada) {
         dataDespesca: null,
         quantidadeDespescada: null,
         pesoMedioFinalG: null,
+        biomassaFinalKg: null,
         status: 'ativo',
     };
     dados.ciclos.push(ciclo);
@@ -136,14 +157,25 @@ export function registrarDespesca(tanqueId, entrada) {
                 ? `A despesca não pode ser anterior ao último registro (${formatarData(minima)}).`
                 : `A despesca não pode ser anterior ao povoamento (${formatarData(minima)}).`,
         }),
-        quantidadeDespescada: validarNumero(entrada.quantidadeDespescada, { rotulo: 'a quantidade despescada', obrigatorio: true, minimo: 0, inteiro: true }),
+        // RN19: a despesca fecha o ciclo pelo que foi pesado; a contagem é opcional.
+        biomassaFinalKg: validarNumero(entrada.biomassaFinalKg, { rotulo: 'a biomassa final', obrigatorio: true, positivo: true }),
         pesoMedioFinalG: validarNumero(entrada.pesoMedioFinalG, { rotulo: 'o peso médio final', obrigatorio: true, positivo: true }),
+        quantidadeDespescada: validarNumero(entrada.quantidadeDespescada ?? null, { minimo: 0, inteiro: true }),
     });
+    // RN20: com a quantidade informada, quantidade × peso médio precisa bater com a biomassa (até 20% de diferença).
+    const quantidadeDespescada = entrada.quantidadeDespescada ?? null;
+    if (quantidadeDespescada !== null) {
+        const biomassaCalculadaKg = (quantidadeDespescada * entrada.pesoMedioFinalG) / 1000;
+        if (Math.abs(biomassaCalculadaKg - entrada.biomassaFinalKg) / entrada.biomassaFinalKg > LIMITE_DIFERENCA_DESPESCA) {
+            lancarSeHouverErros({ quantidadeDespescada: 'Os valores não batem: confira a biomassa, o peso médio ou a quantidade.' });
+        }
+    }
 
     Object.assign(ciclo, {
         dataDespesca: entrada.dataDespesca,
-        quantidadeDespescada: entrada.quantidadeDespescada,
+        quantidadeDespescada,
         pesoMedioFinalG: entrada.pesoMedioFinalG,
+        biomassaFinalKg: entrada.biomassaFinalKg,
         status: 'encerrado',
     });
     // RN08
@@ -184,7 +216,7 @@ export function listarEventosCalendario({ inicio, fim, tanqueId = null }) {
         }
         if (ciclo.status === 'encerrado' && noPeriodo(ciclo.dataDespesca)) {
             adicionar(ciclo.dataDespesca, 'despesca-realizada', tanque,
-                `${pluralizar(ciclo.quantidadeDespescada, 'peixe', 'peixes')} com ${formatarGramas(ciclo.pesoMedioFinalG)}`);
+                `${formatarKg(ciclo.biomassaFinalKg)} com peso médio de ${formatarGramas(ciclo.pesoMedioFinalG)}`);
         }
     }
     const ciclosAtivos = new Set(dados.ciclos.filter((ciclo) => ciclo.status === 'ativo').map((ciclo) => ciclo.id));

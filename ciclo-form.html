@@ -68,6 +68,8 @@
             <h1 class="pagina__titulo" id="titulo-iniciar-ciclo">Iniciar ciclo</h1>
             <p class="pagina__descricao" data-campo="nomeTanque"></p>
 
+            <aside class="aviso-referencia" id="referencia-ciclo-anterior" aria-label="Referência do ciclo anterior" hidden></aside>
+
             <form class="formulario" id="formulario-iniciar-ciclo" novalidate>
                 <div class="formulario__grade">
                     <div class="campo">
@@ -126,16 +128,25 @@
 
                 <div class="formulario__grade">
                     <div class="campo">
-                        <label class="campo__rotulo" for="campo-quantidade-despescada">Quantidade despescada</label>
-                        <input class="campo__input" id="campo-quantidade-despescada" name="quantidadeDespescada" type="text" autocomplete="off" pattern="[0-9]*" inputmode="numeric" required aria-describedby="erro-quantidade-despescada">
-                        <p class="campo__erro" id="erro-quantidade-despescada"></p>
+                        <label class="campo__rotulo" for="campo-biomassa-final">Biomassa final (kg)</label>
+                        <input class="campo__input" id="campo-biomassa-final" name="biomassaFinalKg" type="text" autocomplete="off" pattern="[0-9.]*[,]?[0-9]*" inputmode="decimal" required aria-describedby="ajuda-biomassa-final erro-biomassa-final">
+                        <p class="campo__ajuda" id="ajuda-biomassa-final">Peso total dos peixes despescados.</p>
+                        <p class="campo__erro" id="erro-biomassa-final"></p>
                     </div>
 
                     <div class="campo">
                         <label class="campo__rotulo" for="campo-peso-final">Peso médio final (g)</label>
-                        <input class="campo__input" id="campo-peso-final" name="pesoMedioFinalG" type="text" autocomplete="off" pattern="[0-9]*[.,]?[0-9]*" inputmode="decimal" required aria-describedby="erro-peso-final">
+                        <input class="campo__input" id="campo-peso-final" name="pesoMedioFinalG" type="text" autocomplete="off" pattern="[0-9]*[.,]?[0-9]*" inputmode="decimal" required aria-describedby="ajuda-peso-final erro-peso-final">
+                        <p class="campo__ajuda" id="ajuda-peso-final">Peso médio da amostra.</p>
                         <p class="campo__erro" id="erro-peso-final"></p>
                     </div>
+                </div>
+
+                <div class="campo">
+                    <label class="campo__rotulo" for="campo-quantidade-despescada">Quantidade despescada (opcional)</label>
+                    <input class="campo__input" id="campo-quantidade-despescada" name="quantidadeDespescada" type="text" autocomplete="off" pattern="[0-9]*" inputmode="numeric" aria-describedby="ajuda-quantidade-despescada erro-quantidade-despescada">
+                    <p class="campo__ajuda" id="ajuda-quantidade-despescada">Só se os peixes foram contados.</p>
+                    <p class="campo__erro" id="erro-quantidade-despescada"></p>
                 </div>
 
                 <p class="campo__ajuda">Registrar a despesca encerra o ciclo, e o tanque volta a ficar vazio.</p>

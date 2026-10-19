@@ -20,16 +20,15 @@ export function ordenarRegistros(registros) {
     return [...registros].sort((a, b) => a.data.localeCompare(b.data) || a.criadoEm.localeCompare(b.criadoEm));
 }
 
-// Estoque antes e depois de cada registro, em ordem. A contagem é a quantidade
-// real ao fim daquele registro: substitui a estimativa, e a mortalidade e a
-// natalidade passam a valer só para os registros posteriores (seção 9.4).
+// Estoque estimado antes e depois de cada registro, em ordem. Durante o ciclo
+// não se contam os peixes: a quantidade é sempre a do povoamento menos os mortos
+// encontrados mais a natalidade. Muitos mortos não são vistos, então é uma
+// estimativa; o número real só sai na despesca (seção 9.4).
 export function calcularEstoquePorRegistro(ciclo, registros) {
     let quantidade = ciclo.quantidadeInicial;
     return ordenarRegistros(registros).map((registro) => {
         const quantidadeAntes = quantidade;
-        quantidade = informado(registro.quantidadeContada)
-            ? registro.quantidadeContada
-            : quantidadeAntes - valorOuZero(registro.mortalidade) + valorOuZero(registro.natalidade);
+        quantidade = quantidadeAntes - valorOuZero(registro.mortalidade) + valorOuZero(registro.natalidade);
         return { registro, quantidadeAntes, quantidadeDepois: quantidade };
     });
 }
@@ -119,6 +118,42 @@ export function calcularIndicadores({ tanque, ciclo, registros, hoje }) {
         densidadePovoamento: ciclo.quantidadeInicial / tanque.volumeM3,
         diasCultivo: diasEntre(ciclo.dataInicio, ciclo.dataDespesca ?? hoje),
         ultimoRegistro: ordenados.at(-1) ?? null,
+    };
+}
+
+// Resultado real de um ciclo encerrado (seção 9.4.1). Durante o ciclo a
+// quantidade é só estimada; na despesca a biomassa é pesada, e daí saem a
+// sobrevivência e a mortalidade reais, referência para o próximo ciclo.
+// As fórmulas ficam todas aqui porque ainda serão confirmadas com o
+// laboratório que testa o app (seção 13).
+export function calcularResultadoCiclo({ tanque, ciclo, registros }) {
+    const biomassaInicialKg = (ciclo.quantidadeInicial * ciclo.pesoMedioInicialG) / 1000;
+    // Sem contagem na despesca, a quantidade final sai da biomassa pesada e do peso médio da amostra.
+    const quantidadeFinalEstimada = !informado(ciclo.quantidadeDespescada);
+    const quantidadeFinal = quantidadeFinalEstimada
+        ? Math.round((ciclo.biomassaFinalKg * 1000) / ciclo.pesoMedioFinalG)
+        : ciclo.quantidadeDespescada;
+    const sobrevivenciaReal = (quantidadeFinal / ciclo.quantidadeInicial) * 100;
+    const mortosEncontrados = registros.reduce((total, registro) => total + valorOuZero(registro.mortalidade), 0);
+    const ganhoBiomassaKg = ciclo.biomassaFinalKg - biomassaInicialKg;
+    const racaoTotalKg = registros.reduce((total, registro) => total + valorOuZero(registro.racaoKg), 0);
+    const diasCultivo = diasEntre(ciclo.dataInicio, ciclo.dataDespesca);
+    return {
+        biomassaInicialKg,
+        biomassaFinalKg: ciclo.biomassaFinalKg,
+        quantidadeFinal,
+        quantidadeFinalEstimada,
+        sobrevivenciaReal,
+        mortalidadeReal: Math.max(0, 100 - sobrevivenciaReal),
+        mortosEncontrados,
+        // Peixes que morreram (ou sumiram) sem ninguém ver: a diferença entre o real e o anotado.
+        mortalidadeNaoObservada: Math.max(0, ciclo.quantidadeInicial - quantidadeFinal - mortosEncontrados),
+        ganhoBiomassaKg,
+        racaoTotalKg,
+        fcaFinal: ganhoBiomassaKg > 0 ? racaoTotalKg / ganhoBiomassaKg : null,
+        diasCultivo,
+        ganhoPesoDiarioG: diasCultivo > 0 ? (ciclo.pesoMedioFinalG - ciclo.pesoMedioInicialG) / diasCultivo : null,
+        produtividadeKgM3: ciclo.biomassaFinalKg / tanque.volumeM3,
     };
 }
 

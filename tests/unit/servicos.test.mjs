@@ -29,10 +29,10 @@ describe('services/exportacao (seção 9.7)', () => {
         registros.salvarRegistro({ tanqueId: b.id, data: '2026-09-05', mortalidade: 2, observacoes: '=1+1' });
         const { conteudo, quantidade } = exportacao.gerarCsvRegistros();
         assert.equal(quantidade, 2);
-        assert.ok(conteudo.startsWith('﻿Tanque;Espécie;Ciclo (povoamento);Data;Peso médio (g);Ração (kg);Mortalidade;Natalidade;Quantidade contada;Observações\r\n'));
+        assert.ok(conteudo.startsWith('﻿Tanque;Espécie;Ciclo (povoamento);Data;Peso médio (g);Ração (kg);Mortos encontrados;Natalidade;Observações\r\n'));
         const linhas = conteudo.slice(1).trimEnd().split('\r\n');
-        assert.equal(linhas[1], "Tanque A;Pacu;02/09/2026;05/09/2026;;;2;;;'=1+1");
-        assert.equal(linhas[2], 'Tanque B;Tilápia;01/09/2026;10/09/2026;12,5;1,25;;;;"Água ""turva""; ok"');
+        assert.equal(linhas[1], "Tanque A;Pacu;02/09/2026;05/09/2026;;;2;;'=1+1");
+        assert.equal(linhas[2], 'Tanque B;Tilápia;01/09/2026;10/09/2026;12,5;1,25;;;"Água ""turva""; ok"');
         assert.equal(exportacao.gerarCsvRegistros({ tanqueId: a.id }).quantidade, 1);
     });
     it('CSV de lembretes: uma linha por lembrete, com as conclusões', () => {
@@ -58,7 +58,7 @@ describe('services/exportacao (seção 9.7)', () => {
         await assert.rejects(exportacao.lerBackup(new Blob(['não é json'])), /JSON válido/);
         const v1 = { versao: 1, tanques: [{ id: 'a', nome: 'Antigo', capacidade: 10 }], ciclos: [], registros: [], config: { limitesAlerta: {} } };
         const migrados = await exportacao.lerBackup(new Blob([JSON.stringify(v1)]));
-        assert.equal(migrados.versao, 2, 'backup da versão 1 continua restaurável');
+        assert.equal(migrados.versao, storage.VERSAO_DADOS, 'backup da versão 1 continua restaurável');
         assert.equal(migrados.tanques[0].capacidadePeixesLegado, 10);
         await assert.rejects(exportacao.lerBackup(new Blob([JSON.stringify({ versao: 99, tanques: [], ciclos: [], registros: [] })])), /versão 99/);
     });
@@ -97,6 +97,10 @@ describe('services/seed (dados de exemplo)', () => {
         }
         const viveiro = tanques.listarSituacoes().find((s) => s.tanque.nome === 'Viveiro Norte');
         assert.equal(viveiro.ciclos[0].status, 'encerrado');
+        // Despescas do exemplo fecham pela biomassa, com perdas que ninguém viu.
+        const [{ resultado }] = ciclos.listarResultadosCiclos(viveiro.tanque.id);
+        assert.ok(viveiro.ciclos[0].biomassaFinalKg > 0 && viveiro.ciclos[0].quantidadeDespescada === null);
+        assert.ok(resultado.quantidadeFinalEstimada && resultado.mortalidadeNaoObservada > 300, JSON.stringify(resultado));
         assert.equal(viveiro.ultimoRegistro.data, somarDias(hoje, -150));
 
         // Lembretes: três hoje (um concluído), repetidos e um atrasado.

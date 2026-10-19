@@ -384,6 +384,110 @@
     line-height: 1.2;
 }
 
+.cartao-indicador__apoio {
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-1);
+}
+
+/* ---------- Estimativas e resultado do ciclo (seção 9.4) ---------- */
+
+/* Botão "i": o círculo pequeno fica dentro de uma área de toque de 44 px. */
+.botao-info {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--altura-toque);
+    height: var(--altura-toque);
+    margin: calc(var(--espaco-3) * -1) 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--cor-primaria);
+    font-family: var(--fonte-titulo);
+    font-size: var(--texto-2);
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.botao-info::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    translate: -50% -50%;
+    width: 1.375rem;
+    height: 1.375rem;
+    border: 1.5px solid currentColor;
+    border-radius: 50%;
+    transition: background-color var(--transicao);
+}
+
+.botao-info:hover::before,
+.botao-info:active::before,
+.botao-info[aria-expanded="true"]::before {
+    background: var(--cor-primaria-suave);
+}
+
+.aviso-info,
+.aviso-referencia {
+    padding: var(--espaco-3) var(--espaco-4);
+    border-left: 3px solid var(--cor-primaria);
+    border-radius: var(--raio);
+    background: var(--cor-primaria-suave);
+    color: var(--cor-texto);
+    font-size: var(--texto-3);
+}
+
+.aviso-referencia {
+    margin-bottom: var(--espaco-4);
+}
+
+.aviso-sucesso {
+    display: grid;
+    gap: var(--espaco-3);
+    margin-bottom: var(--espaco-5);
+    padding: var(--espaco-4) var(--espaco-5);
+    border: 1px solid var(--cor-sucesso);
+    border-radius: var(--raio-grande);
+    background: var(--cor-sucesso-suave);
+}
+
+.aviso-sucesso__titulo {
+    color: var(--cor-sucesso);
+    font-size: var(--texto-5);
+}
+
+.resumo-ciclo {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+    gap: var(--espaco-3);
+    margin: 0;
+}
+
+.resumo-ciclo__item {
+    display: grid;
+    align-content: start;
+    gap: 2px;
+    padding: var(--espaco-3);
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio);
+    background: var(--cor-superficie);
+}
+
+.resumo-ciclo__rotulo,
+.resumo-ciclo__apoio {
+    margin: 0;
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-1);
+}
+
+.resumo-ciclo__valor {
+    margin: 0;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
 .cartao-tanque {
     display: grid;
     align-content: start;

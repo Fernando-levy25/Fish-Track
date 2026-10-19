@@ -32,7 +32,7 @@ const comCicloNome = (nome) => {
 const comCicloArquivado = () => {
     const tanque = tanques.salvarTanque({ nome: 'Arquivado', especie: 'X', volumeM3: 1, densidadeMaximaKgM3: 20 });
     ciclos.iniciarCiclo(tanque.id, { dataInicio: dia(-20), quantidadeInicial: 10, pesoMedioInicialG: 1 });
-    ciclos.registrarDespesca(tanque.id, { dataDespesca: dia(-1), quantidadeDespescada: 10, pesoMedioFinalG: 5 });
+    ciclos.registrarDespesca(tanque.id, { dataDespesca: dia(-1), biomassaFinalKg: 0.05, pesoMedioFinalG: 5 });
     tanques.arquivarTanque(tanque.id);
     return tanque.id;
 };
@@ -152,14 +152,35 @@ describe('core/storage', () => {
         };
         localStorage.setItem('fishtrack:v1', JSON.stringify(v1));
         const dados = storage.lerDados();
-        assert.equal(dados.versao, 2);
+        assert.equal(dados.versao, storage.VERSAO_DADOS);
         assert.deepEqual(dados.lembretes, []);
         assert.deepEqual(dados.config, { limitesAlerta: { capacidadePct: 95 }, metaFca: 1.6, ultimoBackupEm: null });
         assert.ok(!('capacidade' in dados.tanques[0]));
         assert.equal(dados.tanques[0].densidadeMaximaKgM3, null);
         assert.equal(dados.tanques[0].capacidadePeixesLegado, 3000);
-        assert.equal(JSON.parse(localStorage.getItem('fishtrack:v1')).versao, 2, 'grava migrado');
+        assert.equal(JSON.parse(localStorage.getItem('fishtrack:v1')).versao, storage.VERSAO_DADOS, 'grava migrado');
         assert.equal(v1.versao, 1, 'não altera o objeto original');
+    });
+    it('migra da versão 2 para a 3: sem contagem e com biomassa final (seção 8.4)', () => {
+        const base = { id: 'x', cicloId: 'c', tanqueId: 't', data: '2026-01-02', criadoEm: '1', pesoMedioG: null, racaoKg: null, mortalidade: null, natalidade: null, observacoes: '' };
+        const v2 = {
+            versao: 2, tanques: [], lembretes: [], config: { limitesAlerta: {}, metaFca: 1.6, ultimoBackupEm: null },
+            ciclos: [
+                { id: 'c', status: 'encerrado', quantidadeDespescada: 750, pesoMedioFinalG: 400 },
+                { id: 'd', status: 'ativo', quantidadeDespescada: null, pesoMedioFinalG: null },
+            ],
+            registros: [
+                { ...base, id: 'so-contagem', quantidadeContada: 980 },
+                { ...base, id: 'com-racao', racaoKg: 2, quantidadeContada: 500 },
+            ],
+        };
+        const dados = storage.migrarDados(v2);
+        assert.equal(dados.versao, 3);
+        assert.ok(dados.registros.every((registro) => !('quantidadeContada' in registro)));
+        assert.equal(dados.registros[0].observacoes, 'Contagem registrada: 980 peixes', 'RN11: não fica vazio');
+        assert.equal(dados.registros[1].observacoes, '');
+        assert.equal(dados.ciclos[0].biomassaFinalKg, 300);
+        assert.equal(dados.ciclos[1].biomassaFinalKg, null);
     });
     it('valida a estrutura e recusa versão mais nova', () => {
         assert.throws(() => storage.validarEstrutura({ versao: 99, tanques: [], ciclos: [], registros: [] }), /versão 99/);
@@ -215,7 +236,7 @@ describe('domain/tanques (RN01 a RN04)', () => {
         const tanque = comCiclo();
         recusa(() => tanques.excluirTanque(tanque.id), null, /Arquivar/);
         recusa(() => tanques.arquivarTanque(tanque.id), null, /despesca/);
-        ciclos.registrarDespesca(tanque.id, { dataDespesca: hoje, quantidadeDespescada: 990, pesoMedioFinalG: 200 });
+        ciclos.registrarDespesca(tanque.id, { dataDespesca: hoje, biomassaFinalKg: 198, pesoMedioFinalG: 200 });
         tanques.arquivarTanque(tanque.id);
         assert.equal(tanques.listarTanques().length, 0);
         assert.equal(tanques.listarTanques({ incluirArquivados: true }).length, 1);
@@ -253,12 +274,20 @@ describe('domain/ciclos (RN05 a RN09)', () => {
     it('RN08/RN09: despesca encerra o ciclo e respeita as datas', () => {
         const tanque = comCiclo();
         registros.salvarRegistro({ tanqueId: tanque.id, data: dia(-5), racaoKg: 3 });
-        const despescar = (extra) => () => ciclos.registrarDespesca(tanque.id, { dataDespesca: hoje, quantidadeDespescada: 950, pesoMedioFinalG: 300, ...extra });
+        const despescar = (extra) => () => ciclos.registrarDespesca(tanque.id, { dataDespesca: hoje, biomassaFinalKg: 300, pesoMedioFinalG: 400, ...extra });
         recusa(despescar({ dataDespesca: dia(-6) }), 'dataDespesca', /último registro/);
         recusa(despescar({ dataDespesca: dia(1) }), 'dataDespesca', /futura/);
         recusa(despescar({ quantidadeDespescada: -1 }), 'quantidadeDespescada', /negativo/);
         recusa(despescar({ pesoMedioFinalG: 0 }), 'pesoMedioFinalG');
-        assert.equal(despescar({ dataDespesca: dia(-5) })().status, 'encerrado');
+        // RN19: biomassa final obrigatória; quantidade opcional.
+        recusa(despescar({ biomassaFinalKg: null }), 'biomassaFinalKg', /biomassa final/);
+        recusa(despescar({ biomassaFinalKg: 0 }), 'biomassaFinalKg');
+        // RN20: 950 x 400 g = 380 kg, 27% acima dos 300 kg pesados.
+        recusa(despescar({ quantidadeDespescada: 950 }), 'quantidadeDespescada', /não batem/);
+        const encerrado = despescar({ dataDespesca: dia(-5), quantidadeDespescada: 780 })();
+        assert.equal(encerrado.status, 'encerrado');
+        assert.equal(encerrado.biomassaFinalKg, 300);
+        assert.equal(encerrado.quantidadeDespescada, 780, '312 kg, 4% acima: aceito');
         assert.equal(tanques.obterTanque(tanque.id).status, 'vazio');
         recusa(() => ciclos.iniciarCiclo(tanque.id, { dataInicio: dia(-6), quantidadeInicial: 1, pesoMedioInicialG: 1 }), 'dataInicio', /última despesca/);
         ciclos.iniciarCiclo(tanque.id, { dataInicio: dia(-5), quantidadeInicial: 1, pesoMedioInicialG: 1 });
@@ -281,7 +310,7 @@ describe('domain/registros (RN10 a RN15)', () => {
         recusa(() => registros.salvarRegistro({ tanqueId: '', data: hoje, racaoKg: 1 }), 'tanqueId');
         const tanque = comCiclo();
         const registro = registros.salvarRegistro({ tanqueId: tanque.id, data: dia(-1), racaoKg: 1 });
-        ciclos.registrarDespesca(tanque.id, { dataDespesca: hoje, quantidadeDespescada: 1000, pesoMedioFinalG: 50 });
+        ciclos.registrarDespesca(tanque.id, { dataDespesca: hoje, biomassaFinalKg: 50, pesoMedioFinalG: 50 });
         recusa(() => registros.salvarRegistro({ ...registro, racaoKg: 2 }), null, /encerrado/);
         recusa(() => registros.excluirRegistro(registro.id), null, /encerrado/);
     });
@@ -304,10 +333,11 @@ describe('domain/registros (RN10 a RN15)', () => {
         registros.salvarRegistro({ tanqueId: tanque.id, data: dia(-10), mortalidade: 600 });
         registros.salvarRegistro({ tanqueId: tanque.id, data: dia(-5), mortalidade: 400 });
         recusa(() => registros.salvarRegistro({ tanqueId: tanque.id, data: dia(-20), mortalidade: 1 }), null, /passaria/);
-        const outro = comCicloNome('Contado');
-        const contagem = registros.salvarRegistro({ tanqueId: outro, data: dia(-9), quantidadeContada: 1500 });
+        const outro = comCicloNome('Com nascimentos');
+        const nascimentos = registros.salvarRegistro({ tanqueId: outro, data: dia(-9), natalidade: 500 });
         registros.salvarRegistro({ tanqueId: outro, data: dia(-8), mortalidade: 1200 });
-        recusa(() => registros.excluirRegistro(contagem.id), null, /exclusão/);
+        recusa(() => registros.excluirRegistro(nascimentos.id), null, /exclusão/);
+        recusa(() => registros.salvarRegistro({ tanqueId: outro, data: dia(-7), mortalidade: 301 }), 'mortalidade', /quantidade estimada/);
     });
     it('RN15: registros da mesma data somam ração e mortalidade no dia', () => {
         const tanque = comCiclo();
@@ -327,30 +357,30 @@ describe('domain/registros (RN10 a RN15)', () => {
         assert.equal(editado.criadoEm, registro.criadoEm);
         registros.excluirRegistro(registro.id);
         assert.equal(registros.obterRegistro(registro.id), null);
-        assert.equal(registros.resumirRegistro({ pesoMedioG: 210, racaoKg: 25, mortalidade: 1, natalidade: null, quantidadeContada: 980, observacoes: 'ok' }),
-            'Peso 210 g · Ração 25 kg · 1 morto · Contagem de 980 peixes · ok');
+        assert.equal(registros.resumirRegistro({ pesoMedioG: 210, racaoKg: 25, mortalidade: 1, natalidade: null, observacoes: 'ok' }),
+            'Peso 210 g · Ração 25 kg · 1 morto · ok');
     });
 });
 
 describe('domain/indicadores (seção 9.4) com valores calculados à mão', () => {
     const tanque = { volumeM3: 100, densidadeMaximaKgM3: 1.2 };
     const ciclo = { dataInicio: '2026-01-01', quantidadeInicial: 1000, pesoMedioInicialG: 10, dataDespesca: null };
-    const r = (data, criadoEm, campos) => ({ data, criadoEm, pesoMedioG: null, racaoKg: null, mortalidade: null, natalidade: null, quantidadeContada: null, ...campos });
+    const r = (data, criadoEm, campos) => ({ data, criadoEm, pesoMedioG: null, racaoKg: null, mortalidade: null, natalidade: null, ...campos });
     const lista = [
         r('2026-01-31', '4', { pesoMedioG: 60, racaoKg: 7, mortalidade: 20 }),
-        r('2026-01-21', '3', { quantidadeContada: 980 }),
         r('2026-01-11', '1', { pesoMedioG: 30, racaoKg: 5, mortalidade: 10 }),
         r('2026-01-21', '2', { racaoKg: 6, mortalidade: 5, natalidade: 2 }),
     ];
     const resultado = ind.calcularIndicadores({ tanque, ciclo, registros: lista, hoje: '2026-02-10' });
     const perto = (valor, esperado) => assert.ok(Math.abs(valor - esperado) < 1e-9, `${valor} != ${esperado}`);
-    it('quantidade parte da contagem e aplica os registros posteriores', () => assert.equal(resultado.quantidade, 960));
+    // Estimada: 1.000 − 10 − 5 + 2 − 20 = 967 (sem contagem durante o ciclo).
+    it('quantidade estimada: povoamento menos mortos encontrados mais natalidade', () => assert.equal(resultado.quantidade, 967));
     it('peso, biomassa, ganho e FCA', () => {
         assert.equal(resultado.pesoMedioG, 60);
-        perto(resultado.biomassaKg, 57.6);
-        perto(resultado.ganhoBiomassaKg, 47.6);
+        perto(resultado.biomassaKg, 58.02);
+        perto(resultado.ganhoBiomassaKg, 48.02);
         assert.equal(resultado.racaoAcumuladaKg, 18);
-        perto(resultado.fca, 18 / 47.6);
+        perto(resultado.fca, 18 / 48.02);
     });
     it('taxas de mortalidade, sobrevivência e natalidade', () => {
         perto(resultado.taxaMortalidade, 3.5);
@@ -360,17 +390,17 @@ describe('domain/indicadores (seção 9.4) com valores calculados à mão', () =
     it('crescimento, densidade, capacidade e dias', () => {
         perto(resultado.taxaCrescimentoGDia, 1.5);
         perto(resultado.crescimentoCicloGDia, 50 / 30);
-        perto(resultado.densidadeKgM3, 0.576);
-        perto(resultado.capacidadeUtilizada, 48);
+        perto(resultado.densidadeKgM3, 0.5802);
+        perto(resultado.capacidadeUtilizada, 48.35);
         assert.equal(resultado.diasCultivo, 40);
         assert.equal(ind.calcularIndicadores({ tanque, ciclo: { ...ciclo, dataDespesca: '2026-01-31' }, registros: lista, hoje: '2026-02-10' }).diasCultivo, 30);
     });
     it('capacidade pela carga máxima, densidade de povoamento e projeção (seção 4.2)', () => {
         perto(resultado.cargaMaximaKg, 120);
         perto(resultado.densidadePovoamento, 10);
-        // Última pesagem: 960 peixes x 60 g = 57,6 kg; anterior: 990 x 30 g = 29,7 kg, 20 dias antes.
-        // Ganho de 1,395 kg/dia; faltam 62,4 kg até 120 kg: 45 dias.
-        assert.equal(resultado.projecaoDiasLimite, 45);
+        // Última pesagem: 967 peixes x 60 g = 58,02 kg; anterior: 990 x 30 g = 29,7 kg, 20 dias antes.
+        // Ganho de 1,416 kg/dia; faltam 61,98 kg até 120 kg: 43,8, arredondado para 44 dias.
+        assert.equal(resultado.projecaoDiasLimite, 44);
         const semDensidade = ind.calcularIndicadores({ tanque: { volumeM3: 100, densidadeMaximaKgM3: null }, ciclo, registros: lista, hoje: '2026-02-10' });
         assert.equal(semDensidade.capacidadeUtilizada, null);
         assert.equal(semDensidade.projecaoDiasLimite, null);
@@ -388,7 +418,30 @@ describe('domain/indicadores (seção 9.4) com valores calculados à mão', () =
         perto(series.mortalidade.at(-1).valor, 3.5);
         const dia21 = ind.calcularLinhaDoTempo(ciclo, lista)[2];
         assert.equal(dia21.quantidadeInicioDia, 990);
-        assert.equal(dia21.quantidade, 980);
+        assert.equal(dia21.quantidade, 987);
+    });
+    it('resultado do ciclo encerrado pela biomassa final (seção 9.4.1)', () => {
+        // Exemplo do laboratório: 1.000 peixes de 10 g; despesca de 300 kg com peso médio de 400 g, sem contagem.
+        const encerrado = { ...ciclo, dataDespesca: '2026-05-01', pesoMedioFinalG: 400, biomassaFinalKg: 300, quantidadeDespescada: null };
+        const doCiclo = [r('2026-02-01', '1', { racaoKg: 200, mortalidade: 30 }), r('2026-03-01', '2', { racaoKg: 190, mortalidade: 20 })];
+        const final = ind.calcularResultadoCiclo({ tanque, ciclo: encerrado, registros: doCiclo });
+        assert.equal(final.biomassaInicialKg, 10);
+        assert.equal(final.quantidadeFinal, 750);
+        assert.equal(final.quantidadeFinalEstimada, true);
+        assert.equal(final.sobrevivenciaReal, 75);
+        assert.equal(final.mortalidadeReal, 25);
+        assert.equal(final.mortosEncontrados, 50);
+        assert.equal(final.mortalidadeNaoObservada, 200, '250 a menos, 50 encontrados');
+        assert.equal(final.ganhoBiomassaKg, 290);
+        assert.equal(final.racaoTotalKg, 390);
+        perto(final.fcaFinal, 390 / 290);
+        assert.equal(final.diasCultivo, 120);
+        perto(final.ganhoPesoDiarioG, 390 / 120);
+        assert.equal(final.produtividadeKgM3, 3);
+        const contado = ind.calcularResultadoCiclo({ tanque, ciclo: { ...encerrado, quantidadeDespescada: 780 }, registros: [] });
+        assert.equal(contado.quantidadeFinal, 780);
+        assert.equal(contado.quantidadeFinalEstimada, false);
+        assert.equal(ind.calcularResultadoCiclo({ tanque, ciclo: { ...encerrado, biomassaFinalKg: 8 }, registros: [] }).fcaFinal, null, 'sem ganho, sem FCA');
     });
     it('totais do dashboard com média ponderada pela quantidade inicial', () => {
         const resumo = ind.calcularResumoProducao([
@@ -402,7 +455,7 @@ describe('domain/indicadores (seção 9.4) com valores calculados à mão', () =
 });
 
 describe('domain/indicadores: série diária e período (seção 9.4)', () => {
-    const r = (data, criadoEm, campos) => ({ data, criadoEm, pesoMedioG: null, racaoKg: null, mortalidade: null, natalidade: null, quantidadeContada: null, ...campos });
+    const r = (data, criadoEm, campos) => ({ data, criadoEm, pesoMedioG: null, racaoKg: null, mortalidade: null, natalidade: null, ...campos });
     const cicloA = { dataInicio: '2026-01-01', quantidadeInicial: 100, pesoMedioInicialG: 10, dataDespesca: null };
     const registrosA = [r('2026-01-03', '1', { racaoKg: 0.5, mortalidade: 2 }), r('2026-01-05', '2', { pesoMedioG: 20, racaoKg: 0.6 })];
     const perto = (valor, esperado) => assert.ok(Math.abs(valor - esperado) < 1e-9, `${valor} != ${esperado}`);
@@ -441,7 +494,7 @@ describe('domain/alertas (seção 9.5)', () => {
     // Carga máxima de 20 kg: 1.000 peixes de 10 g (10 kg) ocupam 50%.
     const tanque = { id: 't', nome: 'T', volumeM3: 100, densidadeMaximaKgM3: 0.2, limitesAlerta: null };
     const ciclo = { dataInicio: dia(-20), quantidadeInicial: 1000, pesoMedioInicialG: 10, pesoAlvoG: null, dataPrevistaDespesca: null, dataDespesca: null, status: 'ativo' };
-    const r = (data, campos) => ({ data, criadoEm: data, pesoMedioG: null, racaoKg: null, mortalidade: null, natalidade: null, quantidadeContada: null, ...campos });
+    const r = (data, campos) => ({ data, criadoEm: data, pesoMedioG: null, racaoKg: null, mortalidade: null, natalidade: null, ...campos });
     const avaliar = (lista, { c = ciclo, t = tanque, limites = alertas.LIMITES_PADRAO } = {}) => {
         const indicadores = ind.calcularIndicadores({ tanque: t, ciclo: c, registros: lista, hoje });
         return alertas.avaliarAlertas({ tanque: t, ciclo: c, registros: lista, indicadores, limites, hoje }).map((a) => a.tipo);
@@ -459,9 +512,10 @@ describe('domain/alertas (seção 9.5)', () => {
         assert.deepEqual(avaliar([r(dia(-1), { racaoKg: 0.6 })]), ['racao']);
     });
     it('capacidade a partir de 90%', () => {
-        assert.deepEqual(avaliar([r(dia(-1), { quantidadeContada: 1800 })]), ['capacidade']);
-        assert.deepEqual(avaliar([r(dia(-1), { quantidadeContada: 1799 })]), []);
-        assert.deepEqual(avaliar([r(dia(-1), { quantidadeContada: 5000 })], { t: { ...tanque, densidadeMaximaKgM3: null } }), [], 'sem densidade máxima não avalia');
+        // 1.000 + 800 nascimentos = 1.800 peixes de 10 g: 18 kg, 90% dos 20 kg.
+        assert.deepEqual(avaliar([r(dia(-1), { natalidade: 800 })]), ['capacidade']);
+        assert.deepEqual(avaliar([r(dia(-1), { natalidade: 799 })]), []);
+        assert.deepEqual(avaliar([r(dia(-1), { natalidade: 4000 })], { t: { ...tanque, densidadeMaximaKgM3: null } }), [], 'sem densidade máxima não avalia');
     });
     it('peso abaixo de 85% do esperado na data da pesagem', () => {
         const comAlvo = { ...ciclo, pesoAlvoG: 210, dataPrevistaDespesca: dia(180) };
@@ -480,7 +534,7 @@ describe('domain/alertas (seção 9.5)', () => {
         assert.equal(limites.capacidadePct, 95);
         assert.equal(limites.mortalidadeRegistroPct, 0.5);
         assert.ok(!('chaveDesconhecida' in limites));
-        assert.deepEqual(avaliar([r(dia(-9), { quantidadeContada: 950 }), r(dia(-8), { mortalidade: 8 })], { limites }), ['mortalidade-registro', 'sem-registro']);
+        assert.deepEqual(avaliar([r(dia(-9), { mortalidade: 50 }), r(dia(-8), { mortalidade: 8 })], { limites }), ['mortalidade-registro', 'sem-registro']);
         const lista = [{ gravidade: 'baixa', data: 'a', tanqueNome: 'A' }, { gravidade: 'alta', data: 'a', tanqueNome: 'B' }];
         assert.equal(alertas.ordenarAlertas(lista)[0].gravidade, 'alta');
         assert.equal(alertas.gravidadeMaisAlta(lista), 'alta');

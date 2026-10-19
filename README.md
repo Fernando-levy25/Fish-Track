@@ -28,10 +28,9 @@ O uso segue um fluxo simples:
 3. **Registros:** durante o ciclo, anota o que mediu ou observou no dia. Todos os campos são opcionais:
    * peso médio;
    * ração fornecida;
-   * mortalidade e natalidade;
-   * quantidade contada;
+   * mortos encontrados e natalidade;
    * observações.
-4. **Indicadores:** o sistema calcula automaticamente a quantidade estimada de peixes, biomassa, conversão alimentar (FCA), taxas de mortalidade e crescimento, densidade e capacidade utilizada.
+4. **Indicadores:** durante o ciclo o sistema estima a quantidade de peixes (o povoamento menos os mortos encontrados), biomassa, conversão alimentar (FCA), taxas de mortalidade e crescimento, densidade e capacidade utilizada.
 5. **Alertas:** avisa quando algo pede atenção, como mortalidade elevada, ração acima do limite, peso abaixo do esperado, tanque perto da capacidade ou muitos dias sem registro.
 
 ## Telas

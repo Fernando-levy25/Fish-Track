@@ -17,9 +17,8 @@ const COLUNAS_REGISTROS = [
     ['Data', ({ registro }) => formatarData(registro.data)],
     ['Peso médio (g)', ({ registro }) => numero(registro.pesoMedioG)],
     ['Ração (kg)', ({ registro }) => numero(registro.racaoKg)],
-    ['Mortalidade', ({ registro }) => numero(registro.mortalidade)],
+    ['Mortos encontrados', ({ registro }) => numero(registro.mortalidade)],
     ['Natalidade', ({ registro }) => numero(registro.natalidade)],
-    ['Quantidade contada', ({ registro }) => numero(registro.quantidadeContada)],
     ['Observações', ({ registro }) => texto(registro.observacoes)],
 ];
 // Uma linha por lembrete (não por ocorrência): as datas concluídas vão juntas.

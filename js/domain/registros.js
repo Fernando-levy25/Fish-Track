@@ -6,7 +6,7 @@ import { formatarData, formatarGramas, formatarInteiro, formatarKg, pluralizar }
 import { encontrarMortalidadeAcimaDoEstoque, ordenarRegistros } from './indicadores.js';
 import { ErroValidacao, falharRegra, lancarSeHouverErros, validarData, validarNumero, validarTexto } from './validacao.js';
 
-const CAMPOS_MEDICAO = ['pesoMedioG', 'racaoKg', 'mortalidade', 'natalidade', 'quantidadeContada'];
+const CAMPOS_MEDICAO = ['pesoMedioG', 'racaoKg', 'mortalidade', 'natalidade'];
 const TAMANHO_MAXIMO_OBSERVACOES = 500;
 
 function informado(valor) {
@@ -35,9 +35,6 @@ export function resumirRegistro(registro) {
     }
     if (informado(registro.natalidade)) {
         partes.push(pluralizar(registro.natalidade, 'nascimento', 'nascimentos'));
-    }
-    if (informado(registro.quantidadeContada)) {
-        partes.push(`Contagem de ${pluralizar(registro.quantidadeContada, 'peixe', 'peixes')}`);
     }
     if (registro.observacoes) {
         partes.push(registro.observacoes);
@@ -76,7 +73,6 @@ export function salvarRegistro(entrada) {
         racaoKg: entrada.racaoKg ?? null,
         mortalidade: entrada.mortalidade ?? null,
         natalidade: entrada.natalidade ?? null,
-        quantidadeContada: entrada.quantidadeContada ?? null,
         observacoes: limparTexto(entrada.observacoes),
         criadoEm: existente?.criadoEm ?? agoraISO(),
     };
@@ -96,7 +92,6 @@ export function salvarRegistro(entrada) {
         racaoKg: validarNumero(registro.racaoKg, { minimo: 0 }),
         mortalidade: validarNumero(registro.mortalidade, { minimo: 0, inteiro: true }),
         natalidade: validarNumero(registro.natalidade, { minimo: 0, inteiro: true }),
-        quantidadeContada: validarNumero(registro.quantidadeContada, { minimo: 0, inteiro: true }),
         observacoes: validarTexto(registro.observacoes, { maximo: TAMANHO_MAXIMO_OBSERVACOES }),
     });
     // RN11
@@ -141,9 +136,9 @@ function validarEstoque(ciclo, registros, { idAlterado, acao }) {
     const { registro, quantidadeAntes } = conflito;
     if (registro.id === idAlterado) {
         throw new ErroValidacao({
-            mortalidade: `A mortalidade não pode passar da quantidade estimada de peixes nessa data (${formatarInteiro(quantidadeAntes)}).`,
+            mortalidade: `Os mortos encontrados não podem passar da quantidade estimada de peixes nessa data (${formatarInteiro(quantidadeAntes)}).`,
         });
     }
-    falharRegra(`Com essa ${acao}, a mortalidade registrada em ${formatarData(registro.data)} passaria da quantidade `
+    falharRegra(`Com essa ${acao}, os mortos encontrados em ${formatarData(registro.data)} passariam da quantidade `
         + `estimada de peixes naquela data (${formatarInteiro(quantidadeAntes)}). Revise os registros desse período.`);
 }

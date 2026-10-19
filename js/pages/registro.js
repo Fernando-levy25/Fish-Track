@@ -10,7 +10,7 @@ import { irPara, lerParametro, montarUrl } from '../ui/nav.js';
 import { criarElemento, iniciarFormulario, mostrarErroPagina, preencherFormulario } from '../ui/componentes.js';
 import { iniciarPagina } from './comum.js';
 
-const AJUDA_CONTAGEM = 'Só se você contou os peixes. Corrige a quantidade estimada do tanque.';
+const AJUDA_MORTOS = 'Peixes mortos vistos neste dia. O número real só é conhecido na despesca.';
 
 const registroId = lerParametro('id');
 const tanqueDoEndereco = lerParametro('tanqueId');
@@ -88,7 +88,6 @@ function prepararEdicao() {
         racaoKg: registro.racaoKg,
         mortalidade: registro.mortalidade,
         natalidade: registro.natalidade,
-        quantidadeContada: registro.quantidadeContada,
         observacoes: registro.observacoes,
     });
     porId('link-cancelar-registro').href = urlHistorico;
@@ -111,10 +110,10 @@ function criarOpcao({ tanque }) {
 
 function atualizarTanqueEscolhido() {
     const situacao = situacoes.find((item) => item.tanque.id === seletorTanque.value);
-    const ajuda = porId('ajuda-quantidade-contada');
+    const ajuda = porId('ajuda-mortalidade');
     if (!situacao) {
         campoData.min = '';
-        ajuda.textContent = AJUDA_CONTAGEM;
+        ajuda.textContent = AJUDA_MORTOS;
         return;
     }
     // RN12: o calendário do campo não deixa escolher data antes do povoamento.
@@ -125,7 +124,7 @@ function atualizarTanqueEscolhido() {
         registros: situacao.registros,
         hoje: hojeISO(),
     });
-    ajuda.textContent = `${AJUDA_CONTAGEM} Estimativa atual: ${formatarInteiro(quantidade)} peixes.`;
+    ajuda.textContent = `${AJUDA_MORTOS} Estimativa atual: ${formatarInteiro(quantidade)} peixes.`;
 }
 
 function enviar(valores) {
@@ -137,7 +136,6 @@ function enviar(valores) {
         racaoKg: paraNumero(valores.racaoKg),
         mortalidade: paraNumero(valores.mortalidade),
         natalidade: paraNumero(valores.natalidade),
-        quantidadeContada: paraNumero(valores.quantidadeContada),
         observacoes: valores.observacoes,
     });
     irPara(montarUrl('tanque.html', { id: registro.tanqueId }, registroId ? 'historico' : ''));

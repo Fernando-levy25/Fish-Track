@@ -170,12 +170,13 @@ async function roteiro() {
     await navegarCom(() => porId('link-novo-registro').click());
     verificar('tanque já escolhido', porId('campo-tanque').value === tanqueId);
     verificar('data padrão é hoje', porId('campo-data').value === HOJE);
-    verificar('estimativa na ajuda', texto('ajuda-quantidade-contada').endsWith('Estimativa atual: 1.000 peixes.'), texto('ajuda-quantidade-contada'));
+    verificar('"Mortos encontrados" com ajuda e estimativa', doc().querySelector('label[for="campo-mortalidade"]').textContent === 'Mortos encontrados'
+        && texto('ajuda-mortalidade').endsWith('Estimativa atual: 1.000 peixes.') && !porId('campo-quantidade-contada'), texto('ajuda-mortalidade'));
     await enviarSemSair('formulario-registro');
     verificar('RN11 pede alguma medição', texto('erro-geral-registro') === 'Preencha pelo menos uma medição ou observação.', texto('erro-geral-registro'));
     preencher({ 'campo-mortalidade': '2000' });
     await enviarSemSair('formulario-registro');
-    verificar('RN14 no campo mortalidade', texto('erro-mortalidade') === 'A mortalidade não pode passar da quantidade estimada de peixes nessa data (1.000).', texto('erro-mortalidade'));
+    verificar('RN14 no campo mortalidade', texto('erro-mortalidade') === 'Os mortos encontrados não podem passar da quantidade estimada de peixes nessa data (1.000).', texto('erro-mortalidade'));
     preencher({ 'campo-mortalidade': '' });
     for (const invalido of ['2,5,1', 'abc', '1e3']) {
         preencher({ 'campo-racao': invalido });
@@ -193,6 +194,10 @@ async function roteiro() {
     preencher({ 'campo-data': somarDias(HOJE, -1), 'campo-peso-medio': '60', 'campo-racao': '7', 'campo-mortalidade': '15', 'campo-observacoes': 'Peixes agitados' });
     await enviarENavegar('formulario-registro');
     verificar('quantidade 980', indicador('quantidade') === '980', indicador('quantidade'));
+    verificar('rótulos de estimativa', [...doc().querySelectorAll('#conteudo-resumo .cartao-indicador__rotulo')].map((r) => r.textContent).join('|')
+        .includes('Peixes (estimado)|Peso médio atual|Biomassa (estimada)') && porId('conteudo-resumo').textContent.includes('Mortalidade observada'));
+    porId('botao-info-estimativa').click();
+    verificar('botão "i" explica a estimativa', !porId('texto-info-estimativa').hidden && porId('botao-info-estimativa').getAttribute('aria-expanded') === 'true');
     verificar('alerta alto de mortalidade', doc().querySelector('#lista-alertas-tanque .lista-alertas__item--alta')?.textContent.includes('Mortalidade elevada no registro'));
     verificar('gráficos desenhados', porId('grafico-peso-medio').querySelector('svg') && porId('aviso-grafico-peso-medio').hidden);
     verificar('registros recentes, o mais novo primeiro', doc().querySelectorAll('#lista-registros-recentes .lista-registros__item').length === 2
@@ -246,11 +251,28 @@ async function roteiro() {
     etapa = 'Despesca';
     await abrir(`ciclo-form.html?tanqueId=${tanqueId}&acao=despesca`);
     verificar('estimativa como sugestão', porId('campo-quantidade-despescada').placeholder === 'Estimativa: 995', porId('campo-quantidade-despescada').placeholder);
-    preencher({ 'campo-data-despesca': somarDias(HOJE, -25), 'campo-quantidade-despescada': '990', 'campo-peso-final': '80' });
+    verificar('biomassa estimada como sugestão', porId('campo-biomassa-final').placeholder.startsWith('Estimativa: '), porId('campo-biomassa-final').placeholder);
+    await enviarSemSair('formulario-registrar-despesca');
+    verificar('RN19 biomassa final obrigatória', texto('erro-biomassa-final') === 'Informe a biomassa final.', texto('erro-biomassa-final'));
+    // RN20: 950 peixes x 80 g = 76 kg, contra 60 kg pesados (27% acima).
+    preencher({ 'campo-biomassa-final': '60', 'campo-quantidade-despescada': '950', 'campo-peso-final': '80' });
+    await enviarSemSair('formulario-registrar-despesca');
+    verificar('RN20 valores que não batem', texto('erro-quantidade-despescada') === 'Os valores não batem: confira a biomassa, o peso médio ou a quantidade.', texto('erro-quantidade-despescada'));
+    preencher({ 'campo-data-despesca': somarDias(HOJE, -25), 'campo-quantidade-despescada': '' });
     await enviarSemSair('formulario-registrar-despesca');
     verificar('RN09 antes do último registro', texto('erro-data-despesca') === `A despesca não pode ser anterior ao último registro (${emBr(somarDias(HOJE, -20))}).`, texto('erro-data-despesca'));
     preencher({ 'campo-data-despesca': HOJE });
     await enviarENavegar('formulario-registrar-despesca');
+    // 60 kg / 80 g = 750 peixes de 1.000: 75% de sobrevivência; 250 perdidos, 5 encontrados (o outro registro foi excluído antes).
+    verificar('resumo do ciclo após a despesca', !porId('aviso-despesca').hidden && porId('aviso-despesca').textContent.includes('75%')
+        && porId('aviso-despesca').textContent.includes('245 não observados · 5 encontrados') && porId('aviso-despesca').textContent.includes('(estimada pela biomassa)'),
+        texto('aviso-despesca'));
+    porId('aba-historico').click();
+    await esperar(40);
+    verificar('ciclo encerrado no histórico com o resumo', !porId('resultado-ciclo-historico').hidden && porId('resultado-ciclo-historico').textContent.includes('Sobrevivência real'));
+    await abrir(`ciclo-form.html?tanqueId=${tanqueId}&acao=iniciar`);
+    verificar('referência do último ciclo ao iniciar', texto('referencia-ciclo-anterior')?.startsWith('Último ciclo: sobrevivência de 75%'), texto('referencia-ciclo-anterior'));
+    await abrir(`tanque.html?id=${tanqueId}`);
     verificar('RN08 tanque vazio', texto('selo-status-tanque') === 'Vazio' && !porId('aviso-sem-ciclo').hidden);
     verificar('arquivar disponível com histórico', !porId('botao-arquivar-tanque').hidden && porId('botao-excluir-tanque').hidden);
     await abrir('registro.html');
@@ -338,7 +360,7 @@ async function roteiro() {
     doc().querySelector('[data-indicador-grafico="fca"]').click();
     await esperar(60);
     verificar('linhas da FCA desenhadas', [...porId('grafico-principal').querySelectorAll('.grafico__linha-serie')].every((linha) => linha.getAttribute('d').length > 20));
-    verificar('indicador troca o gráfico', texto('titulo-grafico') === 'Conversão alimentar' && porId('grafico-principal').querySelector('.grafico__meta')
+    verificar('indicador troca o gráfico', texto('titulo-grafico') === 'FCA (estimada)' && porId('grafico-principal').querySelector('.grafico__meta')
         && doc().querySelector('[data-indicador-grafico="fca"]').getAttribute('aria-pressed') === 'true');
     cartao05.querySelector('[data-ver-grafico]').click();
     await esperar(60);

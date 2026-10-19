@@ -189,7 +189,8 @@ Cria ou edita um tanque (nome, espécie, volume, capacidade máxima, status, obs
 ### 7.5 Formulário de ciclo (`ciclo-form.html`)
 
 - **Iniciar ciclo:** data de povoamento, quantidade inicial, peso médio inicial, peso alvo (opcional) e data prevista de despesca (opcional).
-- **Registrar despesca:** data, quantidade despescada e peso médio final. Encerra o ciclo.
+- **Iniciar ciclo:** com ciclo encerrado anterior, mostra a caixa "Último ciclo: sobrevivência de X%, FCA de Y, Z dias."
+- **Registrar despesca:** data, **biomassa final (kg)** ("Peso total dos peixes despescados."), peso médio final ("Peso médio da amostra.") e quantidade despescada opcional ("Só se os peixes foram contados."), com RN19 e RN20. Encerra o ciclo e leva à página do tanque com o resumo do ciclo (seção 9.4.1).
 
 ### 7.6 Novo registro (`registro.html`)
 
@@ -197,7 +198,7 @@ Formulário rápido, com poucos campos e otimizado para o celular:
 
 - Tanque (pré-selecionado quando vier da página do tanque);
 - Data (padrão: hoje; vindo da agenda, `registro.html?data=AAAA-MM-DD` preenche o dia escolhido, e uma data futura é ignorada);
-- Peso médio, consumo de ração, mortalidade, natalidade, quantidade contada (todos opcionais);
+- Peso médio, consumo de ração, mortos encontrados, natalidade (todos opcionais). "Mortos encontrados" traz a ajuda "Peixes mortos vistos neste dia. O número real só é conhecido na despesca." e a quantidade estimada atual;
 - Observações.
 
 A edição usa o endereço `registro.html?id=...`, e o registro continua no mesmo tanque.
@@ -314,8 +315,9 @@ Os valores são sempre armazenados nestas unidades e convertidos apenas na exibi
   pesoAlvoG: 800,               // opcional
   dataPrevistaDespesca: "2027-02-01", // opcional
   dataDespesca: null,           // preenchida ao encerrar
-  quantidadeDespescada: null,
-  pesoMedioFinalG: null,
+  biomassaFinalKg: null,        // pesada na despesca (obrigatória ao encerrar)
+  pesoMedioFinalG: null,        // peso médio da amostra na despesca
+  quantidadeDespescada: null,   // opcional: só se os peixes foram contados
   status: "ativo"               // "ativo" | "encerrado"
 }
 ```
@@ -330,9 +332,8 @@ Os valores são sempre armazenados nestas unidades e convertidos apenas na exibi
   data: "2026-10-16",
   pesoMedioG: 210,              // opcional
   racaoKg: 25,                  // opcional
-  mortalidade: 4,               // opcional
+  mortalidade: 4,               // opcional: mortos encontrados no dia (observação parcial)
   natalidade: 0,                // opcional
-  quantidadeContada: null,      // opcional: contagem real, corrige o estoque
   observacoes: "",
   criadoEm: "2026-10-16T13:00:00.000Z"
 }
@@ -361,12 +362,12 @@ Os valores são sempre armazenados nestas unidades e convertidos apenas na exibi
 
 ### 8.3 Armazenamento
 
-Uma única chave no `localStorage`. Ela continua se chamando `fishtrack:v1` na versão 2 do formato, para não perder os dados existentes; a versão do formato fica no campo `versao`.
+Uma única chave no `localStorage`. Ela continua se chamando `fishtrack:v1` na versão 3 do formato, para não perder os dados existentes; a versão do formato fica no campo `versao`.
 
 ```js
 // chave: "fishtrack:v1"
 {
-  versao: 2,
+  versao: 3,
   tanques: [],
   ciclos: [],
   registros: [],
@@ -400,6 +401,13 @@ O `limitesAlerta` de cada tanque usa as mesmas chaves e pode conter só as que f
 1. Cria `lembretes: []`.
 2. Em cada tanque, remove `capacidade` (número de peixes) e cria `densidadeMaximaKgM3: null`. O valor antigo fica em `capacidadePeixesLegado`, só como referência: não há conversão possível de peixes para kg/m³, então o produtor informa o novo valor.
 3. Cria `config.metaFca = 1.6` e `config.ultimoBackupEm = null`.
+
+**Da versão 2 para a 3** (quantidade estimada e fechamento do ciclo pela biomassa):
+
+1. Em cada registro, remove `quantidadeContada`. Se o registro ficar sem nenhuma medição e sem observação, grava em `observacoes` "Contagem registrada: N peixes", para não perder a informação nem violar a RN11.
+2. Em cada ciclo encerrado, cria `biomassaFinalKg = quantidadeDespescada × pesoMedioFinalG / 1000`; nos ativos, `biomassaFinalKg: null`.
+
+Backups das versões 1 e 2 continuam podendo ser restaurados: passam pelas migrações em sequência.
 4. Define `versao = 2`.
 
 ---
@@ -420,14 +428,16 @@ O `limitesAlerta` de cada tanque usa as mesmas chaves e pode conter só as que f
 - **RN07.** Quantidade inicial e peso médio inicial são obrigatórios e maiores que zero, e a quantidade é inteira. A data do povoamento não pode ser futura nem anterior à última despesca do tanque. O peso alvo, se informado, deve ser maior que o peso inicial, e a despesca prevista deve ser depois do povoamento.
 - **RN08.** Registrar a despesca encerra o ciclo, e o tanque volta a `vazio`.
 - **RN09.** A data de despesca não pode ser anterior à data de início nem ao último registro, nem futura.
+- **RN19.** A despesca fecha o ciclo pelo que foi pesado: **biomassa final (kg)** e **peso médio final (g)** são obrigatórios e maiores que zero. A **quantidade despescada** é opcional (só se os peixes foram contados), inteira e ≥ 0.
+- **RN20.** Com a quantidade despescada informada, `quantidade × peso médio` não pode diferir mais de 20% da biomassa final. Se diferir, a despesca é recusada com a mensagem "Os valores não batem: confira a biomassa, o peso médio ou a quantidade." no campo da quantidade.
 
 ### 9.3 Registros
 
 - **RN10.** Todo registro pertence a um ciclo ativo. Não há registro em tanque vazio. Registros de ciclos encerrados ficam só para consulta: não podem ser alterados nem excluídos.
-- **RN11.** Apenas a **data** é obrigatória, mas pelo menos um campo de medição ou observação deve ser preenchido.
+- **RN11.** Apenas a **data** é obrigatória, mas pelo menos um campo de medição (peso médio, ração, mortos encontrados, natalidade) ou observação deve ser preenchido. Não há contagem de peixes durante o ciclo: na prática ela não é feita.
 - **RN12.** A data não pode ser futura nem anterior ao início do ciclo.
 - **RN13.** Valores numéricos não podem ser negativos. Contagens são inteiras, e o peso médio, se informado, é maior que zero.
-- **RN14.** A mortalidade de um registro não pode ser maior que a quantidade estimada de peixes naquela data. A regra é conferida em todos os registros do ciclo a cada inclusão, alteração ou exclusão, porque um registro muda o estoque estimado dos que vêm depois dele.
+- **RN14.** Os mortos encontrados de um registro não podem passar da quantidade **estimada** de peixes naquela data. A regra é conferida em todos os registros do ciclo a cada inclusão, alteração ou exclusão, porque um registro muda o estoque estimado dos que vêm depois dele.
 - **RN15.** Pode haver mais de um registro na mesma data. Os valores de ração, mortalidade e natalidade são somados.
 
 ### 9.3.1 Lembretes
@@ -440,9 +450,11 @@ O `limitesAlerta` de cada tanque usa as mesmas chaves e pode conter só as que f
 
 Todos os indicadores são calculados a partir do ciclo e dos registros, ordenados por data.
 
+**Durante o ciclo, a quantidade é estimada.** Não dá para contar os peixes no viveiro, e muitos mortos não são vistos: os mortos anotados são uma observação parcial. Por isso a quantidade, a biomassa, a FCA e a capacidade do ciclo ativo são **estimativas**, e as telas dizem isso nos rótulos: "Peixes (estimado)", "Biomassa (estimada)", "FCA (estimada)", "Capacidade (estimada)", "Mortalidade observada" (com "Real só na despesca") e "Sobrevivência estimada". Na página do tanque, um botão "i" ao lado dos indicadores explica a estimativa. Os valores reais só saem na despesca (seção 9.4.1).
+
 | Indicador | Fórmula |
 |---|---|
-| **Quantidade de peixes** | Parte da última `quantidadeContada` (ou da `quantidadeInicial`) e aplica `− mortalidade + natalidade` dos registros posteriores. A contagem é o estoque ao fim do registro em que foi informada. |
+| **Quantidade de peixes (estimada)** | `quantidadeInicial − mortos encontrados + natalidade`, acumulados até a data. |
 | **Peso médio atual** | Último `pesoMedioG` informado. Se nenhum, usa `pesoMedioInicialG`. |
 | **Biomassa (kg)** | `quantidade × pesoMedio / 1000` |
 | **Ração acumulada (kg)** | Soma de `racaoKg` no ciclo. |
@@ -460,6 +472,27 @@ Todos os indicadores são calculados a partir do ciclo e dos registros, ordenado
 | **Projeção até o limite (dias)** | `(cargaMaxima − biomassa) / ganho de biomassa por dia entre as duas últimas pesagens`. Só aparece com ganho positivo e resultado entre 1 e 180 dias. Não é previsão: estende o ritmo recente. |
 | **Dias de cultivo** | Dias entre `dataInicio` e hoje (ou `dataDespesca`). |
 
+### 9.4.1 Resultado do ciclo encerrado
+
+Na despesca a biomassa é pesada, e daí saem os números reais do ciclo, que servem de referência para o próximo. `calcularResultadoCiclo({ tanque, ciclo, registros })` (função pura em `indicadores.js`) concentra as fórmulas, que ainda serão confirmadas com o laboratório (seção 13):
+
+| Resultado | Fórmula |
+|---|---|
+| Biomassa inicial (kg) | `quantidadeInicial × pesoMedioInicialG / 1000` |
+| Quantidade final | `quantidadeDespescada` se informada; senão `biomassaFinalKg × 1000 / pesoMedioFinalG`, arredondado ("estimada pela biomassa") |
+| Sobrevivência real (%) | `quantidadeFinal / quantidadeInicial × 100` |
+| Mortalidade real (%) | `100 − sobrevivenciaReal` (mínimo 0) |
+| Mortos encontrados | soma de `mortalidade` dos registros do ciclo |
+| Mortalidade não observada | `max(0, quantidadeInicial − quantidadeFinal − mortosEncontrados)` |
+| Ganho de biomassa (kg) | `biomassaFinalKg − biomassaInicialKg` |
+| Ração total (kg) | soma de `racaoKg` dos registros do ciclo |
+| FCA final | `racaoTotalKg / ganhoBiomassaKg` (vazia se o ganho for ≤ 0) |
+| Dias de cultivo | dias entre `dataInicio` e `dataDespesca` |
+| Ganho de peso diário (g/dia) | `(pesoMedioFinalG − pesoMedioInicialG) / diasCultivo` |
+| Produtividade (kg/m³) | `biomassaFinalKg / volumeM3` |
+
+**Onde aparece:** logo depois da despesca, a página do tanque abre com o resumo do ciclo encerrado; no Histórico, cada ciclo encerrado mostra o mesmo resumo; quando há ciclo encerrado anterior, sobrevivência, mortalidade, FCA e dias trazem a comparação ("75% (ciclo anterior: 81%)"). Ao iniciar um novo ciclo, uma caixa mostra a referência do último: "Último ciclo: sobrevivência de X%, FCA de Y, Z dias."
+
 **Dashboard:** os totais somam os tanques com ciclo ativo. As taxas gerais são médias ponderadas pela quantidade inicial de cada ciclo.
 
 **Período do dashboard:** a série diária de cada ciclo repete o último valor conhecido entre registros. O período vai do fim do dia inicial até hoje; um tanque povoado no meio dele parte da biomassa do povoamento. A **variação** compara hoje com o início do período; a **FCA do período** é a ração do período dividida pelo ganho de biomassa do período; as **perdas** são a mortalidade registrada no período. A meta de FCA fica em `config.metaFca` (padrão 1,60) e pode ser sobrescrita por tanque.
@@ -472,7 +505,7 @@ Os alertas são calculados sempre que os dados mudam e não são armazenados. Ca
 
 | Alerta | Condição | Limite padrão | Gravidade |
 |---|---|---|---|
-| **Mortalidade elevada no registro** | mortalidade do registro > X% da quantidade estimada | 1% | Alta |
+| **Mortalidade elevada no registro** | mortos encontrados no registro > X% da quantidade estimada (a mensagem diz "do estoque estimado") | 1% | Alta |
 | **Mortalidade acumulada elevada** | taxa de mortalidade do ciclo > X% | 10% | Média |
 | **Ração acima do limite** | ração do dia > X% da biomassa | 5% | Média |
 | **Tanque próximo da capacidade** | capacidade utilizada (biomassa ÷ carga máxima) ≥ X%; não avaliado sem densidade máxima | 90% | Média |
@@ -732,3 +765,4 @@ fish-track/
 | Registrar parâmetros da água (oxigênio, pH, temperatura) | Fora do MVP | Produtores |
 | Corrigir ou cancelar um ciclo iniciado com dados errados | Não previsto no MVP: hoje só é possível registrar a despesca | Produtores |
 | Conteúdo exato dos relatórios em PDF | O da seção 7.12 | Produtores |
+| Fórmulas do fechamento do ciclo (seção 9.4.1) | As da tabela, com a quantidade final estimada pela biomassa quando não houver contagem | Laboratório de piscicultura |

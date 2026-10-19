@@ -102,8 +102,9 @@
 
                 <div class="formulario__grade">
                     <div class="campo">
-                        <label class="campo__rotulo" for="campo-mortalidade">Mortalidade</label>
-                        <input class="campo__input" id="campo-mortalidade" name="mortalidade" type="text" autocomplete="off" pattern="[0-9]*" inputmode="numeric" aria-describedby="erro-mortalidade">
+                        <label class="campo__rotulo" for="campo-mortalidade">Mortos encontrados</label>
+                        <input class="campo__input" id="campo-mortalidade" name="mortalidade" type="text" autocomplete="off" pattern="[0-9]*" inputmode="numeric" aria-describedby="ajuda-mortalidade erro-mortalidade">
+                        <p class="campo__ajuda" id="ajuda-mortalidade">Peixes mortos vistos neste dia. O número real só é conhecido na despesca.</p>
                         <p class="campo__erro" id="erro-mortalidade"></p>
                     </div>
 
@@ -114,12 +115,6 @@
                     </div>
                 </div>
 
-                <div class="campo">
-                    <label class="campo__rotulo" for="campo-quantidade-contada">Quantidade contada</label>
-                    <input class="campo__input" id="campo-quantidade-contada" name="quantidadeContada" type="text" autocomplete="off" pattern="[0-9]*" inputmode="numeric" aria-describedby="ajuda-quantidade-contada erro-quantidade-contada">
-                    <p class="campo__ajuda" id="ajuda-quantidade-contada">Só se você contou os peixes. Corrige a quantidade estimada do tanque.</p>
-                    <p class="campo__erro" id="erro-quantidade-contada"></p>
-                </div>
 
                 <div class="campo">
                     <label class="campo__rotulo" for="campo-observacoes">Observações</label>

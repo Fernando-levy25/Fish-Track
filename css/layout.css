@@ -296,6 +296,11 @@ body {
     gap: var(--espaco-2) var(--espaco-4);
 }
 
+/* Título com um botão pequeno logo ao lado (o "i" dos indicadores estimados). */
+.secao__cabecalho--inicio {
+    justify-content: flex-start;
+}
+
 .secao__titulo {
     font-size: var(--texto-5);
 }

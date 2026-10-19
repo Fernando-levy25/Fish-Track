@@ -16,6 +16,7 @@ import {
     pluralizar,
 } from '../core/format.js';
 import { arquivarTanque, desarquivarTanque, excluirTanque, obterSituacao, ROTULOS_STATUS } from '../domain/tanques.js';
+import { listarResultadosCiclos } from '../domain/ciclos.js';
 import { excluirRegistro, listarRegistrosDoCiclo, resumirRegistro } from '../domain/registros.js';
 import { calcularCargaMaximaKg, calcularSeries } from '../domain/indicadores.js';
 import { analisarTanque, resolverLimites } from '../domain/alertas.js';
@@ -26,6 +27,7 @@ import {
     confirmar,
     criarBarraCapacidade,
     criarElemento,
+    criarResumoCiclo,
     criarItemRegistro,
     iniciarAbas,
     iniciarFormulario,
@@ -73,6 +75,8 @@ function iniciar() {
     calendario = montarAgenda(porId('agenda-tanque'), { tanqueId, nivelTitulo: 3 });
     configurarAcoes();
     configurarGraficos();
+    configurarInfoEstimativa();
+    mostrarDespescaRecente();
     configurarHistorico();
     configurarLimites();
     renderizar();
@@ -252,6 +256,28 @@ function configurarGraficos() {
     });
 }
 
+// O "i" ao lado dos indicadores explica por que eles são estimados.
+function configurarInfoEstimativa() {
+    const botao = porId('botao-info-estimativa');
+    botao.addEventListener('click', () => {
+        const aberto = botao.getAttribute('aria-expanded') === 'true';
+        botao.setAttribute('aria-expanded', String(!aberto));
+        porId('texto-info-estimativa').hidden = aberto;
+    });
+}
+
+// Vindo da despesca (?despesca=1): o resumo do ciclo que acabou de fechar.
+function mostrarDespescaRecente() {
+    if (!lerParametro('despesca')) {
+        return;
+    }
+    const recente = listarResultadosCiclos(tanqueId)[0];
+    if (recente) {
+        porId('resultado-despesca').replaceChildren(criarResumoCiclo(recente.resultado, recente.anterior));
+        porId('aviso-despesca').hidden = false;
+    }
+}
+
 // ---------- Histórico ----------
 
 function configurarHistorico() {
@@ -305,6 +331,11 @@ function renderizarTabela() {
     porId('resumo-ciclo-historico').textContent = ciclo
         ? descreverCicloHistorico(ciclo, registros.length)
         : 'Este tanque ainda não teve nenhum ciclo.';
+    // Ciclo encerrado: o resultado real, comparado com o ciclo anterior.
+    const resultado = ciclo?.status === 'encerrado' ? listarResultadosCiclos(tanqueId).find((item) => item.ciclo.id === ciclo.id) : null;
+    const areaResultado = porId('resultado-ciclo-historico');
+    areaResultado.replaceChildren(...(resultado ? [criarResumoCiclo(resultado.resultado, resultado.anterior)] : []));
+    areaResultado.hidden = !resultado;
     porId('corpo-tabela-registros').replaceChildren(...registros.map((registro) => criarLinhaRegistro(registro, editavel)));
     porId('rolagem-tabela-registros').hidden = registros.length === 0;
     porId('aviso-tabela-registros').hidden = registros.length > 0 || !ciclo;
@@ -315,8 +346,8 @@ function descreverCicloHistorico(ciclo, quantidadeRegistros) {
     const partes = [`Povoamento em ${formatarData(ciclo.dataInicio)} com ${pluralizar(ciclo.quantidadeInicial, 'peixe', 'peixes')} `
         + `de ${formatarGramas(ciclo.pesoMedioInicialG)}`];
     if (ciclo.status === 'encerrado') {
-        partes.push(`despesca em ${formatarData(ciclo.dataDespesca)}: ${pluralizar(ciclo.quantidadeDespescada, 'peixe', 'peixes')} `
-            + `com ${formatarGramas(ciclo.pesoMedioFinalG)}`);
+        partes.push(`despesca em ${formatarData(ciclo.dataDespesca)}: ${formatarKg(ciclo.biomassaFinalKg)} `
+            + `com peso médio de ${formatarGramas(ciclo.pesoMedioFinalG)}`);
     }
     partes.push(pluralizar(quantidadeRegistros, 'registro', 'registros'));
     if (ciclo.status === 'encerrado') {
@@ -347,7 +378,6 @@ function criarLinhaRegistro(registro, editavel) {
         criarElemento('td', { texto: formatarNumero(registro.racaoKg, 2) }),
         criarElemento('td', { texto: formatarInteiro(registro.mortalidade) }),
         criarElemento('td', { texto: formatarInteiro(registro.natalidade) }),
-        criarElemento('td', { texto: formatarInteiro(registro.quantidadeContada) }),
         criarElemento('td', { texto: registro.observacoes || '—' }),
         criarElemento('td', {}, [acoes]),
     ]);

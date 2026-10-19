@@ -37,14 +37,14 @@ function criarExemplo(hoje) {
     const sortear = criarSorteio(SEMENTE);
     const dia = (deslocamento) => somarDias(hoje, deslocamento);
 
-    // Bom crescimento, com uma contagem que corrigiu o estoque. Capacidade informada como carga total.
+    // Bom crescimento. Capacidade informada como carga total.
     const tanque01 = salvarTanque({
         nome: 'Tanque 01', especie: 'Tilápia', volumeM3: 300, cargaMaximaKg: 1200,
         observacoes: 'Viveiro escavado, com aerador de pás.',
     });
     simularCiclo(tanque01.id, {
         inicio: dia(-84), dias: 84, quantidadeInicial: 2500, pesoInicialG: 5, pesoFinalG: 385,
-        pesoAlvoG: 800, duracaoPrevista: 180, contagem: { dia: 42, ajuste: -30 }, sortear,
+        pesoAlvoG: 800, duracaoPrevista: 180, sortear,
     });
 
     // Crescimento abaixo do esperado e mortalidade alta no último registro.
@@ -66,7 +66,7 @@ function criarExemplo(hoje) {
     });
     simularCiclo(viveiro.id, {
         inicio: dia(-330), dias: 180, quantidadeInicial: 5000, pesoInicialG: 4, pesoFinalG: 870,
-        pesoAlvoG: 850, duracaoPrevista: 180, despesca: { perda: 25 }, sortear,
+        pesoAlvoG: 850, duracaoPrevista: 180, despesca: { naoObservados: 410, contada: false }, sortear,
     });
 
     // Em manutenção, sem ciclos.
@@ -76,7 +76,7 @@ function criarExemplo(hoje) {
     const antigo = salvarTanque({ nome: 'Tanque 03', especie: 'Tilápia', volumeM3: 250, densidadeMaximaKgM3: 3 });
     simularCiclo(antigo.id, {
         inicio: dia(-520), dias: 120, quantidadeInicial: 1800, pesoInicialG: 5, pesoFinalG: 520,
-        despesca: { perda: 10 }, sortear,
+        despesca: { naoObservados: 160, contada: true }, sortear,
     });
     arquivarTanque(antigo.id);
 
@@ -104,7 +104,6 @@ function simularCiclo(tanqueId, {
     pesoFinalG,
     pesoAlvoG = null,
     duracaoPrevista = null,
-    contagem = null,
     ultimoRegistro = null,
     despesca = null,
     sortear,
@@ -142,19 +141,19 @@ function simularCiclo(tanqueId, {
             Object.assign(registro, ultimoRegistro);
         }
         estoque -= registro.mortalidade ?? 0;
-        if (contagem?.dia === dia) {
-            registro.quantidadeContada = estoque + contagem.ajuste;
-            registro.observacoes = 'Contagem feita na biometria.';
-            estoque = registro.quantidadeContada;
-        }
         salvarRegistro(registro);
     }
 
     if (despesca) {
+        // Na despesca aparecem as perdas que ninguém viu: a quantidade real fica
+        // abaixo da estimada, e a biomassa é a pesada (RN19).
+        const pesoFinalG = arredondar(pesoNoDia(dias), 0);
+        const quantidadeReal = estoque - despesca.naoObservados;
         registrarDespesca(tanqueId, {
             dataDespesca: somarDias(inicio, dias),
-            quantidadeDespescada: estoque - despesca.perda,
-            pesoMedioFinalG: arredondar(pesoNoDia(dias), 0),
+            biomassaFinalKg: arredondar((quantidadeReal * pesoFinalG) / 1000, 1),
+            pesoMedioFinalG: pesoFinalG,
+            quantidadeDespescada: despesca.contada ? quantidadeReal : null,
         });
     }
 }

@@ -2,9 +2,9 @@
 // a ação: ciclo-form.html?tanqueId=...&acao=iniciar (ou acao=despesca).
 
 import { hojeISO, paraNumero } from '../core/utils.js';
-import { formatarGramas, formatarInteiro } from '../core/format.js';
+import { formatarFca, formatarGramas, formatarInteiro, formatarKg, formatarPercentual } from '../core/format.js';
 import { obterSituacao } from '../domain/tanques.js';
-import { iniciarCiclo, registrarDespesca, verificarInicioCiclo } from '../domain/ciclos.js';
+import { iniciarCiclo, listarResultadosCiclos, registrarDespesca, verificarInicioCiclo } from '../domain/ciclos.js';
 import { calcularIndicadores } from '../domain/indicadores.js';
 import { irPara, lerParametro, montarUrl } from '../ui/nav.js';
 import { iniciarFormulario, mostrarErroPagina, preencherCampos } from '../ui/componentes.js';
@@ -54,6 +54,14 @@ function prepararInicio({ tanque }, urlTanque) {
     }
     document.title = `Fish Track - Iniciar ciclo · ${tanque.nome}`;
     porId('secao-iniciar-ciclo').hidden = false;
+    // O resultado real do último ciclo é a referência para planejar o próximo.
+    const ultimo = listarResultadosCiclos(tanque.id)[0]?.resultado;
+    if (ultimo) {
+        const referencia = porId('referencia-ciclo-anterior');
+        referencia.textContent = `Último ciclo: sobrevivência de ${formatarPercentual(ultimo.sobrevivenciaReal)}, `
+            + `FCA de ${formatarFca(ultimo.fcaFinal)}, ${formatarInteiro(ultimo.diasCultivo)} dias.`;
+        referencia.hidden = false;
+    }
     const hoje = hojeISO();
     const data = porId('campo-data-inicio');
     data.value = hoje;
@@ -89,7 +97,8 @@ function prepararDespesca({ tanque, cicloAtivo, registros }, urlTanque) {
     // RN09: o calendário do campo já começa no último registro (ou no povoamento).
     data.min = registros.at(-1)?.data ?? cicloAtivo.dataInicio;
     // As estimativas entram como sugestão, não como valor: a despesca registra o
-    // que foi contado e pesado de fato.
+    // que foi pesado (e, se houver, contado) de fato.
+    porId('campo-biomassa-final').placeholder = `Estimativa: ${formatarKg(indicadores.biomassaKg)}`;
     porId('campo-quantidade-despescada').placeholder = `Estimativa: ${formatarInteiro(indicadores.quantidade)}`;
     porId('campo-peso-final').placeholder = `Último peso: ${formatarGramas(indicadores.pesoMedioG)}`;
 
@@ -98,10 +107,12 @@ function prepararDespesca({ tanque, cicloAtivo, registros }, urlTanque) {
         aoEnviar: (valores) => {
             registrarDespesca(tanque.id, {
                 dataDespesca: valores.dataDespesca,
-                quantidadeDespescada: paraNumero(valores.quantidadeDespescada),
+                biomassaFinalKg: paraNumero(valores.biomassaFinalKg),
                 pesoMedioFinalG: paraNumero(valores.pesoMedioFinalG),
+                quantidadeDespescada: paraNumero(valores.quantidadeDespescada),
             });
-            irPara(urlTanque);
+            // A página do tanque abre com o resumo do ciclo que acabou de fechar.
+            irPara(montarUrl('tanque.html', { id: tanque.id, despesca: 1 }));
         },
     });
 }

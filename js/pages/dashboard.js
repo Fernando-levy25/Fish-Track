@@ -38,10 +38,10 @@ const PERIODO_PADRAO = '30';
 
 // Cada indicador: como aparece no cartão e qual campo da série vai para o gráfico.
 const INDICADORES = {
-    biomassa: { rotulo: 'Biomassa total', campo: 'biomassaKg', formatar: formatarKg, rotuloTotal: 'Total' },
-    peixes: { rotulo: 'Peixes no estoque', campo: 'quantidade', formatar: formatarInteiro, rotuloTotal: 'Total' },
-    fca: { rotulo: 'Conversão alimentar', campo: 'fca', formatar: formatarFca, rotuloTotal: 'Geral' },
-    mortalidade: { rotulo: 'Mortalidade acumulada', campo: 'taxaMortalidade', formatar: formatarPercentual, rotuloTotal: 'Geral' },
+    biomassa: { rotulo: 'Biomassa (estimada)', campo: 'biomassaKg', formatar: formatarKg, rotuloTotal: 'Total' },
+    peixes: { rotulo: 'Peixes (estimado)', campo: 'quantidade', formatar: formatarInteiro, rotuloTotal: 'Total' },
+    fca: { rotulo: 'FCA (estimada)', campo: 'fca', formatar: formatarFca, rotuloTotal: 'Geral' },
+    mortalidade: { rotulo: 'Mortalidade observada', campo: 'taxaMortalidade', formatar: formatarPercentual, rotuloTotal: 'Geral' },
     racao: { rotulo: 'Ração fornecida', campo: 'racaoDiaKg', formatar: formatarKg, rotuloTotal: 'Total' },
 };
 // A FCA dos primeiros dias do ciclo, com pouco ganho de peso, passa de 10:
@@ -341,9 +341,9 @@ function criarCartaoCultivo({ tanque, cicloAtivo, indicadores, alertas, ultimoRe
         criarElemento('div', { classe: 'cartao-cultivo__corpo' }, [
             anel,
             criarElemento('dl', { classe: 'cartao-cultivo__dados' }, [
-                ['Peixes', formatarInteiro(indicadores.quantidade)],
-                ['Biomassa', formatarKg(indicadores.biomassaKg)],
-                ['FCA', formatarFca(indicadores.fca)],
+                ['Peixes (estimado)', formatarInteiro(indicadores.quantidade)],
+                ['Biomassa (estimada)', formatarKg(indicadores.biomassaKg)],
+                ['FCA (estimada)', formatarFca(indicadores.fca)],
                 ['Despesca', despesca],
             ].map(([rotulo, valor]) => criarElemento('div', { classe: 'cartao-cultivo__dado' }, [
                 criarElemento('dt', { texto: rotulo }),

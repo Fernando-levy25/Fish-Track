@@ -7,7 +7,7 @@
 // A chave continua "v1" mesmo com o formato na versão 2: trocar a chave faria
 // os dados existentes parecerem perdidos. A versão do formato fica no campo versao.
 export const CHAVE_DADOS = 'fishtrack:v1';
-export const VERSAO_DADOS = 2;
+export const VERSAO_DADOS = 3;
 
 const CHAVE_COPIA_ILEGIVEL = `${CHAVE_DADOS}:ilegivel`;
 // Preferências de tela (como o período do dashboard) ficam fora dos dados do
@@ -124,6 +124,27 @@ export function migrarDados(dados) {
                 capacidadePeixesLegado: capacidade ?? null,
             })),
             config: { ...atuais.config, metaFca: META_FCA_PADRAO, ultimoBackupEm: null },
+        };
+    }
+    if (atuais.versao === 2) {
+        atuais = {
+            ...atuais,
+            versao: 3,
+            // A contagem durante o ciclo saiu (seção 9.4): na prática não se contam
+            // os peixes. Um registro que só tinha a contagem guarda o número na
+            // observação, para não perder a informação nem ficar vazio (RN11).
+            registros: (atuais.registros ?? []).map(({ quantidadeContada, ...registro }) => {
+                const vazio = ['pesoMedioG', 'racaoKg', 'mortalidade', 'natalidade'].every((campo) => registro[campo] === null || registro[campo] === undefined)
+                    && !registro.observacoes;
+                return vazio && quantidadeContada !== null && quantidadeContada !== undefined
+                    ? { ...registro, observacoes: `Contagem registrada: ${quantidadeContada} peixes` }
+                    : registro;
+            }),
+            // A despesca passou a fechar pela biomassa pesada (RN19); para os
+            // ciclos antigos, ela sai da quantidade e do peso médio informados.
+            ciclos: (atuais.ciclos ?? []).map((ciclo) => (ciclo.status === 'encerrado'
+                ? { ...ciclo, biomassaFinalKg: (ciclo.quantidadeDespescada * ciclo.pesoMedioFinalG) / 1000 }
+                : { ...ciclo, biomassaFinalKg: null })),
         };
     }
     return atuais;

@@ -65,7 +65,7 @@ export function avaliarAlertas({ tanque, ciclo, registros, indicadores, limites,
         if (percentual > limites.mortalidadeRegistroPct) {
             adicionar('mortalidade-registro', 'alta', 'Mortalidade elevada no registro',
                 `${pluralizar(ultimoDia.mortalidadeDia, 'peixe morto', 'peixes mortos')} em ${formatarData(ultimoDia.data)}: `
-                + `${formatarPercentual(percentual)} do estoque (limite de ${formatarPercentual(limites.mortalidadeRegistroPct)}).`,
+                + `${formatarPercentual(percentual)} do estoque estimado (limite de ${formatarPercentual(limites.mortalidadeRegistroPct)}).`,
                 ultimoDia.data);
         }
     }
@@ -135,7 +135,7 @@ export function avaliarAlertasDosDias({ ciclo, registros, limites }) {
             const percentual = (dia.mortalidadeDia / dia.quantidadeInicioDia) * 100;
             if (percentual > limites.mortalidadeRegistroPct) {
                 alertas.push({ data: dia.data, tipo: 'mortalidade-registro', gravidade: 'alta', titulo: 'Mortalidade alta',
-                    descricao: `${pluralizar(dia.mortalidadeDia, 'peixe morto', 'peixes mortos')}: ${formatarPercentual(percentual)} do estoque.` });
+                    descricao: `${pluralizar(dia.mortalidadeDia, 'peixe morto', 'peixes mortos')}: ${formatarPercentual(percentual)} do estoque estimado.` });
             }
         }
         if (dia.racaoDiaKg > 0 && dia.biomassaKg > 0) {

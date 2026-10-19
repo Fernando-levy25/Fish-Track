@@ -3,7 +3,7 @@
 // 10): recebe das páginas os textos já formatados. Texto do usuário entra
 // sempre por textContent (seção 11.2).
 
-import { formatarKg, formatarNumero, formatarPercentual, pluralizar } from '../core/format.js';
+import { formatarFca, formatarGramasPorDia, formatarInteiro, formatarKg, formatarNumero, formatarPercentual, pluralizar } from '../core/format.js';
 import { criarIcone } from './icones.js';
 
 // ---------- Elementos ----------
@@ -194,7 +194,7 @@ export function criarBarraCapacidade({
         classes.push('barra-agua--compacta');
     }
     const topo = (filhos) => criarElemento('div', { classe: 'barra-agua__topo' }, [
-        criarElemento('span', { classe: 'barra-agua__rotulo', texto: 'Capacidade' }),
+        criarElemento('span', { classe: 'barra-agua__rotulo', texto: 'Capacidade (estimada)' }),
         ...filhos,
     ]);
 
@@ -240,7 +240,7 @@ export function criarBarraCapacidade({
             classe: 'barra-agua__trilho',
             atributos: {
                 role: 'progressbar',
-                'aria-label': 'Capacidade',
+                'aria-label': 'Capacidade (estimada)',
                 'aria-valuemin': '0',
                 'aria-valuemax': '100',
                 'aria-valuenow': String(Math.round(Math.min(percentual, 100))),
@@ -302,6 +302,32 @@ export function mostrarErroPagina(erro) {
         atributos: { role: 'alert' },
     });
     document.querySelector('main').prepend(aviso);
+}
+
+// ---------- Resultado do ciclo ----------
+
+// Resumo de um ciclo encerrado (seção 9.4.1), com o ciclo anterior entre
+// parênteses quando houver: "Sobrevivência 86% (ciclo anterior: 81%)".
+export function criarResumoCiclo(resultado, anterior = null) {
+    const comparar = (valor, formatar, chave) => (anterior && anterior[chave] !== null
+        ? `${formatar(valor)} (ciclo anterior: ${formatar(anterior[chave])})`
+        : formatar(valor));
+    const itens = [
+        ['Sobrevivência real', comparar(resultado.sobrevivenciaReal, formatarPercentual, 'sobrevivenciaReal'),
+            `${formatarInteiro(resultado.quantidadeFinal)} peixes no fim${resultado.quantidadeFinalEstimada ? ' (estimada pela biomassa)' : ''}`],
+        ['Mortalidade real', comparar(resultado.mortalidadeReal, formatarPercentual, 'mortalidadeReal'),
+            `${pluralizar(resultado.mortalidadeNaoObservada, 'não observado', 'não observados')} · ${pluralizar(resultado.mortosEncontrados, 'encontrado', 'encontrados')}`],
+        ['Biomassa final', formatarKg(resultado.biomassaFinalKg), `ganho de ${formatarKg(resultado.ganhoBiomassaKg)}`],
+        ['FCA final', comparar(resultado.fcaFinal, formatarFca, 'fcaFinal'), `${formatarKg(resultado.racaoTotalKg)} de ração`],
+        ['Ganho de peso diário', formatarGramasPorDia(resultado.ganhoPesoDiarioG), ''],
+        ['Produtividade', `${formatarNumero(resultado.produtividadeKgM3, 2)} kg/m³`, ''],
+        ['Dias de cultivo', comparar(resultado.diasCultivo, formatarInteiro, 'diasCultivo'), ''],
+    ];
+    return criarElemento('dl', { classe: 'resumo-ciclo' }, itens.map(([rotulo, valor, apoio]) => criarElemento('div', { classe: 'resumo-ciclo__item' }, [
+        criarElemento('dt', { classe: 'resumo-ciclo__rotulo', texto: rotulo }),
+        criarElemento('dd', { classe: 'resumo-ciclo__valor', texto: valor }),
+        apoio && criarElemento('dd', { classe: 'resumo-ciclo__apoio', texto: apoio }),
+    ])));
 }
 
 // ---------- Formulários ----------
