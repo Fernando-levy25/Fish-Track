@@ -174,7 +174,14 @@ Em telas largas, coluna escura com a marca, o botão "Novo registro", a navegaç
 
 Página própria de cada tanque, organizada em abas:
 
-- **Resumo:** carga do tanque (barra de capacidade da seção 9.8 e densidade de povoamento), indicadores do ciclo atual, gráficos (peso médio, biomassa e mortalidade ao longo do tempo), registros recentes e alertas do tanque.
+- **Cabeçalho:** além de nome, espécie, volume, status e ações, a barra de andamento do ciclo: "Dia 84 de 180 · despesca prevista em 96 dias" (sem data prevista, só "84 dias de cultivo", sem barra).
+- **Resumo:** só fica em destaque o que ajuda a decidir algo durante o ciclo; nenhum cálculo de `indicadores.js` foi removido, muda só a exibição. Ordem (no celular, uma coluna nesta ordem; no computador, a ração numa coluna larga ao lado dos destaques e o acompanhamento em 3 colunas):
+  1. **Ração de hoje** (cartão principal): ração já registrada hoje, botão "+ Registrar alimentação" (registro com o tanque e a data de hoje) e aviso quando a última biometria tem mais de 30 dias. A ração sugerida por dia, por refeição e a faixa, com a barra do que já foi registrado, dependem da tabela de alimentação (Prompt 02, ainda não implementado); até lá, o cartão diz que a sugestão chega com ela.
+  2. **Destaques:** Peso médio (barra até o peso alvo, "381 g de 800 g · 48%", "Biometria em 17/10 · há 3 dias", em âmbar acima de 30 dias); Biomassa (estimada) ("+X kg nos últimos 7 dias", "≈ 2.434 peixes"); Capacidade (estimada) (barra de capacidade compacta da seção 9.8 e densidade).
+  3. **Acompanhamento:** Mortalidade observada ("Últimos 7 dias: X%", "Real só na despesca"); FCA (estimada) ("X kg de ração consumida para Y kg de ganho", meta); Crescimento (g/dia entre as duas últimas biometrias, "Peso alvo em ~N dias (dd/mm)" com peso alvo e ganho positivo).
+  4. **"Ver todos os indicadores"** (recolhido; lembra se ficou aberto, como preferência de tela): tabela com nome, valor e como é calculado, estimados marcados. Natalidade só aparece com nascimento registrado no ciclo.
+  5. Gráficos, alertas e registros recentes, como antes.
+- **Tanque sem ciclo ativo:** no lugar dos cartões, o resumo do último ciclo encerrado (seção 9.4.1) e "Iniciar ciclo".
 - **Histórico:** todos os registros do ciclo atual, com edição e exclusão. Permite consultar ciclos anteriores, que ficam só para leitura (RN10).
 - **Calendário:** a mesma agenda da seção 7.8, filtrada pelo tanque (sem os chips de tanque e sem a abreviação do tanque nas etiquetas), com o quadro do dia. Lembretes gerais também aparecem.
 
@@ -492,6 +499,18 @@ Na despesca a biomassa é pesada, e daí saem os números reais do ciclo, que se
 | Produtividade (kg/m³) | `biomassaFinalKg / volumeM3` |
 
 **Onde aparece:** logo depois da despesca, a página do tanque abre com o resumo do ciclo encerrado; no Histórico, cada ciclo encerrado mostra o mesmo resumo; quando há ciclo encerrado anterior, sobrevivência, mortalidade, FCA e dias trazem a comparação ("75% (ciclo anterior: 81%)"). Ao iniciar um novo ciclo, uma caixa mostra a referência do último: "Último ciclo: sobrevivência de X%, FCA de Y, Z dias."
+
+**Onde cada indicador aparece na página do tanque (seção 7.3):**
+
+| Lugar | Indicadores |
+|---|---|
+| Cabeçalho | dias de cultivo e andamento até a despesca prevista |
+| Destaque | peso médio (com o peso alvo), biomassa (estimada), capacidade (estimada) com densidade |
+| Acompanhamento | mortalidade observada (e a dos últimos 7 dias), FCA (estimada) com ração e ganho, crescimento entre as duas últimas biometrias |
+| Só em "Ver todos" | peixes (estimado), sobrevivência estimada, ganho de biomassa, ração acumulada, crescimento no ciclo, densidade, densidade de povoamento, natalidade (só com nascimentos) |
+| Resumo da despesca | sobrevivência e mortalidade reais, FCA final, ganho de peso diário, produtividade |
+
+As leituras de curto prazo (ganho de biomassa e mortalidade dos últimos 7 dias, ração de hoje, dias desde a biometria, data prevista do peso alvo) vêm de `calcularAcompanhamento`, em `indicadores.js`. O peso alvo é projetado no ritmo das duas últimas biometrias, a partir da última. TCE e fator de condição entram em "Ver todos" quando a biometria tiver os dados do Prompt 02.
 
 **Dashboard:** os totais somam os tanques com ciclo ativo. As taxas gerais são médias ponderadas pela quantidade inicial de cada ciclo.
 

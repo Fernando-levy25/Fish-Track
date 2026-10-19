@@ -320,16 +320,16 @@ body {
 /* Seção 9.2: os blocos sobem 12 px e aparecem em sequência. Só "backwards":
    depois de entrar, o elemento volta a obedecer às próprias transformações
    (como o cartão que sobe ao passar o mouse). */
-:is(.pagina, .grade-indicadores, .grade-destaques, .grade-tanques, .grade-cultivo, .grade-graficos, .lista-alertas, .grupos-alertas) > * {
+:is(.pagina, .painel-tanque__destaques, .painel-tanque__acompanhamento, .grade-destaques, .grade-tanques, .grade-cultivo, .grade-graficos, .lista-alertas, .grupos-alertas) > * {
     animation: entrar var(--duracao-lenta) var(--curva-saida) backwards;
     animation-delay: calc(var(--ordem, 0) * var(--atraso-passo));
 }
 
-:is(.pagina, .grade-indicadores, .grade-destaques, .grade-tanques, .grade-cultivo, .grade-graficos, .lista-alertas, .grupos-alertas) > :nth-child(2) { --ordem: 1; }
-:is(.pagina, .grade-indicadores, .grade-destaques, .grade-tanques, .grade-cultivo, .grade-graficos, .lista-alertas, .grupos-alertas) > :nth-child(3) { --ordem: 2; }
-:is(.pagina, .grade-indicadores, .grade-destaques, .grade-tanques, .grade-cultivo, .grade-graficos, .lista-alertas, .grupos-alertas) > :nth-child(4) { --ordem: 3; }
-:is(.pagina, .grade-indicadores, .grade-destaques, .grade-tanques, .grade-cultivo, .grade-graficos, .lista-alertas, .grupos-alertas) > :nth-child(5) { --ordem: 4; }
-:is(.pagina, .grade-indicadores, .grade-destaques, .grade-tanques, .grade-cultivo, .grade-graficos, .lista-alertas, .grupos-alertas) > :nth-child(n + 6) { --ordem: 5; }
+:is(.pagina, .painel-tanque__destaques, .painel-tanque__acompanhamento, .grade-destaques, .grade-tanques, .grade-cultivo, .grade-graficos, .lista-alertas, .grupos-alertas) > :nth-child(2) { --ordem: 1; }
+:is(.pagina, .painel-tanque__destaques, .painel-tanque__acompanhamento, .grade-destaques, .grade-tanques, .grade-cultivo, .grade-graficos, .lista-alertas, .grupos-alertas) > :nth-child(3) { --ordem: 2; }
+:is(.pagina, .painel-tanque__destaques, .painel-tanque__acompanhamento, .grade-destaques, .grade-tanques, .grade-cultivo, .grade-graficos, .lista-alertas, .grupos-alertas) > :nth-child(4) { --ordem: 3; }
+:is(.pagina, .painel-tanque__destaques, .painel-tanque__acompanhamento, .grade-destaques, .grade-tanques, .grade-cultivo, .grade-graficos, .lista-alertas, .grupos-alertas) > :nth-child(5) { --ordem: 4; }
+:is(.pagina, .painel-tanque__destaques, .painel-tanque__acompanhamento, .grade-destaques, .grade-tanques, .grade-cultivo, .grade-graficos, .lista-alertas, .grupos-alertas) > :nth-child(n + 6) { --ordem: 5; }
 
 @keyframes entrar {
     from {
@@ -339,12 +339,6 @@ body {
 }
 
 /* ---------- Grades ---------- */
-
-.grade-indicadores {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(9.5rem, 100%), 1fr));
-    gap: var(--espaco-3);
-}
 
 .grade-tanques {
     display: grid;

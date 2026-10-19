@@ -157,9 +157,9 @@ async function roteiro() {
     await enviarENavegar('formulario-iniciar-ciclo');
     verificar('ponto de milhar: 1.000 peixes', dados().ciclos[0].quantidadeInicial === 1000, dados().ciclos[0].quantidadeInicial);
     verificar('tanque ativo', texto('selo-status-tanque') === 'Ativo');
-    const barra = porId('barra-capacidade-tanque').querySelector('[role="progressbar"]');
+    const barra = porId('destaques-tanque').querySelector('[role="progressbar"]');
     verificar('barra de capacidade acessível', barra?.getAttribute('aria-valuetext') === '1,1%, 10 de 900 kg', barra?.getAttribute('aria-valuetext'));
-    verificar('densidade de povoamento', texto('densidade-povoamento') === 'Povoamento com 6,6 peixes por m³ de água.', texto('densidade-povoamento'));
+    verificar('densidade de povoamento em "Ver todos"', porId('corpo-todos-indicadores').textContent.includes('6,6 peixes/m³'), texto('corpo-todos-indicadores'));
     verificar('indicadores iniciais', indicador('quantidade') === '1.000' && indicador('diasCultivo') === '30' && indicador('fca') === '—',
         `${indicador('quantidade')} ${indicador('diasCultivo')} ${indicador('fca')}`);
     verificar('ações com ciclo ativo', !porId('link-novo-registro').hidden && !porId('link-registrar-despesca').hidden
@@ -194,8 +194,12 @@ async function roteiro() {
     preencher({ 'campo-data': somarDias(HOJE, -1), 'campo-peso-medio': '60', 'campo-racao': '7', 'campo-mortalidade': '15', 'campo-observacoes': 'Peixes agitados' });
     await enviarENavegar('formulario-registro');
     verificar('quantidade 980', indicador('quantidade') === '980', indicador('quantidade'));
-    verificar('rótulos de estimativa', [...doc().querySelectorAll('#conteudo-resumo .cartao-indicador__rotulo')].map((r) => r.textContent).join('|')
-        .includes('Peixes (estimado)|Peso médio atual|Biomassa (estimada)') && porId('conteudo-resumo').textContent.includes('Mortalidade observada'));
+    verificar('ração de hoje é o primeiro cartão', porId('cartao-racao').querySelector('.cartao-racao__titulo')?.textContent === 'Ração de hoje'
+        && porId('cartao-racao').querySelector('a[href*="data="]')?.textContent.trim() === 'Registrar alimentação');
+    verificar('3 destaques e 3 de acompanhamento', [...doc().querySelectorAll('#destaques-tanque .cartao-indicador__rotulo')].map((r) => r.textContent).join('|') === 'Peso médio|Biomassa (estimada)|Capacidade (estimada)'
+        && [...doc().querySelectorAll('#acompanhamento-tanque .cartao-indicador__rotulo')].map((r) => r.textContent).join('|') === 'Mortalidade observada|FCA (estimada)|Crescimento');
+    verificar('"Ver todos" recolhido, sem natalidade sem nascimentos', !porId('todos-indicadores').open && !porId('corpo-todos-indicadores').textContent.includes('Natalidade'));
+    verificar('progresso do ciclo no cabeçalho', texto('progresso-ciclo') === `Dia 30 de 150 · despesca prevista em 120 dias`, texto('progresso-ciclo'));
     porId('botao-info-estimativa').click();
     verificar('botão "i" explica a estimativa', !porId('texto-info-estimativa').hidden && porId('botao-info-estimativa').getAttribute('aria-expanded') === 'true');
     verificar('alerta alto de mortalidade', doc().querySelector('#lista-alertas-tanque .lista-alertas__item--alta')?.textContent.includes('Mortalidade elevada no registro'));
@@ -339,6 +343,20 @@ async function roteiro() {
     await responderConfirmacao(true);
     const carregou = await esperarAte(() => (texto('mensagem-dados') ?? '').startsWith('Dados de exemplo carregados'), 15000);
     verificar('exemplo carregado', carregou && texto('mensagem-dados').includes('6 tanques, 5 ciclos'), texto('mensagem-dados'));
+    await abrir('index.html');
+    etapa = 'Página do tanque com dados';
+    const viveiroNorte = dados().tanques.find((tanque) => tanque.nome === 'Viveiro Norte').id;
+    await abrir(`tanque.html?id=${viveiroNorte}`);
+    verificar('tanque vazio mostra o resumo do último ciclo', !porId('ultimo-ciclo-tanque').hidden && porId('resultado-ultimo-ciclo').textContent.includes('Sobrevivência real'));
+    const tanque01 = dados().tanques.find((tanque) => tanque.nome === 'Tanque 01').id;
+    await abrir(`tanque.html?id=${tanque01}`);
+    porId('todos-indicadores').open = true;
+    await esperar(60);
+    await abrir(`tanque.html?id=${tanque01}`);
+    verificar('"Ver todos" lembra que ficou aberto', porId('todos-indicadores').open);
+    verificar('peso alvo previsto no crescimento', porId('acompanhamento-tanque').textContent.includes('Peso alvo em ~'));
+    porId('todos-indicadores').open = false;
+    await esperar(60);
     await abrir('index.html');
     etapa = 'Dashboard com dados';
     verificar('resumo da produção', texto('resumo-producao') === '3 tanques em cultivo, de 6 cadastrados · 4 alertas pedem atenção', texto('resumo-producao'));

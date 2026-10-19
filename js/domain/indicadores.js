@@ -157,6 +157,29 @@ export function calcularResultadoCiclo({ tanque, ciclo, registros }) {
     };
 }
 
+// Leituras de curto prazo da aba Resumo do tanque (seção 7.3): o que mudou na
+// última semana, a ração anotada hoje e a previsão do peso alvo. Usa os mesmos cálculos de calcularIndicadores e da série diária.
+export function calcularAcompanhamento({ ciclo, registros, indicadores, hoje }) {
+    const semana = calcularSerieDiaria(ciclo, registros, somarDias(hoje, -7), hoje).filter(Boolean);
+    const mortosSemana = semana.slice(1).reduce((total, dia) => total + dia.mortalidadeDia, 0);
+    // Peso alvo no ritmo das duas últimas pesagens, contado a partir da última.
+    let dataPesoAlvo = null;
+    if (ciclo.pesoAlvoG && indicadores.taxaCrescimentoGDia > 0 && indicadores.pesoMedioG < ciclo.pesoAlvoG) {
+        dataPesoAlvo = somarDias(indicadores.dataPesoAtual, Math.ceil((ciclo.pesoAlvoG - indicadores.pesoMedioG) / indicadores.taxaCrescimentoGDia));
+    }
+    return {
+        ganhoBiomassaSemanaKg: semana.length > 1 ? semana.at(-1).biomassaKg - semana[0].biomassaKg : null,
+        taxaMortalidadeSemana: (mortosSemana / ciclo.quantidadeInicial) * 100,
+        racaoHojeKg: registros.filter((registro) => registro.data === hoje).reduce((total, registro) => total + valorOuZero(registro.racaoKg), 0),
+        diasDesdePesagem: diasEntre(indicadores.dataPesoAtual, hoje),
+        houvePesagem: registros.some((registro) => informado(registro.pesoMedioG)),
+        percentualPesoAlvo: ciclo.pesoAlvoG ? (indicadores.pesoMedioG / ciclo.pesoAlvoG) * 100 : null,
+        dataPesoAlvo,
+        diasAtePesoAlvo: dataPesoAlvo ? Math.max(diasEntre(hoje, dataPesoAlvo), 0) : null,
+        houveNascimento: indicadores.natalidadeAcumulada > 0,
+    };
+}
+
 // Carga máxima de peixe que o tanque suporta, derivada e nunca armazenada.
 export function calcularCargaMaximaKg(densidadeMaximaKgM3, volumeM3) {
     return Number.isFinite(densidadeMaximaKgM3) && Number.isFinite(volumeM3) ? densidadeMaximaKgM3 * volumeM3 : null;

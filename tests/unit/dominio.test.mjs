@@ -443,6 +443,22 @@ describe('domain/indicadores (seção 9.4) com valores calculados à mão', () =
         assert.equal(contado.quantidadeFinalEstimada, false);
         assert.equal(ind.calcularResultadoCiclo({ tanque, ciclo: { ...encerrado, biomassaFinalKg: 8 }, registros: [] }).fcaFinal, null, 'sem ganho, sem FCA');
     });
+    it('acompanhamento da aba Resumo: semana, ração de hoje e peso alvo (seção 7.3)', () => {
+        const comAlvo = { ...ciclo, pesoAlvoG: 120 };
+        const indicadores = ind.calcularIndicadores({ tanque, ciclo: comAlvo, registros: lista, hoje: '2026-02-03' });
+        const acompanhamento = ind.calcularAcompanhamento({ ciclo: comAlvo, registros: lista, indicadores, hoje: '2026-02-03' });
+        // Semana de 27/01 a 03/02: só o registro de 31/01 (20 mortos, 30 g → 60 g).
+        perto(acompanhamento.taxaMortalidadeSemana, 2);
+        perto(acompanhamento.ganhoBiomassaSemanaKg, 967 * 0.06 - 987 * 0.03);
+        assert.equal(acompanhamento.racaoHojeKg, 0);
+        assert.equal(acompanhamento.diasDesdePesagem, 3);
+        perto(acompanhamento.percentualPesoAlvo, 50);
+        // 1,5 g/dia entre as duas últimas pesagens: faltam 60 g, 40 dias depois de 31/01.
+        assert.equal(acompanhamento.dataPesoAlvo, '2026-03-12');
+        assert.equal(acompanhamento.diasAtePesoAlvo, 37);
+        assert.equal(acompanhamento.houveNascimento, true);
+        assert.equal(ind.calcularAcompanhamento({ ciclo: comAlvo, registros: lista, indicadores, hoje: '2026-01-31' }).racaoHojeKg, 7);
+    });
     it('totais do dashboard com média ponderada pela quantidade inicial', () => {
         const resumo = ind.calcularResumoProducao([
             { ciclo: { quantidadeInicial: 1000 }, indicadores: { quantidade: 900, biomassaKg: 90, racaoAcumuladaKg: 100, mortalidadeAcumulada: 100 } },

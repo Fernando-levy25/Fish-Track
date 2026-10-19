@@ -72,6 +72,7 @@
                 </div>
                 <p class="cabecalho-tanque__especie" id="especie-tanque"></p>
                 <p class="cabecalho-tanque__ciclo" id="resumo-ciclo"></p>
+                <div class="progresso-ciclo" id="progresso-ciclo" hidden></div>
                 <p class="cabecalho-tanque__observacoes" id="observacoes-tanque"></p>
 
                 <div class="cabecalho-tanque__acoes">
@@ -96,18 +97,18 @@
             </div>
 
             <div class="abas__painel" id="painel-resumo" role="tabpanel" aria-labelledby="aba-resumo">
+                <section class="secao" id="ultimo-ciclo-tanque" aria-labelledby="titulo-ultimo-ciclo" hidden>
+                    <h2 class="secao__titulo" id="titulo-ultimo-ciclo">Resumo do último ciclo</h2>
+                    <p class="secao__descricao" id="descricao-ultimo-ciclo"></p>
+                    <div id="resultado-ultimo-ciclo"></div>
+                </section>
+
                 <p class="aviso-vazio" id="aviso-sem-ciclo" hidden>
                     <span id="texto-aviso-sem-ciclo">Este tanque não tem ciclo ativo.</span>
                     <a class="link" id="link-aviso-iniciar-ciclo" href="ciclo-form.html">Iniciar ciclo</a>
                 </p>
 
                 <div id="conteudo-resumo">
-                    <section class="secao" aria-labelledby="titulo-carga">
-                        <h2 class="secao__titulo" id="titulo-carga">Carga do tanque</h2>
-                        <div id="barra-capacidade-tanque"></div>
-                        <p class="secao__descricao" id="densidade-povoamento"></p>
-                    </section>
-
                     <section class="secao" aria-labelledby="titulo-indicadores">
                         <div class="secao__cabecalho secao__cabecalho--inicio">
                             <h2 class="secao__titulo" id="titulo-indicadores">Indicadores do ciclo</h2>
@@ -115,65 +116,29 @@
                         </div>
                         <p class="secao__descricao aviso-info" id="texto-info-estimativa" hidden>Durante o ciclo, a quantidade é estimada: quantidade do povoamento menos os mortos encontrados. A biomassa usa o peso médio da última pesagem. Os valores reais são calculados na despesca.</p>
 
-                        <dl class="grade-indicadores">
-                            <div class="cartao-indicador">
-                                <dt class="cartao-indicador__rotulo">Peixes (estimado)</dt>
-                                <dd class="cartao-indicador__valor" data-indicador="quantidade">—</dd>
+                        <div class="painel-tanque">
+                            <article class="cartao-racao" id="cartao-racao" aria-labelledby="titulo-racao-hoje"></article>
+                            <div class="painel-tanque__destaques" id="destaques-tanque"></div>
+                        </div>
+
+                        <h3 class="painel-tanque__subtitulo">Acompanhamento</h3>
+                        <div class="painel-tanque__acompanhamento" id="acompanhamento-tanque"></div>
+
+                        <details class="todos-indicadores" id="todos-indicadores">
+                            <summary class="todos-indicadores__resumo">Ver todos os indicadores</summary>
+                            <div class="tabela-rolagem">
+                                <table class="tabela todos-indicadores__tabela">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">Indicador</th>
+                                            <th scope="col">Valor</th>
+                                            <th scope="col">Como é calculado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="corpo-todos-indicadores"></tbody>
+                                </table>
                             </div>
-                            <div class="cartao-indicador">
-                                <dt class="cartao-indicador__rotulo">Peso médio atual</dt>
-                                <dd class="cartao-indicador__valor" data-indicador="pesoMedio">—</dd>
-                            </div>
-                            <div class="cartao-indicador">
-                                <dt class="cartao-indicador__rotulo">Biomassa (estimada)</dt>
-                                <dd class="cartao-indicador__valor" data-indicador="biomassa">—</dd>
-                            </div>
-                            <div class="cartao-indicador">
-                                <dt class="cartao-indicador__rotulo">Ração acumulada</dt>
-                                <dd class="cartao-indicador__valor" data-indicador="racaoAcumulada">—</dd>
-                            </div>
-                            <div class="cartao-indicador">
-                                <dt class="cartao-indicador__rotulo">Ganho de biomassa</dt>
-                                <dd class="cartao-indicador__valor" data-indicador="ganhoBiomassa">—</dd>
-                            </div>
-                            <div class="cartao-indicador">
-                                <dt class="cartao-indicador__rotulo">FCA (estimada)</dt>
-                                <dd class="cartao-indicador__valor" data-indicador="fca">—</dd>
-                            </div>
-                            <div class="cartao-indicador">
-                                <dt class="cartao-indicador__rotulo">Mortalidade observada</dt>
-                                <dd class="cartao-indicador__valor" data-indicador="taxaMortalidade">—</dd>
-                                <dd class="cartao-indicador__apoio">Real só na despesca</dd>
-                            </div>
-                            <div class="cartao-indicador">
-                                <dt class="cartao-indicador__rotulo">Sobrevivência estimada</dt>
-                                <dd class="cartao-indicador__valor" data-indicador="taxaSobrevivencia">—</dd>
-                            </div>
-                            <div class="cartao-indicador">
-                                <dt class="cartao-indicador__rotulo">Taxa de natalidade</dt>
-                                <dd class="cartao-indicador__valor" data-indicador="taxaNatalidade">—</dd>
-                            </div>
-                            <div class="cartao-indicador">
-                                <dt class="cartao-indicador__rotulo">Taxa de crescimento</dt>
-                                <dd class="cartao-indicador__valor" data-indicador="taxaCrescimento">—</dd>
-                            </div>
-                            <div class="cartao-indicador">
-                                <dt class="cartao-indicador__rotulo">Crescimento no ciclo</dt>
-                                <dd class="cartao-indicador__valor" data-indicador="crescimentoCiclo">—</dd>
-                            </div>
-                            <div class="cartao-indicador">
-                                <dt class="cartao-indicador__rotulo">Densidade</dt>
-                                <dd class="cartao-indicador__valor" data-indicador="densidade">—</dd>
-                            </div>
-                            <div class="cartao-indicador">
-                                <dt class="cartao-indicador__rotulo">Capacidade (estimada)</dt>
-                                <dd class="cartao-indicador__valor" data-indicador="capacidadeUtilizada">—</dd>
-                            </div>
-                            <div class="cartao-indicador">
-                                <dt class="cartao-indicador__rotulo">Dias de cultivo</dt>
-                                <dd class="cartao-indicador__valor" data-indicador="diasCultivo">—</dd>
-                            </div>
-                        </dl>
+                        </details>
                     </section>
 
                     <section class="secao" aria-labelledby="titulo-graficos">
