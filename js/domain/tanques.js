@@ -75,6 +75,10 @@ export function salvarTanque(entrada) {
     const informouCarga = entrada.cargaMaximaKg !== undefined;
     const valorCapacidade = (informouCarga ? entrada.cargaMaximaKg : entrada.densidadeMaximaKgM3) ?? null;
     const erroCapacidade = validarNumero(valorCapacidade, { positivo: true });
+    // Sem o campo (ex.: formulário antigo), mantém a tabela que o tanque já tinha.
+    const tabelaArracoamentoId = entrada.tabelaArracoamentoId === undefined
+        ? existente?.tabelaArracoamentoId ?? null
+        : entrada.tabelaArracoamentoId || null;
 
     lancarSeHouverErros({
         nome: validarTexto(nome, { rotulo: 'o nome do tanque', obrigatorio: true, maximo: TAMANHO_MAXIMO_NOME })
@@ -88,6 +92,9 @@ export function salvarTanque(entrada) {
             ? 'Um tanque com ciclo ativo não pode entrar em manutenção. Registre a despesca antes.'
             : null,
         observacoes: validarTexto(observacoes, { maximo: TAMANHO_MAXIMO_OBSERVACOES }),
+        tabelaArracoamentoId: tabelaArracoamentoId && !dados.config.tabelasArracoamento.some((tabela) => tabela.id === tabelaArracoamentoId)
+            ? 'Escolha uma tabela de alimentação existente.'
+            : null,
     });
 
     const agora = agoraISO();
@@ -95,7 +102,7 @@ export function salvarTanque(entrada) {
     const densidadeMaximaKgM3 = valorCapacidade === null || !informouCarga ? valorCapacidade : valorCapacidade / entrada.volumeM3;
     if (existente) {
         Object.assign(existente, {
-            nome, especie, volumeM3: entrada.volumeM3, densidadeMaximaKgM3, status, observacoes, atualizadoEm: agora,
+            nome, especie, volumeM3: entrada.volumeM3, densidadeMaximaKgM3, tabelaArracoamentoId, status, observacoes, atualizadoEm: agora,
         });
         salvarDados(dados);
         return existente;
@@ -106,6 +113,7 @@ export function salvarTanque(entrada) {
         especie,
         volumeM3: entrada.volumeM3,
         densidadeMaximaKgM3,
+        tabelaArracoamentoId,
         status,
         limitesAlerta: null,
         observacoes,

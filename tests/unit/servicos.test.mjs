@@ -25,14 +25,14 @@ describe('services/exportacao (seção 9.7)', () => {
         const b = tanques.salvarTanque({ nome: 'Tanque A', especie: 'Pacu', volumeM3: 1, densidadeMaximaKgM3: 5 });
         ciclos.iniciarCiclo(a.id, { dataInicio: '2026-09-01', quantidadeInicial: 50, pesoMedioInicialG: 5 });
         ciclos.iniciarCiclo(b.id, { dataInicio: '2026-09-02', quantidadeInicial: 50, pesoMedioInicialG: 5 });
-        registros.salvarRegistro({ tanqueId: a.id, data: '2026-09-10', pesoMedioG: 12.5, racaoKg: 1.25, observacoes: 'Água "turva"; ok' });
-        registros.salvarRegistro({ tanqueId: b.id, data: '2026-09-05', mortalidade: 2, observacoes: '=1+1' });
+        registros.salvarRegistro({ tanqueId: a.id, data: '2026-09-10', biometria: { peixesAmostra: 10, pesoAmostraG: 125, comprimentoMedioCm: 8.5 }, racaoKg: 1.25, racaoSobraKg: 0.25, observacoes: 'Água "turva"; ok' });
+        registros.salvarRegistro({ tanqueId: b.id, data: '2026-09-05', mortalidade: 2, causaMortalidade: 'predacao', observacoes: '=1+1' });
         const { conteudo, quantidade } = exportacao.gerarCsvRegistros();
         assert.equal(quantidade, 2);
-        assert.ok(conteudo.startsWith('﻿Tanque;Espécie;Ciclo (povoamento);Data;Peso médio (g);Ração (kg);Mortos encontrados;Natalidade;Observações\r\n'));
+        assert.ok(conteudo.startsWith('﻿Tanque;Espécie;Ciclo (povoamento);Data;Peso médio (g);Ração (kg);Sobra (kg);Mortos encontrados;Causa da mortalidade;Natalidade;Peixes na amostra;Peso da amostra (g);Comprimento médio (cm);Observações\r\n'));
         const linhas = conteudo.slice(1).trimEnd().split('\r\n');
-        assert.equal(linhas[1], "Tanque A;Pacu;02/09/2026;05/09/2026;;;2;;'=1+1");
-        assert.equal(linhas[2], 'Tanque B;Tilápia;01/09/2026;10/09/2026;12,5;1,25;;;"Água ""turva""; ok"');
+        assert.equal(linhas[1], "Tanque A;Pacu;02/09/2026;05/09/2026;;;;2;Predação;;;;;'=1+1");
+        assert.equal(linhas[2], 'Tanque B;Tilápia;01/09/2026;10/09/2026;12,5;1,25;0,25;;;;10;125;8,5;"Água ""turva""; ok"');
         assert.equal(exportacao.gerarCsvRegistros({ tanqueId: a.id }).quantidade, 1);
     });
     it('CSV de lembretes: uma linha por lembrete, com as conclusões', () => {

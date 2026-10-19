@@ -2511,3 +2511,132 @@
         box-shadow: inset 0 0 0 1px var(--cor-primaria), var(--sombra-elevada);
     }
 }
+
+/* ---------- Registro em seções e biometria (seção 7.6) ---------- */
+
+.secao-registro {
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio-grande);
+    background: var(--cor-superficie);
+}
+
+.secao-registro__titulo {
+    display: flex;
+    align-items: center;
+    min-height: var(--altura-toque);
+    padding: 0 var(--espaco-4);
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.secao-registro__corpo {
+    display: grid;
+    gap: var(--espaco-4);
+    padding: 0 var(--espaco-4) var(--espaco-4);
+}
+
+.sugestao-racao {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--espaco-2) var(--espaco-3);
+    padding: var(--espaco-3) var(--espaco-4);
+    border-left: 3px solid var(--cor-primaria);
+    border-radius: var(--raio);
+    background: var(--cor-primaria-suave);
+    font-size: var(--texto-2);
+}
+
+.campo__com-unidade {
+    display: flex;
+    align-items: center;
+    gap: var(--espaco-2);
+}
+
+.campo__com-unidade .campo__input {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+/* Valor que o sistema calcula enquanto o produtor digita. */
+.resultado-calculado {
+    grid-column: 1 / -1;
+    color: var(--cor-primaria-escura);
+    font-weight: 600;
+}
+
+.resultado-calculado:empty {
+    display: none;
+}
+
+.cartao-racao__detalhe,
+.cartao-racao__registrado {
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-2);
+}
+
+/* ---------- Tabelas de alimentação (seção 7.9) ---------- */
+
+.lista-tabelas {
+    display: grid;
+    gap: var(--espaco-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.lista-tabelas__item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--espaco-2) var(--espaco-4);
+    padding: var(--espaco-3) var(--espaco-4);
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio);
+    background: var(--cor-superficie);
+}
+
+.lista-tabelas__nome {
+    font-weight: 600;
+}
+
+.lista-tabelas__detalhe,
+.lista-tabelas__vazio {
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-2);
+}
+
+.lista-tabelas__acoes {
+    display: flex;
+    gap: var(--espaco-4);
+}
+
+.lista-tabelas__acoes .link,
+.editor-tabela__faixas .link {
+    min-height: var(--altura-toque);
+}
+
+.editor-tabela {
+    padding: var(--espaco-4);
+    border: 1px solid var(--cor-primaria);
+    border-radius: var(--raio-grande);
+    background: var(--cor-superficie);
+}
+
+.editor-tabela__titulo {
+    font-size: var(--texto-5);
+}
+
+.editor-tabela__faixas td {
+    padding: var(--espaco-1) var(--espaco-2);
+}
+
+.campo__input--compacto {
+    min-width: 5.5rem;
+}
+
+.editor-tabela__adicionar {
+    justify-self: start;
+}

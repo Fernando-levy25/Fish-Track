@@ -7,7 +7,7 @@
 // A chave continua "v1" mesmo com o formato na versão 2: trocar a chave faria
 // os dados existentes parecerem perdidos. A versão do formato fica no campo versao.
 export const CHAVE_DADOS = 'fishtrack:v1';
-export const VERSAO_DADOS = 3;
+export const VERSAO_DADOS = 4;
 
 const CHAVE_COPIA_ILEGIVEL = `${CHAVE_DADOS}:ilegivel`;
 // Preferências de tela (como o período do dashboard) ficam fora dos dados do
@@ -23,7 +23,7 @@ export function criarDadosVazios() {
         ciclos: [],
         registros: [],
         lembretes: [],
-        config: { limitesAlerta: {}, metaFca: META_FCA_PADRAO, ultimoBackupEm: null },
+        config: { limitesAlerta: {}, metaFca: META_FCA_PADRAO, ultimoBackupEm: null, tabelasArracoamento: [] },
     };
 }
 
@@ -145,6 +145,21 @@ export function migrarDados(dados) {
             ciclos: (atuais.ciclos ?? []).map((ciclo) => (ciclo.status === 'encerrado'
                 ? { ...ciclo, biomassaFinalKg: (ciclo.quantidadeDespescada * ciclo.pesoMedioFinalG) / 1000 }
                 : { ...ciclo, biomassaFinalKg: null })),
+        };
+    }
+    if (atuais.versao === 3) {
+        atuais = {
+            ...atuais,
+            versao: 4,
+            // Povoamento por contagem ou por pesagem do lote; os antigos foram contados.
+            ciclos: (atuais.ciclos ?? []).map((ciclo) => ({
+                ...ciclo,
+                modoPovoamento: 'contagem',
+                biomassaInicialKg: (ciclo.quantidadeInicial * ciclo.pesoMedioInicialG) / 1000,
+            })),
+            registros: (atuais.registros ?? []).map((registro) => ({ ...registro, biometria: null, racaoSobraKg: null, causaMortalidade: null })),
+            tanques: (atuais.tanques ?? []).map((tanque) => ({ ...tanque, tabelaArracoamentoId: null })),
+            config: { ...atuais.config, tabelasArracoamento: [] },
         };
     }
     return atuais;

@@ -86,40 +86,119 @@
 
                 <p class="formulario__aviso">Preencha só o que foi medido ou observado nessa data.</p>
 
-                <div class="formulario__grade">
-                    <div class="campo">
-                        <label class="campo__rotulo" for="campo-peso-medio">Peso médio (g)</label>
-                        <input class="campo__input" id="campo-peso-medio" name="pesoMedioG" type="text" autocomplete="off" pattern="[0-9]*[.,]?[0-9]*" inputmode="decimal" aria-describedby="erro-peso-medio">
-                        <p class="campo__erro" id="erro-peso-medio"></p>
-                    </div>
+                <details class="secao-registro" open>
+                    <summary class="secao-registro__titulo">Alimentação</summary>
+                    <div class="secao-registro__corpo">
+                        <div class="sugestao-racao" id="sugestao-racao" aria-live="polite" hidden>
+                            <p class="sugestao-racao__texto" id="texto-sugestao-racao"></p>
+                            <button class="botao botao--secundario botao--pequeno" id="botao-usar-sugestao" type="button" hidden>Usar sugestão</button>
+                        </div>
+                        <div class="formulario__grade">
+                            <div class="campo">
+                                <label class="campo__rotulo" for="campo-racao">Ração fornecida (kg)</label>
+                                <input class="campo__input" id="campo-racao" name="racaoKg" type="text" autocomplete="off" pattern="[0-9]*[.,]?[0-9]*" inputmode="decimal" aria-describedby="erro-racao">
+                                <p class="campo__erro" id="erro-racao"></p>
+                            </div>
 
-                    <div class="campo">
-                        <label class="campo__rotulo" for="campo-racao">Ração fornecida (kg)</label>
-                        <input class="campo__input" id="campo-racao" name="racaoKg" type="text" autocomplete="off" pattern="[0-9]*[.,]?[0-9]*" inputmode="decimal" aria-describedby="erro-racao">
-                        <p class="campo__erro" id="erro-racao"></p>
+                            <div class="campo">
+                                <label class="campo__rotulo" for="campo-sobra">Sobra (kg, opcional)</label>
+                                <input class="campo__input" id="campo-sobra" name="racaoSobraKg" type="text" autocomplete="off" pattern="[0-9]*[.,]?[0-9]*" inputmode="decimal" aria-describedby="ajuda-sobra erro-sobra">
+                                <p class="campo__ajuda" id="ajuda-sobra">Ração que os peixes não comeram. A conversão alimentar usa a ração consumida.</p>
+                                <p class="campo__erro" id="erro-sobra"></p>
+                            </div>
+                        </div>
                     </div>
-                </div>
+                </details>
 
-                <div class="formulario__grade">
-                    <div class="campo">
-                        <label class="campo__rotulo" for="campo-mortalidade">Mortos encontrados</label>
-                        <input class="campo__input" id="campo-mortalidade" name="mortalidade" type="text" autocomplete="off" pattern="[0-9]*" inputmode="numeric" aria-describedby="ajuda-mortalidade erro-mortalidade">
-                        <p class="campo__ajuda" id="ajuda-mortalidade">Peixes mortos vistos neste dia. O número real só é conhecido na despesca.</p>
-                        <p class="campo__erro" id="erro-mortalidade"></p>
+                <details class="secao-registro" open>
+                    <summary class="secao-registro__titulo">Mortalidade</summary>
+                    <div class="secao-registro__corpo formulario__grade">
+                        <div class="campo">
+                            <label class="campo__rotulo" for="campo-mortalidade">Mortos encontrados</label>
+                            <input class="campo__input" id="campo-mortalidade" name="mortalidade" type="text" autocomplete="off" pattern="[0-9]*" inputmode="numeric" aria-describedby="ajuda-mortalidade erro-mortalidade">
+                            <p class="campo__ajuda" id="ajuda-mortalidade">Peixes mortos vistos neste dia. O número real só é conhecido na despesca.</p>
+                            <p class="campo__erro" id="erro-mortalidade"></p>
+                        </div>
+
+                        <div class="campo">
+                            <label class="campo__rotulo" for="campo-causa">Causa provável (opcional)</label>
+                            <select class="campo__select" id="campo-causa" name="causaMortalidade" aria-describedby="erro-causa">
+                                <option value="">Não informada</option>
+                                <option value="desconhecida">Desconhecida</option>
+                                <option value="manejo">Manejo</option>
+                                <option value="predacao">Predação</option>
+                                <option value="doenca">Doença</option>
+                                <option value="qualidade-agua">Qualidade da água</option>
+                                <option value="outra">Outra</option>
+                            </select>
+                            <p class="campo__erro" id="erro-causa"></p>
+                        </div>
                     </div>
+                </details>
 
-                    <div class="campo">
-                        <label class="campo__rotulo" for="campo-natalidade">Natalidade</label>
-                        <input class="campo__input" id="campo-natalidade" name="natalidade" type="text" autocomplete="off" pattern="[0-9]*" inputmode="numeric" aria-describedby="erro-natalidade">
-                        <p class="campo__erro" id="erro-natalidade"></p>
+                <details class="secao-registro" open>
+                    <summary class="secao-registro__titulo">Biometria</summary>
+                    <div class="secao-registro__corpo">
+                        <fieldset class="campo campo--grupo">
+                            <legend class="campo__rotulo">Como você vai informar o peso?</legend>
+                            <div class="segmentado">
+                                <label class="segmentado__opcao"><input type="radio" name="modoBiometria" value="amostra" checked>Pesei uma amostra</label>
+                                <label class="segmentado__opcao"><input type="radio" name="modoBiometria" value="peso">Informar só o peso médio</label>
+                            </div>
+                        </fieldset>
+
+                        <div class="formulario__grade" id="grupo-amostra">
+                            <div class="campo">
+                                <label class="campo__rotulo" for="campo-peixes-amostra">Peixes na amostra</label>
+                                <input class="campo__input" id="campo-peixes-amostra" name="peixesAmostra" type="text" autocomplete="off" pattern="[0-9]*" inputmode="numeric" aria-describedby="ajuda-peixes-amostra erro-peixes-amostra">
+                                <p class="campo__ajuda" id="ajuda-peixes-amostra">Em geral, de 50 a 100 peixes.</p>
+                                <p class="campo__erro" id="erro-peixes-amostra"></p>
+                            </div>
+
+                            <div class="campo">
+                                <label class="campo__rotulo" for="campo-peso-amostra">Peso total da amostra</label>
+                                <div class="campo__com-unidade">
+                                    <input class="campo__input" id="campo-peso-amostra" name="pesoAmostraG" type="text" autocomplete="off" pattern="[0-9.]*[,]?[0-9]*" inputmode="decimal" aria-describedby="erro-peso-amostra">
+                                    <div class="segmentado segmentado--compacto" role="radiogroup" aria-label="Unidade do peso da amostra">
+                                        <label class="segmentado__opcao"><input type="radio" name="unidadePesoAmostra" value="kg" checked>kg</label>
+                                        <label class="segmentado__opcao"><input type="radio" name="unidadePesoAmostra" value="g">g</label>
+                                    </div>
+                                </div>
+                                <p class="campo__erro" id="erro-peso-amostra"></p>
+                            </div>
+
+                            <div class="campo">
+                                <label class="campo__rotulo" for="campo-comprimento">Comprimento médio (cm, opcional)</label>
+                                <input class="campo__input" id="campo-comprimento" name="comprimentoMedioCm" type="text" autocomplete="off" pattern="[0-9]*[.,]?[0-9]*" inputmode="decimal" aria-describedby="erro-comprimento">
+                                <p class="campo__erro" id="erro-comprimento"></p>
+                            </div>
+
+                            <p class="resultado-calculado" id="peso-medio-calculado" aria-live="polite"></p>
+                        </div>
+
+                        <div class="campo" id="grupo-peso-medio" hidden>
+                            <label class="campo__rotulo" for="campo-peso-medio">Peso médio (g)</label>
+                            <input class="campo__input" id="campo-peso-medio" name="pesoMedioG" type="text" autocomplete="off" pattern="[0-9]*[.,]?[0-9]*" inputmode="decimal" aria-describedby="erro-peso-medio">
+                            <p class="campo__erro" id="erro-peso-medio"></p>
+                        </div>
                     </div>
-                </div>
-
+                </details>
 
                 <div class="campo">
                     <label class="campo__rotulo" for="campo-observacoes">Observações</label>
                     <textarea class="campo__input campo__input--area" id="campo-observacoes" name="observacoes" rows="3"></textarea>
                 </div>
+
+                <details class="secao-registro">
+                    <summary class="secao-registro__titulo">Mais campos</summary>
+                    <div class="secao-registro__corpo">
+                        <div class="campo">
+                            <label class="campo__rotulo" for="campo-natalidade">Natalidade</label>
+                            <input class="campo__input" id="campo-natalidade" name="natalidade" type="text" autocomplete="off" pattern="[0-9]*" inputmode="numeric" aria-describedby="erro-natalidade">
+                            <p class="campo__erro" id="erro-natalidade"></p>
+                        </div>
+                    </div>
+                </details>
 
                 <p class="formulario__erro-geral" id="erro-geral-registro" role="alert" hidden></p>
 

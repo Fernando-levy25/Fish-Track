@@ -71,26 +71,44 @@
             <aside class="aviso-referencia" id="referencia-ciclo-anterior" aria-label="Referência do ciclo anterior" hidden></aside>
 
             <form class="formulario" id="formulario-iniciar-ciclo" novalidate>
-                <div class="formulario__grade">
-                    <div class="campo">
-                        <label class="campo__rotulo" for="campo-data-inicio">Data do povoamento</label>
-                        <input class="campo__input" id="campo-data-inicio" name="dataInicio" type="date" required aria-describedby="erro-data-inicio">
-                        <p class="campo__erro" id="erro-data-inicio"></p>
-                    </div>
-
-                    <div class="campo">
-                        <label class="campo__rotulo" for="campo-quantidade-inicial">Quantidade inicial</label>
-                        <input class="campo__input" id="campo-quantidade-inicial" name="quantidadeInicial" type="text" autocomplete="off" pattern="[0-9]*" inputmode="numeric" required aria-describedby="erro-quantidade-inicial">
-                        <p class="campo__erro" id="erro-quantidade-inicial"></p>
-                    </div>
+                <div class="campo">
+                    <label class="campo__rotulo" for="campo-data-inicio">Data do povoamento</label>
+                    <input class="campo__input" id="campo-data-inicio" name="dataInicio" type="date" required aria-describedby="erro-data-inicio">
+                    <p class="campo__erro" id="erro-data-inicio"></p>
                 </div>
 
+                <fieldset class="campo campo--grupo">
+                    <legend class="campo__rotulo">Como você vai informar o lote?</legend>
+                    <div class="segmentado">
+                        <label class="segmentado__opcao"><input type="radio" name="modoPovoamento" value="contagem" checked>Contei os peixes</label>
+                        <label class="segmentado__opcao"><input type="radio" name="modoPovoamento" value="pesagem">Pesei o lote</label>
+                    </div>
+                </fieldset>
+
                 <div class="formulario__grade">
+                    <div class="campo" id="grupo-quantidade-inicial">
+                        <label class="campo__rotulo" for="campo-quantidade-inicial">Quantidade inicial</label>
+                        <input class="campo__input" id="campo-quantidade-inicial" name="quantidadeInicial" type="text" autocomplete="off" pattern="[0-9.]*" inputmode="numeric" aria-describedby="erro-quantidade-inicial">
+                        <p class="campo__erro" id="erro-quantidade-inicial"></p>
+                    </div>
+
+                    <div class="campo" id="grupo-biomassa-inicial" hidden>
+                        <label class="campo__rotulo" for="campo-biomassa-inicial">Biomassa do lote (kg)</label>
+                        <input class="campo__input" id="campo-biomassa-inicial" name="biomassaInicialKg" type="text" autocomplete="off" pattern="[0-9.]*[,]?[0-9]*" inputmode="decimal" aria-describedby="ajuda-biomassa-inicial erro-biomassa-inicial">
+                        <p class="campo__ajuda" id="ajuda-biomassa-inicial">Peso total dos alevinos do lote.</p>
+                        <p class="campo__erro" id="erro-biomassa-inicial"></p>
+                    </div>
+
                     <div class="campo">
                         <label class="campo__rotulo" for="campo-peso-inicial">Peso médio inicial (g)</label>
                         <input class="campo__input" id="campo-peso-inicial" name="pesoMedioInicialG" type="text" autocomplete="off" pattern="[0-9]*[.,]?[0-9]*" inputmode="decimal" required aria-describedby="erro-peso-inicial">
                         <p class="campo__erro" id="erro-peso-inicial"></p>
                     </div>
+                </div>
+
+                <p class="resultado-calculado" id="resultado-povoamento" aria-live="polite"></p>
+
+                <div class="formulario__grade">
 
                     <div class="campo">
                         <label class="campo__rotulo" for="campo-peso-alvo">Peso alvo (g) (opcional)</label>

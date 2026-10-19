@@ -42,7 +42,7 @@ const INDICADORES = {
     peixes: { rotulo: 'Peixes (estimado)', campo: 'quantidade', formatar: formatarInteiro, rotuloTotal: 'Total' },
     fca: { rotulo: 'FCA (estimada)', campo: 'fca', formatar: formatarFca, rotuloTotal: 'Geral' },
     mortalidade: { rotulo: 'Mortalidade observada', campo: 'taxaMortalidade', formatar: formatarPercentual, rotuloTotal: 'Geral' },
-    racao: { rotulo: 'Ração fornecida', campo: 'racaoDiaKg', formatar: formatarKg, rotuloTotal: 'Total' },
+    racao: { rotulo: 'Ração consumida', campo: 'racaoDiaKg', formatar: formatarKg, rotuloTotal: 'Total' },
 };
 // A FCA dos primeiros dias do ciclo, com pouco ganho de peso, passa de 10:
 // a escala do gráfico para em 3 para a faixa útil continuar legível.

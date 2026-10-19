@@ -6,6 +6,7 @@ import { lerDados, salvarDados, validarEstrutura } from '../core/storage.js';
 import { agoraISO, compararTexto, criarSlug, hojeISO } from '../core/utils.js';
 import { formatarData } from '../core/format.js';
 import { ordenarRegistros } from '../domain/indicadores.js';
+import { CAUSAS_MORTALIDADE } from '../domain/registros.js';
 import { falharRegra } from '../domain/validacao.js';
 
 // Separador ";" e vírgula decimal: é o que o Excel em português espera.
@@ -17,8 +18,13 @@ const COLUNAS_REGISTROS = [
     ['Data', ({ registro }) => formatarData(registro.data)],
     ['Peso médio (g)', ({ registro }) => numero(registro.pesoMedioG)],
     ['Ração (kg)', ({ registro }) => numero(registro.racaoKg)],
+    ['Sobra (kg)', ({ registro }) => numero(registro.racaoSobraKg)],
     ['Mortos encontrados', ({ registro }) => numero(registro.mortalidade)],
+    ['Causa da mortalidade', ({ registro }) => (registro.causaMortalidade ? CAUSAS_MORTALIDADE[registro.causaMortalidade] : '')],
     ['Natalidade', ({ registro }) => numero(registro.natalidade)],
+    ['Peixes na amostra', ({ registro }) => numero(registro.biometria?.peixesAmostra)],
+    ['Peso da amostra (g)', ({ registro }) => numero(registro.biometria?.pesoAmostraG)],
+    ['Comprimento médio (cm)', ({ registro }) => numero(registro.biometria?.comprimentoMedioCm)],
     ['Observações', ({ registro }) => texto(registro.observacoes)],
 ];
 // Uma linha por lembrete (não por ocorrência): as datas concluídas vão juntas.

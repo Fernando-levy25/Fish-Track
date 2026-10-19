@@ -15,6 +15,7 @@ const ind = await import(RAIZ + 'domain/indicadores.js');
 const alertas = await import(RAIZ + 'domain/alertas.js');
 const config = await import(RAIZ + 'domain/configuracoes.js');
 const lembretes = await import(RAIZ + 'domain/lembretes.js');
+const arracoamento = await import(RAIZ + 'domain/arracoamento.js');
 
 const hoje = utils.hojeISO();
 const dia = (n) => utils.somarDias(hoje, n);
@@ -154,7 +155,7 @@ describe('core/storage', () => {
         const dados = storage.lerDados();
         assert.equal(dados.versao, storage.VERSAO_DADOS);
         assert.deepEqual(dados.lembretes, []);
-        assert.deepEqual(dados.config, { limitesAlerta: { capacidadePct: 95 }, metaFca: 1.6, ultimoBackupEm: null });
+        assert.deepEqual(dados.config, { limitesAlerta: { capacidadePct: 95 }, metaFca: 1.6, ultimoBackupEm: null, tabelasArracoamento: [] });
         assert.ok(!('capacidade' in dados.tanques[0]));
         assert.equal(dados.tanques[0].densidadeMaximaKgM3, null);
         assert.equal(dados.tanques[0].capacidadePeixesLegado, 3000);
@@ -175,12 +176,26 @@ describe('core/storage', () => {
             ],
         };
         const dados = storage.migrarDados(v2);
-        assert.equal(dados.versao, 3);
+        assert.equal(dados.versao, storage.VERSAO_DADOS);
         assert.ok(dados.registros.every((registro) => !('quantidadeContada' in registro)));
         assert.equal(dados.registros[0].observacoes, 'Contagem registrada: 980 peixes', 'RN11: não fica vazio');
         assert.equal(dados.registros[1].observacoes, '');
         assert.equal(dados.ciclos[0].biomassaFinalKg, 300);
         assert.equal(dados.ciclos[1].biomassaFinalKg, null);
+    });
+    it('migra da versão 3 para a 4: povoamento, biometria e tabelas de alimentação (seção 8.4)', () => {
+        const v3 = {
+            versao: 3, lembretes: [], config: { limitesAlerta: {}, metaFca: 1.6, ultimoBackupEm: null },
+            tanques: [{ id: 't' }],
+            ciclos: [{ id: 'c', quantidadeInicial: 2000, pesoMedioInicialG: 5 }],
+            registros: [{ id: 'r', racaoKg: 2 }],
+        };
+        const dados = storage.migrarDados(v3);
+        assert.equal(dados.versao, 4);
+        assert.deepEqual([dados.ciclos[0].modoPovoamento, dados.ciclos[0].biomassaInicialKg], ['contagem', 10]);
+        assert.deepEqual(dados.registros[0], { id: 'r', racaoKg: 2, biometria: null, racaoSobraKg: null, causaMortalidade: null });
+        assert.equal(dados.tanques[0].tabelaArracoamentoId, null);
+        assert.deepEqual(dados.config.tabelasArracoamento, []);
     });
     it('valida a estrutura e recusa versão mais nova', () => {
         assert.throws(() => storage.validarEstrutura({ versao: 99, tanques: [], ciclos: [], registros: [] }), /versão 99/);
@@ -447,8 +462,9 @@ describe('domain/indicadores (seção 9.4) com valores calculados à mão', () =
         const comAlvo = { ...ciclo, pesoAlvoG: 120 };
         const indicadores = ind.calcularIndicadores({ tanque, ciclo: comAlvo, registros: lista, hoje: '2026-02-03' });
         const acompanhamento = ind.calcularAcompanhamento({ ciclo: comAlvo, registros: lista, indicadores, hoje: '2026-02-03' });
-        // Semana de 27/01 a 03/02: só o registro de 31/01 (20 mortos, 30 g → 60 g).
-        perto(acompanhamento.taxaMortalidadeSemana, 2);
+        // Semana de 27/01 a 03/02: só o registro de 31/01 (20 mortos, 30 g → 60 g),
+        // sobre os 987 peixes estimados no início da semana.
+        perto(acompanhamento.taxaMortalidadeSemana, (20 / 987) * 100);
         perto(acompanhamento.ganhoBiomassaSemanaKg, 967 * 0.06 - 987 * 0.03);
         assert.equal(acompanhamento.racaoHojeKg, 0);
         assert.equal(acompanhamento.diasDesdePesagem, 3);
@@ -663,5 +679,90 @@ describe('domain/lembretes (seção 7, RN16 a RN18)', () => {
         assert.equal(doDia[0].gravidade, 'alta');
         assert.equal(doDia[1].tanqueNome, null, 'o geral vem antes, sem tanque');
         assert.equal(doDia[3].editavel, true);
+    });
+});
+
+describe('Prompt 02: entradas mínimas e cálculos automáticos (RN21 a RN24)', () => {
+    const perto = (valor, esperado, tolerancia = 1e-9) => assert.ok(Math.abs(valor - esperado) < tolerancia, `${valor} != ${esperado}`);
+    it('RN21: povoamento pelo peso do lote (21 kg de 8,5 g ≈ 2.471 peixes)', () => {
+        const tanque = tanqueBase();
+        const iniciar = (extra) => () => ciclos.iniciarCiclo(tanque.id, { dataInicio: dia(-10), modoPovoamento: 'pesagem', biomassaInicialKg: 21, pesoMedioInicialG: 8.5, ...extra });
+        recusa(iniciar({ biomassaInicialKg: null }), 'biomassaInicialKg', /biomassa do lote/);
+        recusa(iniciar({ biomassaInicialKg: 0.001, pesoMedioInicialG: 10 }), 'biomassaInicialKg', /1 peixe/);
+        const ciclo = iniciar()();
+        assert.deepEqual([ciclo.modoPovoamento, ciclo.quantidadeInicial, ciclo.biomassaInicialKg], ['pesagem', 2471, 21]);
+        const contado = tanques.salvarTanque({ nome: 'Contado', especie: 'X', volumeM3: 10 });
+        const outro = ciclos.iniciarCiclo(contado.id, { dataInicio: dia(-10), quantidadeInicial: 1000, pesoMedioInicialG: 10 });
+        assert.deepEqual([outro.modoPovoamento, outro.biomassaInicialKg], ['contagem', 10]);
+    });
+    it('RN22: biometria por amostra calcula o peso médio (60 peixes, 32,55 kg → 542,5 g)', () => {
+        const tanque = comCiclo();
+        const salvar = (biometria, extra = {}) => () => registros.salvarRegistro({ tanqueId: tanque.id, data: dia(-1), biometria, ...extra });
+        recusa(salvar({ peixesAmostra: 60, pesoAmostraG: null }), 'pesoAmostraG', /peso da amostra/);
+        recusa(salvar({ peixesAmostra: 0, pesoAmostraG: 100 }), 'peixesAmostra');
+        recusa(salvar({ peixesAmostra: 1001, pesoAmostraG: 100 }), 'peixesAmostra', /quantidade estimada/);
+        const registro = salvar({ peixesAmostra: 60, pesoAmostraG: 32550, comprimentoMedioCm: 30 })();
+        assert.equal(registro.pesoMedioG, 542.5);
+        assert.deepEqual(registro.biometria, { peixesAmostra: 60, pesoAmostraG: 32550, comprimentoMedioCm: 30 });
+        assert.equal(registros.resumirRegistro(registro), 'Peso 542,5 g · amostra de 60 peixes');
+        assert.equal(salvar(null, { pesoMedioG: 100 })().biometria, null, 'informar só o peso médio continua valendo');
+    });
+    it('RN23: sobra até a ração fornecida; causa só com mortos; FCA com a ração consumida', () => {
+        const tanque = comCiclo();
+        const salvar = (extra) => () => registros.salvarRegistro({ tanqueId: tanque.id, data: dia(-2), ...extra });
+        recusa(salvar({ racaoKg: 2, racaoSobraKg: 3 }), 'racaoSobraKg', /maior que a ração/);
+        recusa(salvar({ racaoSobraKg: 1 }), 'racaoSobraKg', /ração fornecida/);
+        recusa(salvar({ causaMortalidade: 'doenca', racaoKg: 1 }), 'causaMortalidade', /mortos/);
+        recusa(salvar({ causaMortalidade: 'inventada', mortalidade: 1 }), 'causaMortalidade', /lista/);
+        salvar({ racaoKg: 20, racaoSobraKg: 1.5, mortalidade: 2, causaMortalidade: 'predacao' })();
+        registros.salvarRegistro({ tanqueId: tanque.id, data: dia(-1), pesoMedioG: 40 });
+        const situacao = tanques.obterSituacao(tanque.id);
+        const indicadores = ind.calcularIndicadores({ tanque: situacao.tanque, ciclo: situacao.cicloAtivo, registros: situacao.registros, hoje });
+        assert.equal(indicadores.racaoAcumuladaKg, 18.5);
+        // 998 × 40 g = 39,92 kg; ganho de 29,92 kg sobre os 10 kg do povoamento.
+        perto(indicadores.fca, 18.5 / 29.92);
+    });
+    it('RN24: tabelas de alimentação, modelo Embrapa e tabela por tanque', () => {
+        recusa(() => arracoamento.salvarTabela({ nome: '', faixas: [] }), 'nome');
+        recusa(() => arracoamento.salvarTabela({ nome: 'X', faixas: [] }), 'faixas');
+        recusa(() => arracoamento.salvarTabela({ nome: 'X', faixas: [{ pesoDeG: 100, pesoAteG: 50, taxaPct: 2, refeicoes: 4 }] }), 'faixas.0.pesoAteG', /maior/);
+        recusa(() => arracoamento.salvarTabela({ nome: 'X', faixas: [{ pesoDeG: 0, pesoAteG: 50, taxaPct: 25, refeicoes: 13 }] }), 'faixas.0.taxaPct');
+        recusa(() => arracoamento.salvarTabela({ nome: 'X', faixas: [{ pesoDeG: 0, pesoAteG: 50, taxaPct: 2, refeicoes: 13 }] }), 'faixas.0.refeicoes');
+        recusa(() => arracoamento.salvarTabela({ nome: 'X', faixas: [
+            { pesoDeG: 0, pesoAteG: 50, taxaPct: 3, refeicoes: 4 }, { pesoDeG: 40, pesoAteG: 90, taxaPct: 2, refeicoes: 4 },
+        ] }), 'faixas.1.pesoDeG', /sobrepõe/);
+        const modelo = arracoamento.carregarModeloEmbrapa();
+        assert.equal(modelo.faixas.length, 17);
+        assert.ok(modelo.nome.startsWith('Modelo Embrapa'));
+        const tanque = tanques.salvarTanque({ nome: 'Com tabela', especie: 'Tilápia', volumeM3: 100, tabelaArracoamentoId: modelo.id });
+        assert.equal(tanque.tabelaArracoamentoId, modelo.id);
+        recusa(() => tanques.salvarTanque({ id: tanque.id, nome: 'Com tabela', especie: 'T', volumeM3: 1, tabelaArracoamentoId: 'nao' }), 'tabelaArracoamentoId');
+        arracoamento.excluirTabela(modelo.id);
+        assert.equal(tanques.obterTanque(tanque.id).tabelaArracoamentoId, null, 'o tanque fica sem tabela');
+    });
+    it('ração sugerida: 1.880 peixes de 542,5 g → 19,4 kg/dia (Embrapa)', () => {
+        const tabela = { faixas: arracoamento.MODELO_EMBRAPA.faixas };
+        const indicadores = { pesoMedioG: 542.5, biomassaKg: (1880 * 542.5) / 1000, dataPesoAtual: '2026-10-10' };
+        const { sugestao } = ind.calcularRacaoSugerida({ indicadores, tabela });
+        perto(sugestao.racaoDiaKg, 19.3781);
+        perto(sugestao.racaoRefeicaoKg, 19.3781 / 4);
+        assert.deepEqual([sugestao.faixa.pesoDeG, sugestao.faixa.pesoAteG, sugestao.faixa.taxaPct], [520, 565, 1.9]);
+        assert.equal(ind.calcularRacaoSugerida({ indicadores: { ...indicadores, pesoMedioG: 112 }, tabela }).motivo, 'fora-da-tabela');
+        assert.equal(ind.calcularRacaoSugerida({ indicadores, tabela: null }).motivo, 'sem-tabela');
+        assert.equal(ind.calcularRacaoSugerida({ indicadores, tabela, houvePesagem: false }).motivo, 'sem-biometria');
+        assert.equal(ind.calcularRacaoSugerida({ indicadores: { ...indicadores, pesoMedioG: 1045 }, tabela }).sugestao.faixa.taxaPct, 1.2);
+    });
+    it('TCE, fator de condição e TCE do ciclo, com os fatores de escala centralizados', () => {
+        assert.equal(ind.FATOR_TCE, 100);
+        assert.equal(ind.FATOR_K, 100);
+        perto(ind.calcularTce(10, 100, 100), (Math.log(100) - Math.log(10)) / 100 * 100);
+        perto(ind.calcularFatorCondicao(542.5, 30), 100 * 542.5 / 27000);
+        assert.equal(ind.calcularFatorCondicao(500, null), null);
+        const tanque = comCiclo();
+        registros.salvarRegistro({ tanqueId: tanque.id, data: dia(-10), biometria: { peixesAmostra: 10, pesoAmostraG: 400, comprimentoMedioCm: 10 } });
+        const situacao = tanques.obterSituacao(tanque.id);
+        const indicadores = ind.calcularIndicadores({ tanque: situacao.tanque, ciclo: situacao.cicloAtivo, registros: situacao.registros, hoje });
+        perto(indicadores.fatorCondicao, 4);
+        perto(indicadores.tceCiclo, (Math.log(40) - Math.log(10)) / 20 * 100);
     });
 });

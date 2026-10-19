@@ -3,11 +3,13 @@
 // porque junta domínio, services e ui, o que só esta camada pode fazer.
 
 import { diasEntre, hojeISO, paraDataLocalISO } from '../core/utils.js';
-import { pluralizar } from '../core/format.js';
+import { formatarGramas, formatarKg, formatarNumero, formatarPercentual, pluralizar } from '../core/format.js';
 import { listarSituacoes } from '../domain/tanques.js';
 import { analisarTanque } from '../domain/alertas.js';
 import { obterLimitesPadrao, obterUltimoBackupEm } from '../domain/configuracoes.js';
 import { alternarConclusao, listarAtrasados, listarOcorrencias } from '../domain/lembretes.js';
+import { obterTabela } from '../domain/arracoamento.js';
+import { calcularIndicadores, calcularRacaoSugerida } from '../domain/indicadores.js';
 import { exportarBackup } from '../services/exportacao.js';
 import { criarElemento, criarSelo } from '../ui/componentes.js';
 import { iniciarNavegacao, montarUrl } from '../ui/nav.js';
@@ -25,6 +27,37 @@ export function iniciarPagina() {
     document.getElementById('lista-lembretes-hoje')?.addEventListener('change', concluirDoMenu);
     mostrarEstadoOffline();
     atualizarMenu();
+}
+
+// Biometria com mais de 30 dias deixa a ração sugerida desatualizada (seção 9.10).
+export const DIAS_BIOMETRIA_ANTIGA = 30;
+
+// Ração sugerida de um tanque com ciclo ativo, já em texto, para o registro,
+// a página do tanque e a lista de tanques. Sem como calcular, traz o motivo.
+export function descreverRacaoSugerida(situacao, hoje = hojeISO()) {
+    const { tanque, cicloAtivo, registros } = situacao;
+    const indicadores = calcularIndicadores({ tanque, ciclo: cicloAtivo, registros, hoje });
+    const houvePesagem = registros.some((registro) => registro.pesoMedioG !== null && registro.pesoMedioG !== undefined);
+    const { sugestao, motivo } = calcularRacaoSugerida({ indicadores, tabela: obterTabela(tanque.tabelaArracoamentoId), houvePesagem });
+    const diasBiometria = diasEntre(indicadores.dataPesoAtual, hoje);
+    const motivos = {
+        'sem-tabela': 'Defina uma tabela de alimentação para este tanque.',
+        'sem-biometria': 'Faça uma biometria para calcular a ração.',
+        'fora-da-tabela': `Peso de ${formatarGramas(indicadores.pesoMedioG)} fora da tabela.`,
+    };
+    return {
+        sugestao,
+        motivo,
+        textoMotivo: motivo ? motivos[motivo] : null,
+        textoDia: sugestao ? `${formatarKg(sugestao.racaoDiaKg)} por dia` : null,
+        textoDetalhe: sugestao
+            ? `${pluralizar(sugestao.refeicoes, 'refeição', 'refeições')} de ${formatarKg(sugestao.racaoRefeicaoKg)} · `
+                + `faixa ${formatarNumero(sugestao.faixa.pesoDeG)}–${formatarNumero(sugestao.faixa.pesoAteG)} g (${formatarPercentual(sugestao.faixa.taxaPct)})`
+            : null,
+        aviso: sugestao && diasBiometria > DIAS_BIOMETRIA_ANTIGA
+            ? `Última biometria há ${diasBiometria} dias: a sugestão pode estar desatualizada.`
+            : null,
+    };
 }
 
 // Link de ação de cada alerta (seção 3.5): o próximo passo mais provável.

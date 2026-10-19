@@ -131,6 +131,10 @@ Pequeno e médio produtor que:
 | **Registro** | Anotação feita em uma data, dentro de um ciclo, com o que o produtor mediu ou observou naquele dia. |
 | **Indicador** | Valor calculado a partir do ciclo e dos registros. Nunca é digitado. |
 | **Alerta** | Situação calculada que pede atenção, com base em limites configuráveis. |
+| **Biometria por amostragem** | A cada 15 a 30 dias, pesa-se uma amostra (em geral 50 a 100 peixes): peso médio = peso total da amostra ÷ peixes amostrados. A cada biometria, a ração é recalculada. |
+| **Tabela de arraçoamento** | Para cada faixa de peso, a taxa de ração (% da biomassa por dia) e o número de refeições. Ração do dia = biomassa × taxa ÷ 100, dividida pelas refeições. |
+
+**Princípio:** o produtor informa só o que mede (lote contado ou pesado, amostra da biometria, ração fornecida e sobra, mortos encontrados), e o sistema calcula o resto.
 
 **Padronização:** todos os tanques usam a mesma estrutura de dados, indicadores e alertas. Não há campos ou regras específicas por espécie.
 
@@ -195,7 +199,7 @@ Cria ou edita um tanque (nome, espécie, volume, capacidade máxima, status, obs
 
 ### 7.5 Formulário de ciclo (`ciclo-form.html`)
 
-- **Iniciar ciclo:** data de povoamento, quantidade inicial, peso médio inicial, peso alvo (opcional) e data prevista de despesca (opcional).
+- **Iniciar ciclo:** data de povoamento; "Como você vai informar o lote?" com **"Contei os peixes"** (quantidade + peso médio) ou **"Pesei o lote"** (biomassa do lote em kg + peso médio da amostra), RN21; peso alvo (opcional) e data prevista de despesca (opcional). O valor calculado aparece ao vivo abaixo dos campos: "Biomassa inicial: 10 kg" ou "≈ 2.471 peixes (estimado)".
 - **Iniciar ciclo:** com ciclo encerrado anterior, mostra a caixa "Último ciclo: sobrevivência de X%, FCA de Y, Z dias."
 - **Registrar despesca:** data, **biomassa final (kg)** ("Peso total dos peixes despescados."), peso médio final ("Peso médio da amostra.") e quantidade despescada opcional ("Só se os peixes foram contados."), com RN19 e RN20. Encerra o ciclo e leva à página do tanque com o resumo do ciclo (seção 9.4.1).
 
@@ -205,8 +209,12 @@ Formulário rápido, com poucos campos e otimizado para o celular:
 
 - Tanque (pré-selecionado quando vier da página do tanque);
 - Data (padrão: hoje; vindo da agenda, `registro.html?data=AAAA-MM-DD` preenche o dia escolhido, e uma data futura é ignorada);
-- Peso médio, consumo de ração, mortos encontrados, natalidade (todos opcionais). "Mortos encontrados" traz a ajuda "Peixes mortos vistos neste dia. O número real só é conhecido na despesca." e a quantidade estimada atual;
-- Observações.
+- Três seções recolhíveis, abertas por padrão e todas opcionais (RN11 continua valendo):
+  - **Alimentação:** ração fornecida (kg) e sobra (kg, RN23), com a ração sugerida para hoje e o botão "Usar sugestão" (seção 9.10).
+  - **Mortalidade:** mortos encontrados (com a ajuda "Peixes mortos vistos neste dia. O número real só é conhecido na despesca." e a quantidade estimada atual) e causa provável: Desconhecida, Manejo, Predação, Doença, Qualidade da água ou Outra.
+  - **Biometria:** "Pesei uma amostra" (peixes na amostra, peso total da amostra em kg ou g, guardado em gramas, e comprimento médio opcional; o peso médio aparece ao vivo, RN22) ou "Informar só o peso médio".
+- Observações e, recolhida em "Mais campos", a natalidade (rara).
+- Se houver erro num campo de uma seção recolhida, a seção abre.
 
 A edição usa o endereço `registro.html?id=...`, e o registro continua no mesmo tanque.
 
@@ -255,6 +263,7 @@ O link "Adicionar lembrete" do menu lateral abre `calendario.html?lembrete=novo`
 ### 7.9 Configurações (`configuracoes.html`)
 
 - Limites padrão dos alertas e meta de conversão alimentar.
+- **Tabelas de alimentação:** lista das tabelas (editar, excluir), "Nova tabela" e "Carregar modelo" (o "Modelo Embrapa — tilápia em tanque-rede, ração 32% PB (190 a 1.045 g)", com a fonte no nome). O editor tem o nome e uma linha por faixa: peso de (g), peso até (g), taxa (% da biomassa por dia) e refeições por dia (RN24). Texto de ajuda: "A taxa depende da espécie, da ração e da temperatura. Use a tabela do fabricante da ração ou do seu técnico." Excluir uma tabela deixa os tanques que a usavam sem tabela.
 - Exportar CSV de registros ou de lembretes (por tanque ou geral).
 - Fazer backup e restaurar dados (JSON).
 - Carregar dados de exemplo e apagar todos os dados.
@@ -302,6 +311,7 @@ Os valores são sempre armazenados nestas unidades e convertidos apenas na exibi
   especie: "Tilápia",
   volumeM3: 300,
   densidadeMaximaKgM3: 4,      // kg de peixe por m³ de água; null = não definida
+  tabelaArracoamentoId: null,  // tabela de alimentação (config.tabelasArracoamento) ou null
   status: "ativo",             // "ativo" | "vazio" | "manutencao" | "arquivado"
   limitesAlerta: null,         // null = usa os limites padrão; ou objeto parcial
   observacoes: "",
@@ -317,8 +327,10 @@ Os valores são sempre armazenados nestas unidades e convertidos apenas na exibi
   id: "uuid",
   tanqueId: "uuid",
   dataInicio: "2026-08-01",
-  quantidadeInicial: 2500,
+  modoPovoamento: "contagem",   // "contagem" (peixes contados) | "pesagem" (lote pesado)
+  quantidadeInicial: 2500,      // informada ou calculada (biomassa ÷ peso médio)
   pesoMedioInicialG: 5,
+  biomassaInicialKg: 12.5,      // informada ou calculada (quantidade × peso médio)
   pesoAlvoG: 800,               // opcional
   dataPrevistaDespesca: "2027-02-01", // opcional
   dataDespesca: null,           // preenchida ao encerrar
@@ -339,7 +351,14 @@ Os valores são sempre armazenados nestas unidades e convertidos apenas na exibi
   data: "2026-10-16",
   pesoMedioG: 210,              // opcional
   racaoKg: 25,                  // opcional
+  biometria: {                  // opcional: amostra pesada (o pesoMedioG sai dela)
+    peixesAmostra: 50,
+    pesoAmostraG: 10500,
+    comprimentoMedioCm: 24.5    // opcional
+  },
+  racaoSobraKg: null,           // opcional: consumida = racaoKg − sobra
   mortalidade: 4,               // opcional: mortos encontrados no dia (observação parcial)
+  causaMortalidade: null,       // opcional: "desconhecida" | "manejo" | "predacao" | "doenca" | "qualidade-agua" | "outra"
   natalidade: 0,                // opcional
   observacoes: "",
   criadoEm: "2026-10-16T13:00:00.000Z"
@@ -369,12 +388,12 @@ Os valores são sempre armazenados nestas unidades e convertidos apenas na exibi
 
 ### 8.3 Armazenamento
 
-Uma única chave no `localStorage`. Ela continua se chamando `fishtrack:v1` na versão 3 do formato, para não perder os dados existentes; a versão do formato fica no campo `versao`.
+Uma única chave no `localStorage`. Ela continua se chamando `fishtrack:v1` na versão 4 do formato, para não perder os dados existentes; a versão do formato fica no campo `versao`.
 
 ```js
 // chave: "fishtrack:v1"
 {
-  versao: 3,
+  versao: 4,
   tanques: [],
   ciclos: [],
   registros: [],
@@ -389,7 +408,8 @@ Uma única chave no `localStorage`. Ela continua se chamando `fishtrack:v1` na v
       diasSemRegistro: 7
     },
     metaFca: 1.6,                // meta de conversão alimentar
-    ultimoBackupEm: null         // data e hora do último backup (ISO)
+    ultimoBackupEm: null,        // data e hora do último backup (ISO)
+    tabelasArracoamento: []      // [{ id, nome, faixas: [{ pesoDeG, pesoAteG, taxaPct, refeicoes }] }]
   }
 }
 ```
@@ -414,7 +434,14 @@ O `limitesAlerta` de cada tanque usa as mesmas chaves e pode conter só as que f
 1. Em cada registro, remove `quantidadeContada`. Se o registro ficar sem nenhuma medição e sem observação, grava em `observacoes` "Contagem registrada: N peixes", para não perder a informação nem violar a RN11.
 2. Em cada ciclo encerrado, cria `biomassaFinalKg = quantidadeDespescada × pesoMedioFinalG / 1000`; nos ativos, `biomassaFinalKg: null`.
 
-Backups das versões 1 e 2 continuam podendo ser restaurados: passam pelas migrações em sequência.
+**Da versão 3 para a 4** (entradas mínimas e ração sugerida):
+
+1. Ciclos: `modoPovoamento = "contagem"` e `biomassaInicialKg = quantidadeInicial × pesoMedioInicialG / 1000`.
+2. Registros: `biometria = null`, `racaoSobraKg = null`, `causaMortalidade = null`.
+3. Tanques: `tabelaArracoamentoId = null`.
+4. Config: `tabelasArracoamento = []`.
+
+Backups das versões 1, 2 e 3 continuam podendo ser restaurados: passam pelas migrações em sequência.
 4. Define `versao = 2`.
 
 ---
@@ -447,6 +474,11 @@ Backups das versões 1 e 2 continuam podendo ser restaurados: passam pelas migra
 - **RN14.** Os mortos encontrados de um registro não podem passar da quantidade **estimada** de peixes naquela data. A regra é conferida em todos os registros do ciclo a cada inclusão, alteração ou exclusão, porque um registro muda o estoque estimado dos que vêm depois dele.
 - **RN15.** Pode haver mais de um registro na mesma data. Os valores de ração, mortalidade e natalidade são somados.
 
+- **RN21.** No povoamento, o lote é informado de um de dois jeitos: **contado** (quantidade inteira > 0 e peso médio > 0; a biomassa inicial é calculada) ou **pesado** (biomassa do lote > 0 e peso médio da amostra > 0; a quantidade é calculada, `biomassa × 1000 ÷ peso médio`, arredondada, e precisa dar pelo menos 1 peixe).
+- **RN22.** Na biometria por amostra, peixes na amostra (inteiro) e peso da amostra vêm juntos e são maiores que zero; o comprimento médio, se informado, é maior que zero. A amostra não pode passar da quantidade estimada no tanque naquela data. O peso médio do registro é `peso da amostra ÷ peixes na amostra`. Continua valendo informar só o peso médio.
+- **RN23.** A sobra de ração é ≥ 0, só pode ser informada com a ração fornecida e não pode ser maior que ela. A causa da mortalidade é uma da lista e só pode ser informada com mortos encontrados.
+- **RN24.** Numa tabela de alimentação, o nome é obrigatório (até 80 caracteres) e há pelo menos uma faixa. Em cada faixa, "peso até" é maior que "peso de", a taxa vai de 0,1 a 20% da biomassa por dia e as refeições de 1 a 12. As faixas não se sobrepõem (podem encostar, como 190–225 e 225–265). Os erros aparecem no campo da faixa. O tanque, se tiver tabela, aponta para uma existente.
+
 ### 9.3.1 Lembretes
 
 - **RN16.** O título do lembrete é obrigatório e tem até 80 caracteres.
@@ -464,7 +496,7 @@ Todos os indicadores são calculados a partir do ciclo e dos registros, ordenado
 | **Quantidade de peixes (estimada)** | `quantidadeInicial − mortos encontrados + natalidade`, acumulados até a data. |
 | **Peso médio atual** | Último `pesoMedioG` informado. Se nenhum, usa `pesoMedioInicialG`. |
 | **Biomassa (kg)** | `quantidade × pesoMedio / 1000` |
-| **Ração acumulada (kg)** | Soma de `racaoKg` no ciclo. |
+| **Ração consumida (kg)** | Soma de `racaoKg − racaoSobraKg` no ciclo. É a consumida que entra na FCA e nos totais de ração. |
 | **Ganho de biomassa (kg)** | `biomassaAtual − biomassaInicial` |
 | **Conversão alimentar (FCA)** | `racaoAcumulada / ganhoDeBiomassa`. Exibe "—" se o ganho for ≤ 0. |
 | **Taxa de mortalidade (%)** | `mortalidadeAcumulada / quantidadeInicial × 100` |
@@ -478,6 +510,26 @@ Todos os indicadores são calculados a partir do ciclo e dos registros, ordenado
 | **Densidade de povoamento (peixes/m³)** | `quantidadeInicial / volumeM3`. Informativo. |
 | **Projeção até o limite (dias)** | `(cargaMaxima − biomassa) / ganho de biomassa por dia entre as duas últimas pesagens`. Só aparece com ganho positivo e resultado entre 1 e 180 dias. Não é previsão: estende o ritmo recente. |
 | **Dias de cultivo** | Dias entre `dataInicio` e hoje (ou `dataDespesca`). |
+| **TCE (%/dia)** | `(ln pesoMedioAtual − ln pesoMedioInicial) ÷ dias do início até a última pesagem × FATOR_TCE` |
+| **Fator de condição K** | `FATOR_K × peso médio (g) ÷ comprimento médio (cm)³`, da última biometria com comprimento. Só aparece com comprimento. |
+| **Mortalidade da semana (%)** | mortos encontrados nos últimos 7 dias ÷ peixes estimados no início da semana × 100 |
+| **Dias para o peso alvo** | `(pesoAlvoG − peso atual) ÷ crescimento entre as duas últimas pesagens`, contados a partir da última; só com peso alvo e ganho positivo, com a data estimada. |
+
+`FATOR_TCE` e `FATOR_K` valem 100 e ficam em constantes em `indicadores.js` (seção 13).
+
+**Referências das fórmulas** (citadas também em comentário junto de cada fórmula em `indicadores.js`):
+
+| Cálculo | Situação | Fonte |
+|---|---|---|
+| Nº de peixes = biomassa ÷ peso médio | Confirmado (ex.: 7.500 kg/ha ÷ 1,5 kg = 5.000 peixes/ha) | Embrapa, cálculo de povoamento de viveiros (2015) |
+| Biomassa = nº de peixes × peso médio | Confirmado | Embrapa, cálculo de povoamento de viveiros (2015) |
+| Biometria por amostra, a cada 15–21 dias, com cerca de 50 peixes | Confirmado | Embrapa, manejos na criação de tilápia (Queiroz, 2019) |
+| Sobra pesada; FCA com a ração consumida | Confirmado | Embrapa, manejos na criação de tilápia (Queiroz, 2019) |
+| Ração/dia = biomassa × taxa da faixa ÷ refeições | Confirmado (1.880 peixes × 542,5 g → 19,4 kg/dia) | Embrapa, Comunicado Técnico 12 |
+| TCE = (ln peso final − ln peso inicial) ÷ dias | Confirmado (Ricker, 1979) | Redalyc, crescimento de carpas |
+| Fator de condição K = peso ÷ comprimento³ | Confirmado (Fulton) | Redalyc, crescimento de carpas |
+
+**Capacidade (referência):** a Embrapa cita cerca de 35 kg/m³ para tanques-rede maiores que 60 m³, para evitar problemas de oxigênio. Vale só para tanque-rede; em viveiro escavado a referência é em kg/ha, ordens de grandeza menor. Por isso não há valor padrão de capacidade.
 
 ### 9.4.1 Resultado do ciclo encerrado
 
@@ -485,7 +537,7 @@ Na despesca a biomassa é pesada, e daí saem os números reais do ciclo, que se
 
 | Resultado | Fórmula |
 |---|---|
-| Biomassa inicial (kg) | `quantidadeInicial × pesoMedioInicialG / 1000` |
+| Biomassa inicial (kg) | `biomassaInicialKg` do ciclo (informada no povoamento por pesagem, ou `quantidadeInicial × pesoMedioInicialG / 1000`) |
 | Quantidade final | `quantidadeDespescada` se informada; senão `biomassaFinalKg × 1000 / pesoMedioFinalG`, arredondado ("estimada pela biomassa") |
 | Sobrevivência real (%) | `quantidadeFinal / quantidadeInicial × 100` |
 | Mortalidade real (%) | `100 − sobrevivenciaReal` (mínimo 0) |
@@ -497,6 +549,7 @@ Na despesca a biomassa é pesada, e daí saem os números reais do ciclo, que se
 | Dias de cultivo | dias entre `dataInicio` e `dataDespesca` |
 | Ganho de peso diário (g/dia) | `(pesoMedioFinalG − pesoMedioInicialG) / diasCultivo` |
 | Produtividade (kg/m³) | `biomassaFinalKg / volumeM3` |
+| TCE do ciclo (%/dia) | `(ln pesoMedioFinalG − ln pesoMedioInicialG) / diasCultivo × FATOR_TCE` |
 
 **Onde aparece:** logo depois da despesca, a página do tanque abre com o resumo do ciclo encerrado; no Histórico, cada ciclo encerrado mostra o mesmo resumo; quando há ciclo encerrado anterior, sobrevivência, mortalidade, FCA e dias trazem a comparação ("75% (ciclo anterior: 81%)"). Ao iniciar um novo ciclo, uma caixa mostra a referência do último: "Último ciclo: sobrevivência de X%, FCA de Y, Z dias."
 
@@ -581,6 +634,21 @@ O botão "Baixar imagem" (gráfico principal do Dashboard e gráficos do tanque)
 
 ---
 
+### 9.10 Ração sugerida
+
+`calcularRacaoSugerida({ indicadores, tabela, houvePesagem })`, função pura em `indicadores.js`, usa o peso médio atual e a biomassa estimada:
+
+- Encontra a faixa da tabela do tanque que contém o peso médio (de "peso de" até antes de "peso até"; o fim da última faixa ainda vale).
+- `racaoDiaKg = biomassaKg × taxaPct ÷ 100`; `racaoRefeicaoKg = racaoDiaKg ÷ refeicoes`. Devolve também a faixa e a data da última biometria.
+- Sem como calcular, devolve o motivo, e a tela mostra: "Defina uma tabela de alimentação para este tanque." (com link para escolher), "Peso de 112 g fora da tabela." ou "Faça uma biometria para calcular a ração."
+- Com a última biometria há mais de 30 dias: "Última biometria há N dias: a sugestão pode estar desatualizada."
+
+Onde aparece: no registro (seção Alimentação, com "Usar sugestão", que preenche a ração fornecida), no cartão "Ração de hoje" da página do tanque ("19,4 kg por dia · 4 refeições de 4,85 kg · faixa 520–565 g (1,9%)", com "Registrado hoje: 12 kg de 19,4 kg" e a barra) e nos cartões da lista de tanques ("Ração sugerida").
+
+**Ideia para depois (não implementada):** sugerir a quantidade de alevinos ao iniciar o ciclo pela mortalidade do ciclo anterior: quantidade a povoar = quantidade final desejada × (1 + mortalidade esperada). Exemplo da Embrapa: 5.000 peixes com 4% → 5.200 alevinos.
+
+---
+
 ## 10. Estrutura de arquivos
 
 ```
@@ -617,6 +685,7 @@ fish-track/
 │   │   ├── indicadores.js    # Cálculos (funções puras)
 │   │   ├── alertas.js        # Avaliação de alertas (funções puras)
 │   │   ├── lembretes.js      # Lembretes da agenda e suas ocorrências (RN16 a RN18)
+│   │   ├── arracoamento.js   # Tabelas de alimentação (RN24) e o modelo Embrapa
 │   │   ├── configuracoes.js  # Limites de alerta: padrão e por tanque
 │   │   └── validacao.js      # Validações compartilhadas
 │   ├── ui/
@@ -784,4 +853,6 @@ fish-track/
 | Registrar parâmetros da água (oxigênio, pH, temperatura) | Fora do MVP | Produtores |
 | Corrigir ou cancelar um ciclo iniciado com dados errados | Não previsto no MVP: hoje só é possível registrar a despesca | Produtores |
 | Conteúdo exato dos relatórios em PDF | O da seção 7.12 | Produtores |
+| Tabela de alimentação padrão por espécie | Só o modelo Embrapa de tilápia em tanque-rede, como exemplo; cada produtor cria a sua | Laboratório de piscicultura |
+| Escala da TCE e do fator K (com ou sem × 100) | Com × 100, em `FATOR_TCE` e `FATOR_K` | Laboratório de piscicultura |
 | Fórmulas do fechamento do ciclo (seção 9.4.1) | As da tabela, com a quantidade final estimada pela biomassa quando não houver contagem | Laboratório de piscicultura |

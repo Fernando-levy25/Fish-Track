@@ -153,6 +153,7 @@ async function roteiro() {
     preencher({ 'campo-data-inicio': somarDias(HOJE, -30), 'campo-quantidade-inicial': '1.000', 'campo-peso-inicial': '10', 'campo-peso-alvo': '5' });
     await enviarSemSair('formulario-iniciar-ciclo');
     verificar('peso alvo deve superar o inicial', texto('erro-peso-alvo') === 'O peso alvo deve ser maior que o peso inicial.', texto('erro-peso-alvo'));
+    verificar('biomassa inicial calculada ao vivo', texto('resultado-povoamento') === 'Biomassa inicial: 10 kg', texto('resultado-povoamento'));
     preencher({ 'campo-peso-alvo': '500', 'campo-data-prevista-despesca': somarDias(HOJE, 120) });
     await enviarENavegar('formulario-iniciar-ciclo');
     verificar('ponto de milhar: 1.000 peixes', dados().ciclos[0].quantidadeInicial === 1000, dados().ciclos[0].quantidadeInicial);
@@ -183,6 +184,9 @@ async function roteiro() {
         await enviarSemSair('formulario-registro');
         verificar(`"${invalido}" recusado na ração`, texto('erro-racao') === 'Digite um número válido.', texto('erro-racao'));
     }
+    verificar('sem tabela, a sugestão diz o motivo', texto('texto-sugestao-racao') === 'Defina uma tabela de alimentação para este tanque.' && porId('botao-usar-sugestao').hidden);
+    doc().querySelector('[name="modoBiometria"][value="peso"]').click();
+    verificar('"Informar só o peso médio" mostra o campo', !porId('grupo-peso-medio').hidden && porId('grupo-amostra').hidden);
     preencher({ 'campo-racao': '', 'campo-data': somarDias(HOJE, 1), 'campo-peso-medio': '30' });
     await enviarSemSair('formulario-registro');
     verificar('RN12 data futura', texto('erro-data') === 'A data não pode ser futura.', texto('erro-data'));
@@ -191,7 +195,12 @@ async function roteiro() {
     verificar('quantidade 995', indicador('quantidade') === '995', indicador('quantidade'));
     verificar('vírgula decimal: 2,5 kg', indicador('racaoAcumulada') === '2,5 kg', indicador('racaoAcumulada'));
     await navegarCom(() => porId('link-novo-registro').click());
-    preencher({ 'campo-data': somarDias(HOJE, -1), 'campo-peso-medio': '60', 'campo-racao': '7', 'campo-mortalidade': '15', 'campo-observacoes': 'Peixes agitados' });
+    // Biometria por amostra: 50 peixes, 3 kg → 60 g; sobra maior que a ração é recusada (RN23).
+    preencher({ 'campo-data': somarDias(HOJE, -1), 'campo-peixes-amostra': '50', 'campo-peso-amostra': '3', 'campo-racao': '7', 'campo-sobra': '8', 'campo-mortalidade': '15', 'campo-observacoes': 'Peixes agitados' });
+    verificar('peso médio calculado ao vivo', texto('peso-medio-calculado') === 'Peso médio: 60 g', texto('peso-medio-calculado'));
+    await enviarSemSair('formulario-registro');
+    verificar('RN23 sobra maior que a ração', texto('erro-sobra') === 'A sobra não pode ser maior que a ração fornecida.', texto('erro-sobra'));
+    preencher({ 'campo-sobra': '', 'campo-causa': 'doenca' });
     await enviarENavegar('formulario-registro');
     verificar('quantidade 980', indicador('quantidade') === '980', indicador('quantidade'));
     verificar('ração de hoje é o primeiro cartão', porId('cartao-racao').querySelector('.cartao-racao__titulo')?.textContent === 'Ração de hoje'
@@ -223,7 +232,9 @@ async function roteiro() {
     verificar('#historico abre a aba', !porId('painel-historico').hidden);
     await navegarCom(() => porId('corpo-tabela-registros').querySelector('a.link').click());
     verificar('modo edição', texto('titulo-pagina-registro') === 'Editar registro' && porId('campo-tanque').disabled);
-    verificar('valores preenchidos', porId('campo-peso-medio').value === '60' && porId('campo-racao').value === '7');
+    verificar('valores preenchidos, com a amostra em gramas', porId('campo-peixes-amostra').value === '50' && porId('campo-peso-amostra').value === '3000'
+        && doc().querySelector('[name="unidadePesoAmostra"]:checked').value === 'g' && porId('campo-racao').value === '7' && porId('campo-causa').value === 'doenca',
+        `${porId('campo-peixes-amostra').value} ${porId('campo-peso-amostra').value}`);
     preencher({ 'campo-racao': '8,75' });
     await enviarENavegar('formulario-registro');
     verificar('volta ao histórico', doc().location.hash === '#historico' && !porId('painel-historico').hidden);
@@ -344,6 +355,31 @@ async function roteiro() {
     const carregou = await esperarAte(() => (texto('mensagem-dados') ?? '').startsWith('Dados de exemplo carregados'), 15000);
     verificar('exemplo carregado', carregou && texto('mensagem-dados').includes('6 tanques, 5 ciclos'), texto('mensagem-dados'));
     await abrir('index.html');
+    etapa = 'Tabela de alimentação e ração sugerida';
+    await abrir('configuracoes.html');
+    verificar('modelo Embrapa no exemplo', porId('lista-tabelas').textContent.includes('Modelo Embrapa') && porId('lista-tabelas').textContent.includes('17 faixas'));
+    porId('botao-nova-tabela').click();
+    preencher({ 'campo-nome-tabela': 'Teste', 'campo-faixa-0-pesoDeG': '100', 'campo-faixa-0-pesoAteG': '50', 'campo-faixa-0-taxaPct': '2', 'campo-faixa-0-refeicoes': '4' });
+    await enviarSemSair('formulario-tabela');
+    verificar('RN24 no campo da faixa', texto('erro-faixa-0-pesoAteG') === 'O peso final deve ser maior que o inicial.', texto('erro-faixa-0-pesoAteG'));
+    porId('botao-cancelar-tabela').click();
+    const t01 = dados().tanques.find((tanque) => tanque.nome === 'Tanque 01').id;
+    await abrir(`tanque.html?id=${t01}`);
+    verificar('ração sugerida no cartão do tanque', /kg por dia$/.test(indicador('racaoSugerida') ?? '')
+        && porId('cartao-racao').textContent.includes('4 refeições de') && porId('cartao-racao').textContent.includes('faixa 345–385 g (2,6%)'), texto('cartao-racao'));
+    verificar('TCE e fator K em "Ver todos"', /%\/dia$/.test(indicador('tceCiclo') ?? '') && Boolean(indicador('fatorCondicao')), `${indicador('tceCiclo')} ${indicador('fatorCondicao')}`);
+    await abrir(`registro.html?tanqueId=${t01}`);
+    verificar('sugestão no registro', texto('texto-sugestao-racao')?.startsWith('Sugerida para hoje:') && !porId('botao-usar-sugestao').hidden);
+    porId('botao-usar-sugestao').click();
+    verificar('"Usar sugestão" preenche a ração', /^\d+,\d$/.test(porId('campo-racao').value), porId('campo-racao').value);
+    await abrir('tanques.html');
+    verificar('ração sugerida na lista', [...doc().querySelectorAll('.cartao-tanque')].find((cartao) => cartao.textContent.includes('Tanque 01'))?.textContent.includes('kg por dia'));
+    const viveiroPesagem = dados().tanques.find((tanque) => tanque.nome === 'Viveiro Norte').id;
+    await abrir(`ciclo-form.html?tanqueId=${viveiroPesagem}&acao=iniciar`);
+    doc().querySelector('[name="modoPovoamento"][value="pesagem"]').click();
+    preencher({ 'campo-biomassa-inicial': '21', 'campo-peso-inicial': '8,5' });
+    verificar('lote pesado: quantidade ao vivo (RN21)', texto('resultado-povoamento') === '≈ 2.471 peixes (estimado)', texto('resultado-povoamento'));
+
     etapa = 'Página do tanque com dados';
     const viveiroNorte = dados().tanques.find((tanque) => tanque.nome === 'Viveiro Norte').id;
     await abrir(`tanque.html?id=${viveiroNorte}`);
@@ -479,7 +515,7 @@ async function testarAgenda() {
     const ontem = somarDias(HOJE, -1);
     verificar('vários registros viram uma etiqueta com as bolinhas', etiquetas(ontem).includes('2 registros')
         && celula(ontem).querySelectorAll('.etiqueta--registro .etiqueta__ponto').length === 2, etiquetas(ontem).join(' | '));
-    const alertaT02 = grade().querySelector('.etiqueta--alerta');
+    const alertaT02 = [...grade().querySelectorAll('.etiqueta--alerta')].find((etiqueta) => etiqueta.textContent.startsWith('Mortalidade'));
     verificar('alerta do dia com o tanque abreviado', alertaT02?.textContent === 'Mortalidade alta · T02' && alertaT02.title === 'Mortalidade alta: Tanque 02',
         alertaT02?.textContent);
     const ordemHoje = [...celula(HOJE).querySelectorAll('.etiqueta')].map((item) => item.className.match(/etiqueta--([a-z-]+)/)[1]);

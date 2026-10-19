@@ -105,6 +105,15 @@
                     <p class="campo__erro" id="erro-carga-maxima"></p>
                 </fieldset>
 
+                <div class="campo">
+                    <label class="campo__rotulo" for="campo-tabela-arracoamento">Tabela de alimentação (opcional)</label>
+                    <select class="campo__select" id="campo-tabela-arracoamento" name="tabelaArracoamentoId" aria-describedby="ajuda-tabela-arracoamento erro-tabela-arracoamento">
+                        <option value="">Nenhuma</option>
+                    </select>
+                    <p class="campo__ajuda" id="ajuda-tabela-arracoamento">Com ela, o app sugere a ração do dia. Crie as tabelas em <a class="link" href="configuracoes.html">Configurações</a>.</p>
+                    <p class="campo__erro" id="erro-tabela-arracoamento"></p>
+                </div>
+
                 <div class="campo campo--checkbox">
                     <input class="campo__checkbox" id="campo-manutencao" name="manutencao" type="checkbox" aria-describedby="ajuda-manutencao">
                     <label class="campo__rotulo" for="campo-manutencao">Tanque em manutenção</label>

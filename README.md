@@ -26,9 +26,9 @@ O uso segue um fluxo simples:
 1. **Tanque:** o produtor cadastra cada tanque, viveiro ou tanque-rede, com volume e capacidade.
 2. **Ciclo:** ao povoar um tanque, inicia um ciclo com a quantidade e o peso médio dos peixes. O ciclo termina na despesca.
 3. **Registros:** durante o ciclo, anota o que mediu ou observou no dia. Todos os campos são opcionais:
-   * peso médio;
-   * ração fornecida;
-   * mortos encontrados e natalidade;
+   * biometria: peso de uma amostra (o app calcula o peso médio) ou só o peso médio;
+   * ração fornecida e sobra (com a ração sugerida pela tabela de alimentação do tanque);
+   * mortos encontrados, com a causa provável, e natalidade;
    * observações.
 4. **Indicadores:** durante o ciclo o sistema estima a quantidade de peixes (o povoamento menos os mortos encontrados), biomassa, conversão alimentar (FCA), taxas de mortalidade e crescimento, densidade e capacidade utilizada.
 5. **Alertas:** avisa quando algo pede atenção, como mortalidade elevada, ração acima do limite, peso abaixo do esperado, tanque perto da capacidade ou muitos dias sem registro.

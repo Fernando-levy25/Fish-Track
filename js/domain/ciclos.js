@@ -75,7 +75,11 @@ export function iniciarCiclo(tanqueId, entrada) {
         falharRegra(motivo);
     }
 
-    const { dataInicio, quantidadeInicial, pesoMedioInicialG } = entrada;
+    const { dataInicio, pesoMedioInicialG } = entrada;
+    // RN21: o lote pode ser contado ou pesado. Pesado, a quantidade sai da
+    // biomassa e do peso médio da amostra (Embrapa, cálculo de povoamento, 2015).
+    const modoPovoamento = entrada.modoPovoamento === 'pesagem' ? 'pesagem' : 'contagem';
+    const pesagem = modoPovoamento === 'pesagem';
     const pesoAlvoG = entrada.pesoAlvoG ?? null;
     const dataPrevistaDespesca = entrada.dataPrevistaDespesca || null;
     // Um ciclo novo não pode se sobrepor ao anterior do mesmo tanque.
@@ -95,9 +99,17 @@ export function iniciarCiclo(tanqueId, entrada) {
     });
     // RN07
     const erroPesoInicial = validarNumero(pesoMedioInicialG, { rotulo: 'o peso médio inicial', obrigatorio: true, positivo: true });
+    const erroBiomassaInicial = pesagem
+        ? validarNumero(entrada.biomassaInicialKg ?? null, { rotulo: 'a biomassa do lote', obrigatorio: true, positivo: true })
+        : null;
+    const quantidadeInicial = pesagem && !erroBiomassaInicial && !erroPesoInicial
+        ? Math.round((entrada.biomassaInicialKg * 1000) / pesoMedioInicialG)
+        : entrada.quantidadeInicial;
     lancarSeHouverErros({
         dataInicio: erroDataInicio,
-        quantidadeInicial: validarNumero(quantidadeInicial, { rotulo: 'a quantidade inicial', obrigatorio: true, positivo: true, inteiro: true }),
+        quantidadeInicial: pesagem ? null : validarNumero(quantidadeInicial, { rotulo: 'a quantidade inicial', obrigatorio: true, positivo: true, inteiro: true }),
+        biomassaInicialKg: erroBiomassaInicial
+            ?? (pesagem && !erroPesoInicial && quantidadeInicial < 1 ? 'Com esse peso médio, o lote não chega a 1 peixe. Confira os valores.' : null),
         pesoMedioInicialG: erroPesoInicial,
         pesoAlvoG: validarNumero(pesoAlvoG, { positivo: true })
             ?? (pesoAlvoG !== null && !erroPesoInicial && pesoAlvoG <= pesoMedioInicialG
@@ -115,6 +127,8 @@ export function iniciarCiclo(tanqueId, entrada) {
         dataInicio,
         quantidadeInicial,
         pesoMedioInicialG,
+        modoPovoamento,
+        biomassaInicialKg: pesagem ? entrada.biomassaInicialKg : (quantidadeInicial * pesoMedioInicialG) / 1000,
         pesoAlvoG,
         dataPrevistaDespesca,
         dataDespesca: null,

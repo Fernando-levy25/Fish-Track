@@ -44,11 +44,9 @@ import {
 import { desenharGraficoLinha } from '../ui/graficos.js';
 import { criarIcone } from '../ui/icones.js';
 import { montarAgenda } from './agenda.js';
-import { atualizarMenu, iniciarPagina, obterAcaoDoAlerta } from './comum.js';
+import { atualizarMenu, descreverRacaoSugerida, DIAS_BIOMETRIA_ANTIGA, iniciarPagina, obterAcaoDoAlerta } from './comum.js';
 
 const MAXIMO_REGISTROS_RECENTES = 5;
-// Biometria com mais de 30 dias perde valor: peso, biomassa e ração dependem dela.
-const DIAS_BIOMETRIA_ANTIGA = 30;
 
 const TEXTOS_SEM_CICLO = {
     vazio: 'Este tanque não tem ciclo ativo.',
@@ -287,15 +285,38 @@ function textoBiometria({ indicadores, acompanhamento }) {
     });
 }
 
-// Ração de hoje: o que foi anotado hoje. A ração sugerida pela tabela de
-// alimentação entra aqui quando ela existir (ainda não implementada).
+// Ração de hoje (seção 7.3): a sugerida pela tabela de alimentação do tanque
+// (seção 9.10) e quanto já foi registrado hoje. Sem sugestão, o motivo e a ação.
 function criarConteudoRacao({ tanque, acompanhamento }) {
+    const descricao = descreverRacaoSugerida(situacao);
+    const { sugestao } = descricao;
     const conteudo = [
         criarElemento('h3', { classe: 'cartao-racao__titulo', texto: 'Ração de hoje', atributos: { id: 'titulo-racao-hoje' } }),
-        criarElemento('p', { classe: 'cartao-racao__valor', texto: `${formatarKg(acompanhamento.racaoHojeKg)} registrados`, atributos: { 'data-indicador': 'racaoHoje' } }),
-        criarElemento('p', { classe: 'cartao-racao__motivo', texto: 'A sugestão diária de ração chega com a tabela de alimentação.' }),
     ];
-    if (acompanhamento.diasDesdePesagem > DIAS_BIOMETRIA_ANTIGA) {
+    if (sugestao) {
+        conteudo.push(
+            criarElemento('p', { classe: 'cartao-racao__valor', texto: descricao.textoDia, atributos: { 'data-indicador': 'racaoSugerida' } }),
+            criarElemento('p', { classe: 'cartao-racao__detalhe', texto: descricao.textoDetalhe }),
+            criarElemento('p', {
+                classe: 'cartao-racao__registrado',
+                texto: `Registrado hoje: ${formatarKg(acompanhamento.racaoHojeKg)} de ${formatarKg(sugestao.racaoDiaKg)}`,
+                atributos: { 'data-indicador': 'racaoHoje' },
+            }),
+            criarBarraLimite({ valor: (acompanhamento.racaoHojeKg / sugestao.racaoDiaKg) * 100, limite: 100 }),
+        );
+    } else {
+        conteudo.push(
+            criarElemento('p', { classe: 'cartao-racao__registrado', texto: `Registrado hoje: ${formatarKg(acompanhamento.racaoHojeKg)}`, atributos: { 'data-indicador': 'racaoHoje' } }),
+            criarElemento('p', { classe: 'cartao-racao__motivo' }, [
+                descricao.textoMotivo,
+                descricao.motivo === 'sem-tabela' && ' ',
+                descricao.motivo === 'sem-tabela' && criarElemento('a', { classe: 'link', texto: 'Escolher a tabela', atributos: { href: montarUrl('tanque-form.html', { id: tanque.id }) } }),
+            ]),
+        );
+    }
+    if (descricao.aviso) {
+        conteudo.push(criarElemento('p', { classe: 'cartao-racao__aviso', texto: descricao.aviso }));
+    } else if (acompanhamento.diasDesdePesagem > DIAS_BIOMETRIA_ANTIGA) {
         conteudo.push(criarElemento('p', {
             classe: 'cartao-racao__aviso',
             texto: `A última biometria tem ${acompanhamento.diasDesdePesagem} dias: pese uma amostra para a ração acompanhar o crescimento.`,
@@ -392,7 +413,7 @@ function criarLinhasTodos({ indicadores, acompanhamento }) {
         ['Peixes (estimado)', formatarInteiro(indicadores.quantidade), 'quantidade', 'Povoamento − mortos encontrados + nascimentos'],
         ['Peso médio', formatarGramas(indicadores.pesoMedioG), null, 'Última biometria (ou o peso do povoamento)'],
         ['Biomassa (estimada)', formatarKg(indicadores.biomassaKg), null, 'Peixes estimados × peso médio'],
-        ['Ração acumulada', formatarKg(indicadores.racaoAcumuladaKg), 'racaoAcumulada', 'Soma da ração registrada no ciclo'],
+        ['Ração consumida', formatarKg(indicadores.racaoAcumuladaKg), 'racaoAcumulada', 'Ração fornecida − sobras, somadas no ciclo'],
         ['Ganho de biomassa (estimado)', formatarKg(indicadores.ganhoBiomassaKg), 'ganhoBiomassa', 'Biomassa atual − biomassa do povoamento'],
         ['FCA (estimada)', formatarFca(indicadores.fca), null, 'Ração acumulada ÷ ganho de biomassa'],
         ['Mortalidade observada', formatarPercentual(indicadores.taxaMortalidade), null, 'Mortos encontrados ÷ peixes do povoamento'],
@@ -400,6 +421,9 @@ function criarLinhasTodos({ indicadores, acompanhamento }) {
         acompanhamento.houveNascimento && ['Natalidade', formatarPercentual(indicadores.taxaNatalidade), 'taxaNatalidade', 'Nascimentos ÷ peixes do povoamento'],
         ['Crescimento', formatarGramasPorDia(indicadores.taxaCrescimentoGDia), null, 'Diferença de peso entre as duas últimas biometrias ÷ dias'],
         ['Crescimento no ciclo', formatarGramasPorDia(indicadores.crescimentoCicloGDia), 'crescimentoCiclo', '(Peso atual − peso do povoamento) ÷ dias até a última biometria'],
+        ['Crescimento específico (TCE)', indicadores.tceCiclo === null ? '—' : `${formatarNumero(indicadores.tceCiclo, 2)}%/dia`, 'tceCiclo', '(ln peso atual − ln peso do povoamento) ÷ dias × 100'],
+        indicadores.fatorCondicao !== null && ['Fator de condição (K)', formatarNumero(indicadores.fatorCondicao, 2), 'fatorCondicao', '100 × peso médio ÷ comprimento médio³ (última biometria com comprimento)'],
+        ['Mortalidade da semana', formatarPercentual(acompanhamento.taxaMortalidadeSemana), 'mortalidadeSemana', 'Mortos dos últimos 7 dias ÷ peixes estimados no início da semana'],
         ['Densidade (estimada)', formatarDensidade(indicadores.densidadeKgM3), 'densidade', 'Biomassa ÷ volume do tanque'],
         ['Capacidade (estimada)', formatarPercentual(indicadores.capacidadeUtilizada), null, 'Biomassa ÷ carga máxima do tanque'],
         ['Densidade de povoamento', `${formatarNumero(indicadores.densidadePovoamento, 1)} peixes/m³`, null, 'Peixes do povoamento ÷ volume'],

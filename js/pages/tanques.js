@@ -8,7 +8,7 @@ import { resolverLimites } from '../domain/alertas.js';
 import { obterLimitesPadrao } from '../domain/configuracoes.js';
 import { lerParametro, montarUrl } from '../ui/nav.js';
 import { criarBarraCapacidade, criarCartaoTanque, criarElemento, mostrarErroPagina } from '../ui/componentes.js';
-import { iniciarPagina } from './comum.js';
+import { descreverRacaoSugerida, iniciarPagina } from './comum.js';
 
 const filtro = document.getElementById('filtro-status');
 const grade = document.getElementById('grade-tanques');
@@ -57,7 +57,8 @@ function criarCartao({ tanque, cicloAtivo, registros, ultimoRegistro }, hoje, li
             { rotulo: 'Peixes (estimado)', valor: formatarInteiro(indicadores?.quantidade) },
             { rotulo: 'Biomassa (estimada)', valor: formatarKg(indicadores?.biomassaKg) },
             { rotulo: 'Último registro', valor: formatarData(ultimoRegistro?.data) },
-        ],
+            cicloAtivo && { rotulo: 'Ração sugerida', valor: descreverRacaoSugerida({ tanque, cicloAtivo, registros }, hoje).textoDia ?? '—' },
+        ].filter(Boolean),
         extra: criarBarra(tanque, indicadores, limitesPadrao),
         acoes: [
             { texto: 'Ver detalhes', href: montarUrl('tanque.html', { id: tanque.id }) },

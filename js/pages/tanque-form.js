@@ -5,8 +5,9 @@ import { paraNumero } from '../core/utils.js';
 import { formatarKg, formatarNumero } from '../core/format.js';
 import { obterSituacao, salvarTanque } from '../domain/tanques.js';
 import { calcularCargaMaximaKg } from '../domain/indicadores.js';
+import { listarTabelas } from '../domain/arracoamento.js';
 import { irPara, lerParametro, montarUrl } from '../ui/nav.js';
-import { iniciarFormulario, limparErroCampo, mostrarErroPagina, preencherFormulario } from '../ui/componentes.js';
+import { criarElemento, iniciarFormulario, limparErroCampo, mostrarErroPagina, preencherFormulario } from '../ui/componentes.js';
 import { iniciarPagina } from './comum.js';
 
 const tanqueId = lerParametro('id');
@@ -24,6 +25,8 @@ try {
 }
 
 function iniciar() {
+    porId('campo-tabela-arracoamento').append(...listarTabelas()
+        .map((tabela) => criarElemento('option', { texto: tabela.nome, atributos: { value: tabela.id } })));
     if (tanqueId) {
         const situacao = obterSituacao(tanqueId);
         if (!situacao) {
@@ -53,6 +56,7 @@ function iniciar() {
                 ...(valores.capacidadeUnidade === 'carga'
                     ? { cargaMaximaKg: paraNumero(valores.cargaMaximaKg) }
                     : { densidadeMaximaKgM3: paraNumero(valores.densidadeMaximaKgM3) }),
+                tabelaArracoamentoId: valores.tabelaArracoamentoId || null,
                 manutencao: Boolean(valores.manutencao),
                 observacoes: valores.observacoes,
             });
@@ -71,6 +75,7 @@ function prepararEdicao({ tanque, cicloAtivo }) {
         nome: tanque.nome,
         especie: tanque.especie,
         volumeM3: tanque.volumeM3,
+        tabelaArracoamentoId: tanque.tabelaArracoamentoId ?? '',
         densidadeMaximaKgM3: arredondar(tanque.densidadeMaximaKgM3, 2),
         cargaMaximaKg: arredondar(carga, 1),
         manutencao: tanque.status === 'manutencao',

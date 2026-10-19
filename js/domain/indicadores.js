@@ -15,6 +15,32 @@ function somar(registros, campo) {
     return registros.reduce((total, registro) => total + valorOuZero(registro[campo]), 0);
 }
 
+// Ração consumida = fornecida − sobra. É a consumida que entra na FCA e nos
+// totais de ração (Embrapa, manejos na criação de tilápia, Queiroz, 2019).
+export function calcularRacaoConsumida(registro) {
+    return Math.max(valorOuZero(registro.racaoKg) - valorOuZero(registro.racaoSobraKg), 0);
+}
+
+function somarRacaoConsumida(registros) {
+    return registros.reduce((total, registro) => total + calcularRacaoConsumida(registro), 0);
+}
+
+// Convenções de escala (seção 13): a literatura usa TCE e K com e sem o fator
+// 100. Fica centralizado aqui para trocar se o laboratório usar outra forma.
+export const FATOR_TCE = 100;
+export const FATOR_K = 100;
+
+// TCE (%/dia) = (ln peso final − ln peso inicial) ÷ dias × 100 (Ricker, 1979;
+// Redalyc, crescimento de carpas).
+export function calcularTce(pesoInicialG, pesoFinalG, dias) {
+    return dias > 0 && pesoInicialG > 0 && pesoFinalG > 0 ? ((Math.log(pesoFinalG) - Math.log(pesoInicialG)) / dias) * FATOR_TCE : null;
+}
+
+// Fator de condição de Fulton: K = 100 × peso (g) ÷ comprimento (cm)³ (Redalyc, crescimento de carpas).
+export function calcularFatorCondicao(pesoG, comprimentoCm) {
+    return pesoG > 0 && comprimentoCm > 0 ? (FATOR_K * pesoG) / comprimentoCm ** 3 : null;
+}
+
 export function ordenarRegistros(registros) {
     // RN15 permite vários registros na mesma data; a ordem de criação desempata.
     return [...registros].sort((a, b) => a.data.localeCompare(b.data) || a.criadoEm.localeCompare(b.criadoEm));
@@ -65,8 +91,8 @@ export function calcularLinhaDoTempo(ciclo, registros) {
             dia.pesoMedioG = registro.pesoMedioG;
             dia.pesou = true;
         }
-        dia.racaoDiaKg += valorOuZero(registro.racaoKg);
-        dia.racaoAcumuladaKg += valorOuZero(registro.racaoKg);
+        dia.racaoDiaKg += calcularRacaoConsumida(registro);
+        dia.racaoAcumuladaKg += calcularRacaoConsumida(registro);
         dia.mortalidadeDia += valorOuZero(registro.mortalidade);
         dia.mortalidadeAcumulada += valorOuZero(registro.mortalidade);
     }
@@ -85,11 +111,16 @@ export function calcularIndicadores({ tanque, ciclo, registros, hoje }) {
     const pesagemAtual = pesagens.at(-1);
     const pesoMedioG = pesagemAtual.pesoMedioG;
 
+    // Biomassa = peixes × peso médio (Embrapa, cálculo de povoamento de viveiros, 2015).
     const biomassaKg = (quantidade * pesoMedioG) / 1000;
     const cargaMaximaKg = calcularCargaMaximaKg(tanque.densidadeMaximaKgM3, tanque.volumeM3);
-    const biomassaInicialKg = (ciclo.quantidadeInicial * ciclo.pesoMedioInicialG) / 1000;
+    const biomassaInicialKg = obterBiomassaInicialKg(ciclo);
     const ganhoBiomassaKg = biomassaKg - biomassaInicialKg;
-    const racaoAcumuladaKg = somar(ordenados, 'racaoKg');
+    const racaoAcumuladaKg = somarRacaoConsumida(ordenados);
+    const diasCultivo = diasEntre(ciclo.dataInicio, ciclo.dataDespesca ?? hoje);
+    // Comprimento só vem da última biometria por amostra que o informou.
+    const comAmostra = ordenados.filter((registro) => registro.biometria?.comprimentoMedioCm);
+    const ultimaComComprimento = comAmostra.at(-1) ?? null;
     const mortalidadeAcumulada = somar(ordenados, 'mortalidade');
     const natalidadeAcumulada = somar(ordenados, 'natalidade');
     const taxaMortalidade = (mortalidadeAcumulada / ciclo.quantidadeInicial) * 100;
@@ -116,8 +147,48 @@ export function calcularIndicadores({ tanque, ciclo, registros, hoje }) {
         capacidadeUtilizada: cargaMaximaKg ? (biomassaKg / cargaMaximaKg) * 100 : null,
         projecaoDiasLimite: calcularProjecaoLimite(ciclo, ordenados, cargaMaximaKg, biomassaKg),
         densidadePovoamento: ciclo.quantidadeInicial / tanque.volumeM3,
-        diasCultivo: diasEntre(ciclo.dataInicio, ciclo.dataDespesca ?? hoje),
+        diasCultivo,
+        tceCiclo: calcularTce(ciclo.pesoMedioInicialG, pesoMedioG, diasEntre(ciclo.dataInicio, pesagemAtual.data)),
+        fatorCondicao: ultimaComComprimento
+            ? calcularFatorCondicao(ultimaComComprimento.pesoMedioG, ultimaComComprimento.biometria.comprimentoMedioCm)
+            : null,
         ultimoRegistro: ordenados.at(-1) ?? null,
+    };
+}
+
+// Ciclos novos guardam a biomassa do povoamento (contada ou pesada); a conta é só para garantia.
+function obterBiomassaInicialKg(ciclo) {
+    return ciclo.biomassaInicialKg ?? (ciclo.quantidadeInicial * ciclo.pesoMedioInicialG) / 1000;
+}
+
+// Ração sugerida (seção 9.10): biomassa × taxa da faixa de peso ÷ refeições
+// (Embrapa, Comunicado Técnico 12: 1.880 peixes × 542,5 g → 19,4 kg/dia).
+// Sem como calcular, devolve { sugestao: null, motivo }.
+export function calcularRacaoSugerida({ indicadores, tabela, houvePesagem = true }) {
+    if (!tabela) {
+        return { sugestao: null, motivo: 'sem-tabela' };
+    }
+    if (!houvePesagem) {
+        return { sugestao: null, motivo: 'sem-biometria' };
+    }
+    const peso = indicadores.pesoMedioG;
+    // A faixa inclui o "de" e vai até antes do "até"; o peso exato do fim da última faixa ainda vale.
+    const ultima = tabela.faixas.at(-1);
+    const faixa = tabela.faixas.find((item) => peso >= item.pesoDeG && peso < item.pesoAteG)
+        ?? (ultima && peso === ultima.pesoAteG ? ultima : null);
+    if (!faixa) {
+        return { sugestao: null, motivo: 'fora-da-tabela' };
+    }
+    const racaoDiaKg = (indicadores.biomassaKg * faixa.taxaPct) / 100;
+    return {
+        sugestao: {
+            racaoDiaKg,
+            racaoRefeicaoKg: racaoDiaKg / faixa.refeicoes,
+            refeicoes: faixa.refeicoes,
+            faixa,
+            dataBiometria: indicadores.dataPesoAtual,
+        },
+        motivo: null,
     };
 }
 
@@ -127,7 +198,7 @@ export function calcularIndicadores({ tanque, ciclo, registros, hoje }) {
 // As fórmulas ficam todas aqui porque ainda serão confirmadas com o
 // laboratório que testa o app (seção 13).
 export function calcularResultadoCiclo({ tanque, ciclo, registros }) {
-    const biomassaInicialKg = (ciclo.quantidadeInicial * ciclo.pesoMedioInicialG) / 1000;
+    const biomassaInicialKg = obterBiomassaInicialKg(ciclo);
     // Sem contagem na despesca, a quantidade final sai da biomassa pesada e do peso médio da amostra.
     const quantidadeFinalEstimada = !informado(ciclo.quantidadeDespescada);
     const quantidadeFinal = quantidadeFinalEstimada
@@ -136,7 +207,7 @@ export function calcularResultadoCiclo({ tanque, ciclo, registros }) {
     const sobrevivenciaReal = (quantidadeFinal / ciclo.quantidadeInicial) * 100;
     const mortosEncontrados = registros.reduce((total, registro) => total + valorOuZero(registro.mortalidade), 0);
     const ganhoBiomassaKg = ciclo.biomassaFinalKg - biomassaInicialKg;
-    const racaoTotalKg = registros.reduce((total, registro) => total + valorOuZero(registro.racaoKg), 0);
+    const racaoTotalKg = somarRacaoConsumida(registros);
     const diasCultivo = diasEntre(ciclo.dataInicio, ciclo.dataDespesca);
     return {
         biomassaInicialKg,
@@ -154,6 +225,7 @@ export function calcularResultadoCiclo({ tanque, ciclo, registros }) {
         diasCultivo,
         ganhoPesoDiarioG: diasCultivo > 0 ? (ciclo.pesoMedioFinalG - ciclo.pesoMedioInicialG) / diasCultivo : null,
         produtividadeKgM3: ciclo.biomassaFinalKg / tanque.volumeM3,
+        tceCiclo: calcularTce(ciclo.pesoMedioInicialG, ciclo.pesoMedioFinalG, diasCultivo),
     };
 }
 
@@ -162,6 +234,8 @@ export function calcularResultadoCiclo({ tanque, ciclo, registros }) {
 export function calcularAcompanhamento({ ciclo, registros, indicadores, hoje }) {
     const semana = calcularSerieDiaria(ciclo, registros, somarDias(hoje, -7), hoje).filter(Boolean);
     const mortosSemana = semana.slice(1).reduce((total, dia) => total + dia.mortalidadeDia, 0);
+    // Mortalidade da semana: mortos dos últimos 7 dias ÷ peixes estimados no início da semana.
+    const peixesInicioSemana = semana[0]?.quantidade ?? ciclo.quantidadeInicial;
     // Peso alvo no ritmo das duas últimas pesagens, contado a partir da última.
     let dataPesoAlvo = null;
     if (ciclo.pesoAlvoG && indicadores.taxaCrescimentoGDia > 0 && indicadores.pesoMedioG < ciclo.pesoAlvoG) {
@@ -169,7 +243,7 @@ export function calcularAcompanhamento({ ciclo, registros, indicadores, hoje }) 
     }
     return {
         ganhoBiomassaSemanaKg: semana.length > 1 ? semana.at(-1).biomassaKg - semana[0].biomassaKg : null,
-        taxaMortalidadeSemana: (mortosSemana / ciclo.quantidadeInicial) * 100,
+        taxaMortalidadeSemana: peixesInicioSemana > 0 ? (mortosSemana / peixesInicioSemana) * 100 : null,
         racaoHojeKg: registros.filter((registro) => registro.data === hoje).reduce((total, registro) => total + valorOuZero(registro.racaoKg), 0),
         diasDesdePesagem: diasEntre(indicadores.dataPesoAtual, hoje),
         houvePesagem: registros.some((registro) => informado(registro.pesoMedioG)),

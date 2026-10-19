@@ -4,7 +4,7 @@
 // Os dados do produtor ficam no localStorage e não passam por aqui.
 
 // Ao mudar a lista de arquivos, troque a versão para descartar o cache antigo.
-const VERSAO_CACHE = 'fish-track-v6';
+const VERSAO_CACHE = 'fish-track-v7';
 const ARQUIVOS = [
     './',
     'index.html',
@@ -31,6 +31,7 @@ const ARQUIVOS = [
     'js/domain/indicadores.js',
     'js/domain/lembretes.js',
     'js/domain/alertas.js',
+    'js/domain/arracoamento.js',
     'js/domain/configuracoes.js',
     'js/domain/validacao.js',
     'js/ui/nav.js',

@@ -121,6 +121,49 @@
             </form>
         </section>
 
+        <section class="secao" aria-labelledby="titulo-tabelas">
+            <h2 class="secao__titulo" id="titulo-tabelas">Tabelas de alimentação</h2>
+            <p class="secao__descricao">Para cada faixa de peso, a taxa de arraçoamento (% da biomassa por dia) e as refeições. Cada tanque escolhe a sua, em Editar tanque, e o app sugere a ração do dia. A taxa depende da espécie, da ração e da temperatura. Use a tabela do fabricante da ração ou do seu técnico.</p>
+
+            <ul class="lista-tabelas" id="lista-tabelas"></ul>
+
+            <div class="secao__acoes">
+                <button class="botao botao--primario" id="botao-nova-tabela" type="button">Nova tabela</button>
+                <button class="botao botao--secundario" id="botao-modelo-tabela" type="button">Carregar modelo</button>
+            </div>
+            <p class="mensagem" id="mensagem-tabelas" role="status"></p>
+
+            <form class="formulario editor-tabela" id="formulario-tabela" novalidate hidden>
+                <h3 class="editor-tabela__titulo" id="titulo-editor-tabela">Nova tabela</h3>
+                <input type="hidden" name="id">
+                <div class="campo">
+                    <label class="campo__rotulo" for="campo-nome-tabela">Nome da tabela</label>
+                    <input class="campo__input" id="campo-nome-tabela" name="nome" type="text" maxlength="80" autocomplete="off" aria-describedby="erro-nome-tabela">
+                    <p class="campo__erro" id="erro-nome-tabela"></p>
+                </div>
+                <div class="tabela-rolagem">
+                    <table class="tabela editor-tabela__faixas">
+                        <thead>
+                            <tr>
+                                <th scope="col">Peso de (g)</th>
+                                <th scope="col">Peso até (g)</th>
+                                <th scope="col">Taxa (% da biomassa/dia)</th>
+                                <th scope="col">Refeições por dia</th>
+                                <th scope="col"><span class="visualmente-oculto">Ações</span></th>
+                            </tr>
+                        </thead>
+                        <tbody id="corpo-faixas"></tbody>
+                    </table>
+                </div>
+                <button class="botao botao--secundario botao--pequeno editor-tabela__adicionar" id="botao-adicionar-faixa" type="button">Adicionar faixa</button>
+                <p class="formulario__erro-geral" id="erro-geral-tabela" role="alert" hidden></p>
+                <div class="formulario__acoes">
+                    <button class="botao botao--secundario" id="botao-cancelar-tabela" type="button">Cancelar</button>
+                    <button class="botao botao--primario" type="submit">Salvar tabela</button>
+                </div>
+            </form>
+        </section>
+
         <section class="secao" aria-labelledby="titulo-exportar">
             <h2 class="secao__titulo" id="titulo-exportar">Exportar planilhas (CSV)</h2>
             <p class="secao__descricao">Planilhas prontas para abrir no Excel: uma linha por registro ou uma linha por lembrete.</p>

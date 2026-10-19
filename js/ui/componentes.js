@@ -319,7 +319,7 @@ export function criarResumoCiclo(resultado, anterior = null) {
             `${pluralizar(resultado.mortalidadeNaoObservada, 'não observado', 'não observados')} · ${pluralizar(resultado.mortosEncontrados, 'encontrado', 'encontrados')}`],
         ['Biomassa final', formatarKg(resultado.biomassaFinalKg), `ganho de ${formatarKg(resultado.ganhoBiomassaKg)}`],
         ['FCA final', comparar(resultado.fcaFinal, formatarFca, 'fcaFinal'), `${formatarKg(resultado.racaoTotalKg)} de ração`],
-        ['Ganho de peso diário', formatarGramasPorDia(resultado.ganhoPesoDiarioG), ''],
+        ['Ganho de peso diário', formatarGramasPorDia(resultado.ganhoPesoDiarioG), resultado.tceCiclo === null ? '' : `TCE de ${formatarNumero(resultado.tceCiclo, 2)}%/dia`],
         ['Produtividade', `${formatarNumero(resultado.produtividadeKgM3, 2)} kg/m³`, ''],
         ['Dias de cultivo', comparar(resultado.diasCultivo, formatarInteiro, 'diasCultivo'), ''],
     ];

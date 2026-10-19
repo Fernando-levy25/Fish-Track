@@ -3,10 +3,18 @@
 import { lerDados, salvarDados } from '../core/storage.js';
 import { agoraISO, gerarId, hojeISO, limparTexto } from '../core/utils.js';
 import { formatarData, formatarGramas, formatarInteiro, formatarKg, pluralizar } from '../core/format.js';
-import { encontrarMortalidadeAcimaDoEstoque, ordenarRegistros } from './indicadores.js';
+import { calcularEstoquePorRegistro, encontrarMortalidadeAcimaDoEstoque, ordenarRegistros } from './indicadores.js';
 import { ErroValidacao, falharRegra, lancarSeHouverErros, validarData, validarNumero, validarTexto } from './validacao.js';
 
 const CAMPOS_MEDICAO = ['pesoMedioG', 'racaoKg', 'mortalidade', 'natalidade'];
+export const CAUSAS_MORTALIDADE = Object.freeze({
+    desconhecida: 'Desconhecida',
+    manejo: 'Manejo',
+    predacao: 'Predação',
+    doenca: 'Doença',
+    'qualidade-agua': 'Qualidade da água',
+    outra: 'Outra',
+});
 const TAMANHO_MAXIMO_OBSERVACOES = 500;
 
 function informado(valor) {
@@ -27,11 +35,15 @@ export function resumirRegistro(registro) {
     if (informado(registro.pesoMedioG)) {
         partes.push(`Peso ${formatarGramas(registro.pesoMedioG)}`);
     }
+    if (registro.biometria) {
+        partes.push(`amostra de ${pluralizar(registro.biometria.peixesAmostra, 'peixe', 'peixes')}`);
+    }
     if (informado(registro.racaoKg)) {
-        partes.push(`Ração ${formatarKg(registro.racaoKg)}`);
+        partes.push(`Ração ${formatarKg(registro.racaoKg)}${informado(registro.racaoSobraKg) ? ` (sobra ${formatarKg(registro.racaoSobraKg)})` : ''}`);
     }
     if (informado(registro.mortalidade)) {
-        partes.push(pluralizar(registro.mortalidade, 'morto', 'mortos'));
+        const causa = registro.causaMortalidade ? ` (${CAUSAS_MORTALIDADE[registro.causaMortalidade].toLowerCase()})` : '';
+        partes.push(`${pluralizar(registro.mortalidade, 'morto', 'mortos')}${causa}`);
     }
     if (informado(registro.natalidade)) {
         partes.push(pluralizar(registro.natalidade, 'nascimento', 'nascimentos'));
@@ -64,13 +76,30 @@ export function salvarRegistro(entrada) {
             : 'Este tanque não tem ciclo ativo. Inicie um ciclo antes de fazer registros.');
     }
 
+    // RN22: biometria por amostra. O peso médio sai do peso da amostra dividido
+    // pelos peixes pesados (Embrapa, manejos na criação de tilápia, Queiroz, 2019).
+    const amostra = entrada.biometria ?? null;
+    const temAmostra = Boolean(amostra) && [amostra.peixesAmostra, amostra.pesoAmostraG, amostra.comprimentoMedioCm].some(informado);
+    const errosAmostra = temAmostra ? {
+        peixesAmostra: validarNumero(amostra.peixesAmostra ?? null, { rotulo: 'os peixes na amostra', obrigatorio: true, positivo: true, inteiro: true }),
+        pesoAmostraG: validarNumero(amostra.pesoAmostraG ?? null, { rotulo: 'o peso da amostra', obrigatorio: true, positivo: true }),
+        comprimentoMedioCm: validarNumero(amostra.comprimentoMedioCm ?? null, { positivo: true }),
+    } : {};
+    const amostraValida = temAmostra && !Object.values(errosAmostra).some(Boolean);
+    const biometria = amostraValida
+        ? { peixesAmostra: amostra.peixesAmostra, pesoAmostraG: amostra.pesoAmostraG, comprimentoMedioCm: amostra.comprimentoMedioCm ?? null }
+        : null;
+
     const registro = {
         id: existente?.id ?? gerarId(),
         cicloId: ciclo.id,
         tanqueId,
         data: entrada.data,
-        pesoMedioG: entrada.pesoMedioG ?? null,
+        pesoMedioG: biometria ? biometria.pesoAmostraG / biometria.peixesAmostra : entrada.pesoMedioG ?? null,
+        biometria,
         racaoKg: entrada.racaoKg ?? null,
+        racaoSobraKg: entrada.racaoSobraKg ?? null,
+        causaMortalidade: entrada.causaMortalidade || null,
         mortalidade: entrada.mortalidade ?? null,
         natalidade: entrada.natalidade ?? null,
         observacoes: limparTexto(entrada.observacoes),
@@ -93,6 +122,14 @@ export function salvarRegistro(entrada) {
         mortalidade: validarNumero(registro.mortalidade, { minimo: 0, inteiro: true }),
         natalidade: validarNumero(registro.natalidade, { minimo: 0, inteiro: true }),
         observacoes: validarTexto(registro.observacoes, { maximo: TAMANHO_MAXIMO_OBSERVACOES }),
+        ...errosAmostra,
+        // RN23: a sobra é parte da ração fornecida.
+        racaoSobraKg: validarNumero(registro.racaoSobraKg, { minimo: 0 })
+            ?? (informado(registro.racaoSobraKg) && !informado(registro.racaoKg) ? 'Informe a ração fornecida para registrar a sobra.' : null)
+            ?? (informado(registro.racaoSobraKg) && registro.racaoSobraKg > registro.racaoKg ? 'A sobra não pode ser maior que a ração fornecida.' : null),
+        causaMortalidade: registro.causaMortalidade && !(registro.causaMortalidade in CAUSAS_MORTALIDADE)
+            ? 'Escolha uma das causas da lista.'
+            : registro.causaMortalidade && !(registro.mortalidade > 0) ? 'Informe os mortos encontrados para registrar a causa.' : null,
     });
     // RN11
     if (!CAMPOS_MEDICAO.some((campo) => informado(registro[campo])) && registro.observacoes === '') {
@@ -100,6 +137,13 @@ export function salvarRegistro(entrada) {
     }
     const outros = dados.registros.filter((item) => item.cicloId === ciclo.id && item.id !== registro.id);
     validarEstoque(ciclo, [...outros, registro], { idAlterado: registro.id, acao: 'alteração' });
+    // RN22: não se pesam mais peixes do que os que estão (estimados) no tanque.
+    if (biometria) {
+        const { quantidadeAntes } = calcularEstoquePorRegistro(ciclo, [...outros, registro]).find((item) => item.registro.id === registro.id);
+        if (biometria.peixesAmostra > quantidadeAntes) {
+            throw new ErroValidacao({ peixesAmostra: `A amostra não pode passar da quantidade estimada no tanque (${formatarInteiro(quantidadeAntes)}).` });
+        }
+    }
 
     if (existente) {
         Object.assign(existente, registro);

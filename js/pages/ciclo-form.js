@@ -67,12 +67,15 @@ function prepararInicio({ tanque }, urlTanque) {
     data.value = hoje;
     data.max = hoje;
 
+    configurarModoPovoamento(porId('formulario-iniciar-ciclo'));
     iniciarFormulario(porId('formulario-iniciar-ciclo'), {
         erroGeral: porId('erro-geral-iniciar-ciclo'),
         aoEnviar: (valores) => {
             iniciarCiclo(tanque.id, {
                 dataInicio: valores.dataInicio,
+                modoPovoamento: valores.modoPovoamento,
                 quantidadeInicial: paraNumero(valores.quantidadeInicial),
+                biomassaInicialKg: paraNumero(valores.biomassaInicialKg),
                 pesoMedioInicialG: paraNumero(valores.pesoMedioInicialG),
                 pesoAlvoG: paraNumero(valores.pesoAlvoG),
                 dataPrevistaDespesca: valores.dataPrevistaDespesca,
@@ -115,4 +118,27 @@ function prepararDespesca({ tanque, cicloAtivo, registros }, urlTanque) {
             irPara(montarUrl('tanque.html', { id: tanque.id, despesca: 1 }));
         },
     });
+}
+
+// "Contei os peixes" ou "Pesei o lote" (RN21): o valor que falta aparece ao
+// vivo, abaixo dos campos, enquanto o produtor digita.
+function configurarModoPovoamento(formulario) {
+    const atualizar = () => {
+        const pesagem = formulario.querySelector('[name="modoPovoamento"]:checked').value === 'pesagem';
+        porId('grupo-quantidade-inicial').hidden = pesagem;
+        porId('grupo-biomassa-inicial').hidden = !pesagem;
+        const peso = paraNumero(porId('campo-peso-inicial').value);
+        const quantidade = paraNumero(porId('campo-quantidade-inicial').value);
+        const biomassa = paraNumero(porId('campo-biomassa-inicial').value);
+        let texto = '';
+        if (pesagem && biomassa > 0 && peso > 0) {
+            texto = `≈ ${formatarInteiro(Math.round((biomassa * 1000) / peso))} peixes (estimado)`;
+        } else if (!pesagem && quantidade > 0 && peso > 0) {
+            texto = `Biomassa inicial: ${formatarKg((quantidade * peso) / 1000)}`;
+        }
+        porId('resultado-povoamento').textContent = texto;
+    };
+    formulario.addEventListener('input', atualizar);
+    formulario.addEventListener('change', atualizar);
+    atualizar();
 }

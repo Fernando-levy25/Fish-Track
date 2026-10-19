@@ -184,7 +184,7 @@ function montarRelatorioGeral(situacoes) {
                 { rotulo: 'Tanques em cultivo', valor: formatarInteiro(resumo.tanquesAtivos), apoio: `de ${pluralizar(situacoes.length, 'tanque cadastrado', 'tanques cadastrados')}` },
                 { rotulo: 'Peixes (estimado)', valor: formatarInteiro(resumo.totalPeixes) },
                 { rotulo: 'Biomassa (estimada)', valor: formatarKg(resumo.biomassaTotalKg) },
-                { rotulo: 'Ração fornecida', valor: formatarKg(resumo.racaoAcumuladaKg), apoio: 'nos ciclos em andamento' },
+                { rotulo: 'Ração consumida', valor: formatarKg(resumo.racaoAcumuladaKg), apoio: 'nos ciclos em andamento' },
                 { rotulo: 'Mortalidade média', valor: formatarPercentual(resumo.mortalidadeMedia), apoio: 'ponderada pelo povoamento' },
                 { rotulo: 'Alertas', valor: formatarInteiro(alertas.length), apoio: alertas.length > 0 ? 'detalhes no fim do relatório' : 'nenhum no momento' },
             ]),

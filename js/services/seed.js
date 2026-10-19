@@ -9,6 +9,7 @@ import { arquivarTanque, salvarTanque } from '../domain/tanques.js';
 import { iniciarCiclo, registrarDespesca } from '../domain/ciclos.js';
 import { salvarRegistro } from '../domain/registros.js';
 import { alternarConclusao, salvarLembrete } from '../domain/lembretes.js';
+import { carregarModeloEmbrapa } from '../domain/arracoamento.js';
 
 const SEMENTE = 20261016;
 const OBSERVACOES = [
@@ -37,9 +38,12 @@ function criarExemplo(hoje) {
     const sortear = criarSorteio(SEMENTE);
     const dia = (deslocamento) => somarDias(hoje, deslocamento);
 
-    // Bom crescimento. Capacidade informada como carga total.
+    // Tabela de alimentação de exemplo (seção 9.10), usada pelo Tanque 01.
+    const tabelaEmbrapa = carregarModeloEmbrapa();
+
+    // Bom crescimento. Capacidade informada como carga total; ração sugerida pela tabela.
     const tanque01 = salvarTanque({
-        nome: 'Tanque 01', especie: 'Tilápia', volumeM3: 300, cargaMaximaKg: 1200,
+        nome: 'Tanque 01', especie: 'Tilápia', volumeM3: 300, cargaMaximaKg: 1200, tabelaArracoamentoId: tabelaEmbrapa.id,
         observacoes: 'Viveiro escavado, com aerador de pás.',
     });
     simularCiclo(tanque01.id, {
@@ -129,10 +133,25 @@ function simularCiclo(tanqueId, {
             racaoKg: arredondar(ganhoKg * (1.3 + sortear() * 0.3), 1),
         };
         if (dia % 7 === 0) {
-            registro.pesoMedioG = arredondar(pesoNoDia(dia) * (0.97 + sortear() * 0.06), 1);
+            const pesoMedioG = arredondar(pesoNoDia(dia) * (0.97 + sortear() * 0.06), 1);
+            // Biometrias a cada 14 dias são por amostra de 50 peixes, algumas com comprimento.
+            if (dia % 14 === 0) {
+                registro.biometria = {
+                    peixesAmostra: 50,
+                    pesoAmostraG: arredondar(pesoMedioG * 50, 0),
+                    comprimentoMedioCm: dia % 28 === 0 ? arredondar(4.6 * Math.cbrt(pesoMedioG), 1) : null,
+                };
+            } else {
+                registro.pesoMedioG = pesoMedioG;
+            }
+        }
+        // De vez em quando sobra ração (pesada e anotada).
+        if (dia % 9 === 0) {
+            registro.racaoSobraKg = arredondar(registro.racaoKg * 0.06, 1);
         }
         if (sortear() < 0.25) {
             registro.mortalidade = 1 + Math.floor(sortear() * 3);
+            registro.causaMortalidade = ['desconhecida', 'manejo', 'predacao'][dia % 3];
         }
         if (sortear() < 0.06) {
             registro.observacoes = OBSERVACOES[Math.floor(sortear() * OBSERVACOES.length)];
