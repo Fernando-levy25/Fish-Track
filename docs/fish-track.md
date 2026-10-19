@@ -160,6 +160,8 @@ Visão geral de toda a produção. A versão principal é a de computador; no ce
 
 ### 7.11 Menu lateral
 
+**Logo:** gota d'água com três barras subindo (a água do viveiro e a produção que cresce). No menu escuro a gota fica verde-água com as barras escuras; no fundo claro, gota verde-petróleo com barras verde-água. Arquivos em `assets/icons/`: `icone.svg`, `icone-192.png`, `icone-512.png` e `icone-maskable-512.png` (gota na zona segura central, sobre fundo claro); as propostas originais ficam em `docs/logo/`.
+
 Em telas largas, coluna escura com a marca, o botão "Novo registro", a navegação com ícones (Visão geral, Tanques e Alertas com contadores, Agenda, Relatórios, Configurações), os **Lembretes de hoje** (seção 7.8: checkbox para concluir, contador "1 de 3", atrasados com o selo "Atrasado", até cinco itens e o link "Adicionar lembrete") e um rodapé com o estado do uso offline e o tempo desde o último backup (em âmbar depois de 7 dias, com o link "Fazer backup agora"). No celular, vira a barra inferior com "Mais".
 
 ### 7.2 Tanques (`tanques.html`)
@@ -589,7 +591,7 @@ fish-track/
 │       └── configuracoes.js
 │
 ├── assets/
-│   ├── icons/                # Ícones SVG e ícones do PWA
+│   ├── icons/                # Logo (icone.svg), PNG 192/512 e versão maskable do PWA
 │   └── fonts/                # Figtree e Bricolage Grotesque (woff2, licença OFL)
 │
 ├── tests/

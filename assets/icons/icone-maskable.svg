@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+    <!-- Versão "maskable": fundo inteiro e a gota na zona segura central, que o Android recorta em vários formatos. -->
+    <rect width="64" height="64" fill="#f3f2ec"/>
+    <g transform="translate(32 33) scale(0.62) translate(-32 -30)">
+        <path d="M32 5C27 12 11 27 11 40a21 21 0 0 0 42 0C53 27 37 12 32 5Z" fill="#0e5a52"/>
+        <g fill="#5fd0b4"><rect x="20" y="40" width="6.5" height="11" rx="2"/><rect x="28.75" y="34" width="6.5" height="17" rx="2"/><rect x="37.5" y="27" width="6.5" height="24" rx="2"/></g>
+    </g>
+</svg>

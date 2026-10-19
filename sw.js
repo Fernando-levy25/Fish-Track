@@ -4,7 +4,7 @@
 // Os dados do produtor ficam no localStorage e não passam por aqui.
 
 // Ao mudar a lista de arquivos, troque a versão para descartar o cache antigo.
-const VERSAO_CACHE = 'fish-track-v5';
+const VERSAO_CACHE = 'fish-track-v6';
 const ARQUIVOS = [
     './',
     'index.html',
@@ -55,6 +55,7 @@ const ARQUIVOS = [
     'assets/icons/icone.svg',
     'assets/icons/icone-192.png',
     'assets/icons/icone-512.png',
+    'assets/icons/icone-maskable-512.png',
     'assets/fonts/figtree.woff2',
     'assets/fonts/bricolage-grotesque.woff2',
 ];

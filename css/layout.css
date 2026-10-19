@@ -35,6 +35,15 @@ body {
     height: 2rem;
 }
 
+/* Logo (gota com barras): cores por contexto, porque o menu do computador é escuro. */
+.logo__gota {
+    fill: var(--cor-primaria);
+}
+
+.logo__barras {
+    fill: var(--cor-menu-destaque);
+}
+
 .cabecalho__nome {
     display: grid;
     line-height: 1.15;
@@ -437,6 +446,14 @@ body {
         border-bottom: 0;
         background: var(--cor-menu-fundo);
         overflow-y: auto;
+    }
+
+    .cabecalho__simbolo .logo__gota {
+        fill: var(--cor-menu-destaque);
+    }
+
+    .cabecalho__simbolo .logo__barras {
+        fill: var(--cor-menu-fundo);
     }
 
     .cabecalho__marca {
