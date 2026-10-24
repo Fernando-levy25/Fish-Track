@@ -1491,6 +1491,10 @@
     background: var(--cor-superficie);
 }
 
+.quadro__item--lembrete {
+    border-left: 3px solid var(--cor-borda-forte);
+}
+
 .quadro__item--alerta {
     border-left: 3px solid var(--cor-perigo);
 }
@@ -2554,6 +2558,11 @@
     gap: var(--espaco-2);
 }
 
+.campo__com-unidade .segmentado {
+    flex: none;
+    flex-wrap: nowrap;
+}
+
 .campo__com-unidade .campo__input {
     flex: 1 1 auto;
     min-width: 0;
@@ -2613,30 +2622,389 @@
     gap: var(--espaco-4);
 }
 
-.lista-tabelas__acoes .link,
-.editor-tabela__faixas .link {
+.lista-tabelas__acoes .link {
     min-height: var(--altura-toque);
 }
 
-.editor-tabela {
-    padding: var(--espaco-4);
-    border: 1px solid var(--cor-primaria);
-    border-radius: var(--raio-grande);
+
+
+
+
+
+/* ---------- Campo com unidade e diálogo largo (seções 7.13 e 7.14) ---------- */
+
+.campo__conversao {
+    color: var(--cor-primaria-escura);
+    font-size: var(--texto-2);
+    font-weight: 600;
+}
+
+.campo__conversao:empty {
+    display: none;
+}
+
+.campo__input--curto {
+    width: 6.5rem;
+    min-width: 0;
+}
+
+.dialogo--largo {
+    width: min(56rem, calc(100% - 2 * var(--espaco-4)));
+}
+
+.dialogo--largo .formulario {
+    max-width: none;
+}
+
+.peso-registro {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--espaco-2) var(--espaco-4);
+    padding: var(--espaco-3) var(--espaco-4);
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio);
+    background: var(--cor-superficie-suave);
+}
+
+.cartao-indicador__acao {
+    justify-self: start;
+    margin-top: var(--espaco-2);
+}
+
+.cartao-racao__plano {
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-2);
+}
+
+.tabela__linha--biometria td {
+    background: var(--cor-info-suave);
+}
+
+/* ---------- Painel de biometria (seção 7.13) ---------- */
+
+.painel-biometria {
+    width: min(60rem, calc(100% - 2 * var(--espaco-4)));
+    max-height: calc(100dvh - 2 * var(--espaco-4));
+    overflow-y: auto;
+}
+
+/* O tanque fica fixo e em destaque no topo: não há dúvida de qual se está pesando. */
+.painel-biometria__topo {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: start;
+    gap: var(--espaco-3);
+    padding: var(--espaco-4) var(--espaco-5);
+    border-bottom: 1px solid var(--cor-borda);
     background: var(--cor-superficie);
 }
 
-.editor-tabela__titulo {
-    font-size: var(--texto-5);
+.painel-biometria__faixa {
+    align-self: stretch;
+    width: 6px;
+    border-radius: 3px;
+    background: var(--cor-serie, var(--cor-primaria));
 }
 
-.editor-tabela__faixas td {
-    padding: var(--espaco-1) var(--espaco-2);
+.painel-biometria__rotulo,
+.painel-biometria__detalhe {
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-2);
 }
 
-.campo__input--compacto {
-    min-width: 5.5rem;
+.painel-biometria__nome {
+    font-size: var(--texto-7);
+    line-height: 1.1;
 }
 
-.editor-tabela__adicionar {
+.painel-biometria__troca {
+    color: var(--cor-primaria-escura);
+    font-weight: 700;
+}
+
+.painel-biometria__troca:empty {
+    display: none;
+}
+
+/* Na rodada de biometria, a troca de tanque pisca de leve no topo. */
+.painel-biometria__topo--troca {
+    animation: troca-tanque var(--duracao-lenta) var(--curva-saida);
+}
+
+@keyframes troca-tanque {
+    from {
+        background: var(--cor-primaria-suave);
+        transform: translateY(-4px);
+    }
+}
+
+.painel-biometria__corpo {
+    display: grid;
+    gap: var(--espaco-5);
+    padding: var(--espaco-4) var(--espaco-5) var(--espaco-5);
+}
+
+.painel-biometria__modo {
+    display: grid;
+    gap: var(--espaco-3);
+}
+
+.painel-biometria__alternar,
+.painel-biometria__comprimento summary,
+.painel-biometria__modo .campo > .link {
     justify-self: start;
+    min-height: var(--altura-toque);
+}
+
+.painel-biometria__previa {
+    align-self: start;
+    display: grid;
+    gap: var(--espaco-2);
+    padding: var(--espaco-4);
+    border: 1px solid var(--cor-primaria);
+    border-radius: var(--raio-grande);
+    background: var(--cor-primaria-suave);
+}
+
+.previa__titulo {
+    font-size: var(--texto-4);
+}
+
+.previa__lista {
+    display: grid;
+    gap: var(--espaco-2);
+    margin: 0;
+}
+
+.previa__linha {
+    display: grid;
+    gap: 2px;
+}
+
+.previa__linha dt {
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-1);
+    font-weight: 600;
+}
+
+.previa__linha dd {
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+}
+
+.previa__linha--destaque dd {
+    font-family: var(--fonte-titulo);
+    font-size: var(--texto-6);
+    font-weight: 650;
+}
+
+.previa__linha--atencao dd,
+.previa__aviso {
+    color: var(--cor-atencao);
+    font-weight: 600;
+}
+
+.previa__vazia {
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-2);
+}
+
+.pesagens-parciais__bloco {
+    display: grid;
+    gap: var(--espaco-2);
+}
+
+.pesagens-parciais {
+    display: grid;
+    gap: var(--espaco-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.pesagens-parciais__item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: var(--espaco-2) var(--espaco-3);
+}
+
+.pesagens-parciais__numero {
+    min-width: 2rem;
+    padding-bottom: var(--espaco-3);
+    color: var(--cor-texto-suave);
+    font-weight: 700;
+}
+
+.pesagens-parciais__campo {
+    display: grid;
+    gap: var(--espaco-1);
+    font-size: var(--texto-2);
+}
+
+.pesagens-parciais__campo .campo__input {
+    width: 7rem;
+}
+
+@media (min-width: 48rem) {
+    .painel-biometria__corpo {
+        grid-template-columns: minmax(0, 3fr) minmax(16rem, 2fr);
+    }
+
+    .painel-biometria__previa {
+        position: sticky;
+        top: 7rem;
+    }
+}
+
+/* ---------- Plano de alimentação (seção 7.14) ---------- */
+
+.plano__explicacao {
+    color: var(--cor-texto-suave);
+}
+
+.plano__explicacao + .plano__explicacao {
+    margin-top: calc(var(--espaco-2) * -1);
+}
+
+.plano__corpo {
+    display: grid;
+    gap: var(--espaco-4);
+}
+
+.plano__fixo,
+.plano__grupo-faixas {
+    display: grid;
+    gap: var(--espaco-3);
+}
+
+.plano__frase {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--espaco-2);
+}
+
+.plano__faixas {
+    display: grid;
+    gap: var(--espaco-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.plano__faixa {
+    display: grid;
+    gap: var(--espaco-2);
+    padding: var(--espaco-3) var(--espaco-4);
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio);
+}
+
+.plano__faixa .link {
+    justify-self: start;
+    min-height: var(--altura-toque);
+}
+
+.plano__resumo-faixa {
+    font-weight: 600;
+}
+
+.plano__regua {
+    display: grid;
+    gap: var(--espaco-1);
+    padding-top: var(--espaco-6);
+}
+
+.plano__trilho {
+    position: relative;
+    height: 1.75rem;
+    border-radius: var(--raio);
+    background: var(--cor-neutra-suave);
+}
+
+.plano__segmento {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: var(--inicio);
+    width: calc(var(--fim) - var(--inicio));
+    border-right: 2px solid var(--cor-superficie);
+    background: var(--cor-primaria-suave);
+}
+
+/* Faixas vizinhas em tons alternados, para se distinguirem sem número dentro. */
+.plano__segmento:nth-child(even) {
+    background: var(--cor-primaria-suave-forte);
+}
+
+.plano__marcador {
+    position: absolute;
+    bottom: 100%;
+    left: var(--posicao);
+    padding: 2px var(--espaco-2);
+    border-radius: var(--raio);
+    background: var(--cor-primaria);
+    color: var(--cor-texto-invertido);
+    font-size: var(--texto-1);
+    font-weight: 700;
+    white-space: nowrap;
+    transform: translate(-50%, -4px);
+}
+
+.plano__marcador::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    width: 2px;
+    height: calc(1.75rem + 4px);
+    background: var(--cor-primaria);
+    transform: translateX(-50%);
+}
+
+.plano__limites {
+    display: flex;
+    justify-content: space-between;
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-1);
+}
+
+.plano__simulador {
+    align-self: start;
+    display: grid;
+    gap: var(--espaco-2);
+    padding: var(--espaco-4);
+    border: 1px solid var(--cor-primaria);
+    border-radius: var(--raio-grande);
+    background: var(--cor-primaria-suave);
+}
+
+.plano__simulador-titulo {
+    font-size: var(--texto-4);
+}
+
+.plano__resultado {
+    font-size: var(--texto-3);
+}
+
+.grupo-alimentacao {
+    display: grid;
+    gap: var(--espaco-2);
+}
+
+.grupo-alimentacao__acoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--espaco-2);
+}
+
+@media (min-width: 48rem) {
+    .plano__corpo {
+        grid-template-columns: minmax(0, 3fr) minmax(14rem, 2fr);
+    }
 }

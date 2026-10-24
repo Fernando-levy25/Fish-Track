@@ -1,13 +1,17 @@
-// Novo registro e edição (seção 7.6). registro.html?tanqueId=... já vem com o
-// tanque escolhido; registro.html?id=... edita um registro existente.
+// Registro de um tanque (seção 7.6): só a rotina do dia (ração, sobra, mortos).
+// A biometria tem painel próprio na página do tanque (seção 7.13).
+// registro.html?tanqueId=... já vem com o tanque escolhido; registro.html?id=...
+// edita um registro existente.
 
 import { ehDataISO, hojeISO, paraNumero } from '../core/utils.js';
-import { formatarGramas, formatarInteiro, formatarNumero } from '../core/format.js';
+import { formatarData, formatarGramas, formatarInteiro, pluralizar } from '../core/format.js';
+import { lerPreferencia, salvarPreferencia } from '../core/storage.js';
 import { listarSituacoes, obterSituacao } from '../domain/tanques.js';
 import { obterRegistro, salvarRegistro } from '../domain/registros.js';
+import { ehRegistroDeBiometria } from '../domain/biometrias.js';
 import { calcularIndicadores } from '../domain/indicadores.js';
 import { irPara, lerParametro, montarUrl } from '../ui/nav.js';
-import { criarElemento, iniciarFormulario, mostrarErroPagina, preencherFormulario } from '../ui/componentes.js';
+import { criarElemento, iniciarCampoUnidade, iniciarFormulario, mostrarErroPagina, preencherFormulario } from '../ui/componentes.js';
 import { descreverRacaoSugerida, iniciarPagina } from './comum.js';
 
 const AJUDA_MORTOS = 'Peixes mortos vistos neste dia. O número real só é conhecido na despesca.';
@@ -25,6 +29,10 @@ const campoData = porId('campo-data');
 let situacoes = [];
 // Ração sugerida para o tanque escolhido, para o botão "Usar sugestão".
 let racaoSugeridaKg = null;
+// Registro em edição: o peso que ele tiver é mantido como está (só a biometria o altera).
+let registroEditado = null;
+let campoRacao = null;
+let campoSobra = null;
 
 iniciarPagina();
 try {
@@ -40,13 +48,29 @@ function iniciar() {
     if (!pronto) {
         return;
     }
+    configurarUnidades();
+    if (registroEditado) {
+        campoRacao.definirBase(registroEditado.racaoKg);
+        campoSobra.definirBase(registroEditado.racaoSobraKg);
+    }
     seletorTanque.addEventListener('change', atualizarTanqueEscolhido);
     atualizarTanqueEscolhido();
-    configurarBiometria();
     porId('botao-usar-sugestao').addEventListener('click', usarSugestao);
     iniciarFormulario(formulario, { erroGeral: porId('erro-geral-registro'), aoEnviar: enviar });
     // Erro num campo de seção recolhida: abre a seção para o produtor ver.
     formulario.addEventListener('submit', () => queueMicrotask(abrirSecoesComErro));
+}
+
+// Ração e sobra em kg ou g; a última unidade escolhida fica lembrada (seção 8.1).
+function configurarUnidades() {
+    const opcoes = (chave) => ({
+        grandeza: 'racao',
+        unidades: ['kg', 'g'],
+        unidadeInicial: lerPreferencia(chave, 'kg'),
+        aoTrocarUnidade: (unidade) => salvarPreferencia(chave, unidade),
+    });
+    campoRacao = iniciarCampoUnidade(porId('campo-racao'), opcoes('unidadeRacaoRegistro'));
+    campoSobra = iniciarCampoUnidade(porId('campo-sobra'), opcoes('unidadeSobraRegistro'));
 }
 
 function prepararNovo(hoje) {
@@ -79,7 +103,14 @@ function prepararEdicao() {
     if (situacao.cicloAtivo?.id !== registro.cicloId) {
         return mostrarIndisponivel('Este registro pertence a um ciclo encerrado e não pode ser alterado.', urlHistorico, 'Voltar ao histórico');
     }
+    const urlBiometria = montarUrl('tanque.html', { id: registro.tanqueId, acao: 'biometria', registro: registro.id });
+    // Registro só de biometria: quem edita é o painel de biometria do tanque.
+    if (ehRegistroDeBiometria(registro)) {
+        irPara(urlBiometria);
+        return false;
+    }
 
+    registroEditado = registro;
     situacoes = [situacao];
     document.title = 'Fish Track - Editar registro';
     porId('titulo-pagina-registro').textContent = 'Editar registro';
@@ -90,21 +121,18 @@ function prepararEdicao() {
     preencherFormulario(formulario, {
         id: registro.id,
         data: registro.data,
-        pesoMedioG: registro.biometria ? null : registro.pesoMedioG,
-        racaoKg: registro.racaoKg,
-        racaoSobraKg: registro.racaoSobraKg,
         mortalidade: registro.mortalidade,
         causaMortalidade: registro.causaMortalidade ?? '',
         natalidade: registro.natalidade,
         observacoes: registro.observacoes,
-        // A amostra fica guardada em gramas; na edição aparece em gramas.
-        peixesAmostra: registro.biometria?.peixesAmostra ?? null,
-        pesoAmostraG: registro.biometria?.pesoAmostraG ?? null,
-        comprimentoMedioCm: registro.biometria?.comprimentoMedioCm ?? null,
     });
-    formulario.querySelector(`[name="modoBiometria"][value="${registro.biometria || registro.pesoMedioG === null ? 'amostra' : 'peso'}"]`).checked = true;
-    if (registro.biometria) {
-        formulario.querySelector('[name="unidadePesoAmostra"][value="g"]').checked = true;
+    // Registro antigo com peso e rotina juntos: o peso aparece só para leitura.
+    if (registro.pesoMedioG !== null && registro.pesoMedioG !== undefined) {
+        porId('texto-peso-registro').textContent = `Peso médio: ${formatarGramas(registro.pesoMedioG)}`
+            + (registro.biometria ? ` (amostra de ${pluralizar(registro.biometria.peixesAmostra, 'peixe', 'peixes')})` : '')
+            + ` em ${formatarData(registro.data)}.`;
+        porId('link-editar-peso').href = urlBiometria;
+        porId('peso-registro').hidden = false;
     }
     porId('link-cancelar-registro').href = urlHistorico;
     return true;
@@ -127,11 +155,14 @@ function criarOpcao({ tanque }) {
 function atualizarTanqueEscolhido() {
     const situacao = situacoes.find((item) => item.tanque.id === seletorTanque.value);
     const ajuda = porId('ajuda-mortalidade');
+    porId('aviso-biometria').hidden = !situacao || Boolean(registroEditado);
     if (!situacao) {
         campoData.min = '';
         ajuda.textContent = AJUDA_MORTOS;
+        porId('sugestao-racao').hidden = true;
         return;
     }
+    porId('link-biometria').href = montarUrl('tanque.html', { id: situacao.tanque.id, acao: 'biometria' });
     // RN12: o calendário do campo não deixa escolher data antes do povoamento.
     campoData.min = situacao.cicloAtivo.dataInicio;
     const { quantidade } = calcularIndicadores({
@@ -140,7 +171,7 @@ function atualizarTanqueEscolhido() {
         registros: situacao.registros,
         hoje: hojeISO(),
     });
-    ajuda.textContent = `${AJUDA_MORTOS} Estimativa atual: ${formatarInteiro(quantidade)} peixes.`;
+    ajuda.textContent = `${AJUDA_MORTOS} Estimativa atual: ≈ ${formatarInteiro(quantidade)} peixes.`;
     mostrarSugestao(situacao);
 }
 
@@ -149,48 +180,21 @@ function atualizarTanqueEscolhido() {
 function mostrarSugestao(situacao) {
     const descricao = descreverRacaoSugerida(situacao);
     racaoSugeridaKg = descricao.sugestao ? Math.round(descricao.sugestao.racaoDiaKg * 10) / 10 : null;
-    porId('texto-sugestao-racao').textContent = descricao.sugestao
-        ? `Sugerida para hoje: ${descricao.textoDia} · ${descricao.textoDetalhe}${descricao.aviso ? `. ${descricao.aviso}` : ''}`
-        : descricao.textoMotivo;
+    const texto = porId('texto-sugestao-racao');
+    if (descricao.sugestao) {
+        texto.textContent = `Sugerida para hoje: ${descricao.textoDia} · ${descricao.textoDetalhe}${descricao.aviso ? `. ${descricao.aviso}` : ''}`;
+    } else {
+        // Nunca um traço sem motivo: o motivo e o link que resolve.
+        texto.replaceChildren(`${descricao.textoMotivo} · `,
+            criarElemento('a', { classe: 'link', texto: descricao.acaoMotivo.texto, atributos: { href: descricao.acaoMotivo.href } }));
+    }
     porId('botao-usar-sugestao').hidden = racaoSugeridaKg === null;
     porId('sugestao-racao').hidden = false;
 }
 
 function usarSugestao() {
-    const campo = porId('campo-racao');
-    campo.value = formatarNumero(racaoSugeridaKg, 1);
-    campo.dispatchEvent(new Event('input', { bubbles: true }));
-    campo.focus();
-}
-
-// ---------- Biometria por amostra (seção 9.4) ----------
-
-function modoBiometria() {
-    return formulario.querySelector('[name="modoBiometria"]:checked').value;
-}
-
-// Peso da amostra em gramas, na unidade escolhida (guardado sempre em g).
-function lerPesoAmostraG() {
-    const valor = paraNumero(porId('campo-peso-amostra').value);
-    const emKg = formulario.querySelector('[name="unidadePesoAmostra"]:checked').value === 'kg';
-    return valor === null || Number.isNaN(valor) ? valor : emKg ? valor * 1000 : valor;
-}
-
-function configurarBiometria() {
-    const atualizar = () => {
-        const amostra = modoBiometria() === 'amostra';
-        porId('grupo-amostra').hidden = !amostra;
-        porId('grupo-peso-medio').hidden = amostra;
-        const peixes = paraNumero(porId('campo-peixes-amostra').value);
-        const peso = lerPesoAmostraG();
-        // Peso médio = peso da amostra ÷ peixes pesados, mostrado enquanto se digita.
-        porId('peso-medio-calculado').textContent = peixes > 0 && peso > 0
-            ? `Peso médio: ${formatarGramas(peso / peixes)}`
-            : '';
-    };
-    formulario.addEventListener('input', atualizar);
-    formulario.addEventListener('change', atualizar);
-    atualizar();
+    campoRacao.definirBase(racaoSugeridaKg);
+    porId('campo-racao').focus();
 }
 
 function abrirSecoesComErro() {
@@ -206,14 +210,11 @@ function enviar(valores) {
         id: valores.id || null,
         tanqueId: valores.tanqueId,
         data: valores.data,
-        pesoMedioG: modoBiometria() === 'peso' ? paraNumero(valores.pesoMedioG) : null,
-        biometria: modoBiometria() === 'amostra' ? {
-            peixesAmostra: paraNumero(valores.peixesAmostra),
-            pesoAmostraG: lerPesoAmostraG(),
-            comprimentoMedioCm: paraNumero(valores.comprimentoMedioCm),
-        } : null,
-        racaoKg: paraNumero(valores.racaoKg),
-        racaoSobraKg: paraNumero(valores.racaoSobraKg),
+        // O peso de um registro antigo fica como está; só a biometria o muda.
+        pesoMedioG: registroEditado?.biometria ? null : registroEditado?.pesoMedioG ?? null,
+        biometria: registroEditado?.biometria ?? null,
+        racaoKg: campoRacao.lerBase(),
+        racaoSobraKg: campoSobra.lerBase(),
         mortalidade: paraNumero(valores.mortalidade),
         causaMortalidade: valores.causaMortalidade,
         natalidade: paraNumero(valores.natalidade),

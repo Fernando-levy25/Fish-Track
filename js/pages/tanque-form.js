@@ -1,11 +1,12 @@
 // Cadastro e edição de tanque (seção 7.4). Endereço: tanque-form.html para
 // um tanque novo, tanque-form.html?id=... para editar.
 
-import { paraNumero } from '../core/utils.js';
-import { formatarKg, formatarNumero } from '../core/format.js';
+import { hojeISO, paraNumero } from '../core/utils.js';
+import { formatarBiomassa, formatarGramas, formatarNumero, formatarPercentual, pluralizar } from '../core/format.js';
 import { obterSituacao, salvarTanque } from '../domain/tanques.js';
-import { calcularCargaMaximaKg } from '../domain/indicadores.js';
-import { listarTabelas } from '../domain/arracoamento.js';
+import { calcularCargaMaximaKg, calcularIndicadores, calcularRacaoSugerida, INTERVALO_BIOMETRIA_PADRAO_DIAS } from '../domain/indicadores.js';
+import { listarTabelas, MODELO_EMBRAPA, obterTabela, salvarTabela } from '../domain/arracoamento.js';
+import { criarEditorPlano } from '../ui/editor-plano.js';
 import { irPara, lerParametro, montarUrl } from '../ui/nav.js';
 import { criarElemento, iniciarFormulario, limparErroCampo, mostrarErroPagina, preencherFormulario } from '../ui/componentes.js';
 import { iniciarPagina } from './comum.js';
@@ -25,8 +26,9 @@ try {
 }
 
 function iniciar() {
-    porId('campo-tabela-arracoamento').append(...listarTabelas()
-        .map((tabela) => criarElemento('option', { texto: tabela.nome, atributos: { value: tabela.id } })));
+    preencherPlanos();
+    porId('campo-intervalo-biometria').value = String(INTERVALO_BIOMETRIA_PADRAO_DIAS);
+    configurarPlano();
     if (tanqueId) {
         const situacao = obterSituacao(tanqueId);
         if (!situacao) {
@@ -57,6 +59,7 @@ function iniciar() {
                     ? { cargaMaximaKg: paraNumero(valores.cargaMaximaKg) }
                     : { densidadeMaximaKgM3: paraNumero(valores.densidadeMaximaKgM3) }),
                 tabelaArracoamentoId: valores.tabelaArracoamentoId || null,
+                intervaloBiometriaDias: paraNumero(valores.intervaloBiometriaDias),
                 manutencao: Boolean(valores.manutencao),
                 observacoes: valores.observacoes,
             });
@@ -76,6 +79,7 @@ function prepararEdicao({ tanque, cicloAtivo }) {
         especie: tanque.especie,
         volumeM3: tanque.volumeM3,
         tabelaArracoamentoId: tanque.tabelaArracoamentoId ?? '',
+        intervaloBiometriaDias: tanque.intervaloBiometriaDias ?? INTERVALO_BIOMETRIA_PADRAO_DIAS,
         densidadeMaximaKgM3: arredondar(tanque.densidadeMaximaKgM3, 2),
         cargaMaximaKg: arredondar(carga, 1),
         manutencao: tanque.status === 'manutencao',
@@ -91,6 +95,48 @@ function prepararEdicao({ tanque, cicloAtivo }) {
         manutencao.disabled = true;
         porId('ajuda-manutencao').textContent = 'Indisponível enquanto houver ciclo ativo: o status do tanque é "Ativo".';
     }
+}
+
+// ---------- Plano de alimentação (seção 7.14) ----------
+
+function preencherPlanos(selecionado = porId('campo-tabela-arracoamento').value) {
+    const seletor = porId('campo-tabela-arracoamento');
+    seletor.replaceChildren(
+        criarElemento('option', { texto: 'Sem plano', atributos: { value: '' } }),
+        ...listarTabelas().map((plano) => criarElemento('option', { texto: plano.nome, atributos: { value: plano.id } })),
+    );
+    seletor.value = selecionado;
+}
+
+function configurarPlano() {
+    const seletor = porId('campo-tabela-arracoamento');
+    const editor = criarEditorPlano(porId('dialogo-plano'), {
+        salvar: salvarTabela,
+        calcularSugestao: (plano, { pesoMedioG, biomassaKg }) => calcularRacaoSugerida({ indicadores: { pesoMedioG, biomassaKg, dataPesoAtual: null }, tabela: plano }),
+        modelo: { nome: MODELO_EMBRAPA.nome, aviso: MODELO_EMBRAPA.aviso, faixas: MODELO_EMBRAPA.faixas },
+    });
+    // O simulador já começa com os peixes deste tanque, se houver ciclo.
+    const situacao = tanqueId ? obterSituacao(tanqueId) : null;
+    const indicadores = situacao?.cicloAtivo
+        ? calcularIndicadores({ tanque: situacao.tanque, ciclo: situacao.cicloAtivo, registros: situacao.registros, hoje: hojeISO() })
+        : null;
+    const simulacao = indicadores ? { pesoMedioG: indicadores.pesoMedioG, biomassaKg: indicadores.biomassaKg } : null;
+    const depoisDeSalvar = (plano) => {
+        preencherPlanos(plano.id);
+        atualizarResumo();
+    };
+    const atualizarResumo = () => {
+        const plano = obterTabela(seletor.value);
+        porId('botao-editar-plano').hidden = !plano;
+        porId('resumo-plano').textContent = !plano ? 'Sem plano, o app não sugere a ração do dia.'
+            : plano.tipo === 'fixo' ? `${formatarPercentual(plano.taxaPct)} do peso total por dia, em ${pluralizar(plano.refeicoes, 'refeição', 'refeições')}.`
+                : `Muda com o tamanho do peixe: ${pluralizar(plano.faixas.length, 'faixa', 'faixas')}, de ${formatarGramas(plano.faixas[0].pesoDeG)} a ${formatarGramas(plano.faixas.at(-1).pesoAteG)}.`;
+    };
+    seletor.addEventListener('change', atualizarResumo);
+    porId('botao-novo-plano').addEventListener('click', () => editor.abrir(null, { simulacao, depoisDeSalvar }));
+    porId('botao-editar-plano').addEventListener('click', () => editor.abrir(obterTabela(seletor.value), { simulacao, depoisDeSalvar }));
+    // O resumo vale também depois que a edição preenche o seletor.
+    queueMicrotask(atualizarResumo);
 }
 
 function arredondar(valor, casas) {
@@ -122,7 +168,7 @@ function atualizarEquivalencia() {
     if (volume > 0 && valor > 0) {
         texto = porCarga
             ? `Equivale a ${formatarNumero(valor / volume, 2, 2)} kg de peixe por m³ de água.`
-            : `Equivale a uma carga máxima de ${formatarKg(calcularCargaMaximaKg(valor, volume))} neste tanque.`;
+            : `Equivale a uma carga máxima de ${formatarBiomassa(calcularCargaMaximaKg(valor, volume))} neste tanque.`;
     }
     porId('equivalencia-capacidade').textContent = texto;
 }

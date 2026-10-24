@@ -16,6 +16,7 @@ const alertas = await import(RAIZ + 'domain/alertas.js');
 const config = await import(RAIZ + 'domain/configuracoes.js');
 const lembretes = await import(RAIZ + 'domain/lembretes.js');
 const arracoamento = await import(RAIZ + 'domain/arracoamento.js');
+const biometrias = await import(RAIZ + 'domain/biometrias.js');
 
 const hoje = utils.hojeISO();
 const dia = (n) => utils.somarDias(hoje, n);
@@ -155,7 +156,7 @@ describe('core/storage', () => {
         const dados = storage.lerDados();
         assert.equal(dados.versao, storage.VERSAO_DADOS);
         assert.deepEqual(dados.lembretes, []);
-        assert.deepEqual(dados.config, { limitesAlerta: { capacidadePct: 95 }, metaFca: 1.6, ultimoBackupEm: null, tabelasArracoamento: [] });
+        assert.deepEqual(dados.config, { limitesAlerta: { capacidadePct: 95 }, metaFca: 1.6, ultimoBackupEm: null, tabelasArracoamento: [], unidades: { biomassa: 'kg', racao: 'kg' } });
         assert.ok(!('capacidade' in dados.tanques[0]));
         assert.equal(dados.tanques[0].densidadeMaximaKgM3, null);
         assert.equal(dados.tanques[0].capacidadePeixesLegado, 3000);
@@ -191,7 +192,7 @@ describe('core/storage', () => {
             registros: [{ id: 'r', racaoKg: 2 }],
         };
         const dados = storage.migrarDados(v3);
-        assert.equal(dados.versao, 4);
+        assert.equal(dados.versao, storage.VERSAO_DADOS);
         assert.deepEqual([dados.ciclos[0].modoPovoamento, dados.ciclos[0].biomassaInicialKg], ['contagem', 10]);
         assert.deepEqual(dados.registros[0], { id: 'r', racaoKg: 2, biometria: null, racaoSobraKg: null, causaMortalidade: null });
         assert.equal(dados.tanques[0].tabelaArracoamentoId, null);
@@ -311,7 +312,9 @@ describe('domain/ciclos (RN05 a RN09)', () => {
         const tanque = comCiclo({ pesoAlvoG: 500, dataPrevistaDespesca: dia(10) });
         registros.salvarRegistro({ tanqueId: tanque.id, data: dia(-3), pesoMedioG: 50 });
         const eventos = ciclos.listarEventosCalendario({ inicio: dia(-40), fim: dia(40) });
-        assert.deepEqual(eventos.map((e) => e.tipo), ['povoamento', 'registro', 'despesca-prevista']);
+        // Com a pesagem de dia(-3) e o intervalo padrão de 15 dias, a próxima biometria fica em dia(12).
+        assert.deepEqual(eventos.map((e) => e.tipo), ['povoamento', 'registro', 'despesca-prevista', 'biometria-prevista']);
+        assert.equal(eventos[3].data, dia(12));
         assert.equal(eventos[1].descricao, 'Peso 50 g');
         const arquivado = comCicloArquivado();
         assert.equal(ciclos.listarEventosCalendario({ inicio: dia(-40), fim: dia(40) }).filter((e) => e.tanqueId === arquivado).length, 0);
@@ -524,7 +527,8 @@ describe('domain/indicadores: série diária e período (seção 9.4)', () => {
 
 describe('domain/alertas (seção 9.5)', () => {
     // Carga máxima de 20 kg: 1.000 peixes de 10 g (10 kg) ocupam 50%.
-    const tanque = { id: 't', nome: 'T', volumeM3: 100, densidadeMaximaKgM3: 0.2, limitesAlerta: null };
+    // Intervalo de biometria longo: estes testes olham os outros alertas (o de biometria tem teste próprio).
+    const tanque = { id: 't', nome: 'T', volumeM3: 100, densidadeMaximaKgM3: 0.2, limitesAlerta: null, intervaloBiometriaDias: 90 };
     const ciclo = { dataInicio: dia(-20), quantidadeInicial: 1000, pesoMedioInicialG: 10, pesoAlvoG: null, dataPrevistaDespesca: null, dataDespesca: null, status: 'ativo' };
     const r = (data, campos) => ({ data, criadoEm: data, pesoMedioG: null, racaoKg: null, mortalidade: null, natalidade: null, ...campos });
     const avaliar = (lista, { c = ciclo, t = tanque, limites = alertas.LIMITES_PADRAO } = {}) => {
@@ -703,7 +707,7 @@ describe('Prompt 02: entradas mínimas e cálculos automáticos (RN21 a RN24)', 
         recusa(salvar({ peixesAmostra: 1001, pesoAmostraG: 100 }), 'peixesAmostra', /quantidade estimada/);
         const registro = salvar({ peixesAmostra: 60, pesoAmostraG: 32550, comprimentoMedioCm: 30 })();
         assert.equal(registro.pesoMedioG, 542.5);
-        assert.deepEqual(registro.biometria, { peixesAmostra: 60, pesoAmostraG: 32550, comprimentoMedioCm: 30 });
+        assert.deepEqual(registro.biometria, { peixesAmostra: 60, pesoAmostraG: 32550, comprimentoMedioCm: 30, pesosIndividuaisG: null });
         assert.equal(registros.resumirRegistro(registro), 'Peso 542,5 g · amostra de 60 peixes');
         assert.equal(salvar(null, { pesoMedioG: 100 })().biometria, null, 'informar só o peso médio continua valendo');
     });
@@ -764,5 +768,117 @@ describe('Prompt 02: entradas mínimas e cálculos automáticos (RN21 a RN24)', 
         const indicadores = ind.calcularIndicadores({ tanque: situacao.tanque, ciclo: situacao.cicloAtivo, registros: situacao.registros, hoje });
         perto(indicadores.fatorCondicao, 4);
         perto(indicadores.tceCiclo, (Math.log(40) - Math.log(10)) / 20 * 100);
+    });
+});
+
+describe('Prompt 04, parte A: biometria, unidades e plano de alimentação (RN25, RN26)', () => {
+    const perto = (valor, esperado, tolerancia = 1e-6) => assert.ok(Math.abs(valor - esperado) < tolerancia, `${valor} != ${esperado}`);
+    it('estatísticas dos pesos individuais: 100, 110, 90, 105, 95 → média 100 g, CV ≈ 7,9%', () => {
+        const estatisticas = ind.calcularEstatisticasPesos([100, 110, 90, 105, 95]);
+        assert.deepEqual([estatisticas.quantidade, estatisticas.totalG, estatisticas.mediaG, estatisticas.menorG, estatisticas.maiorG], [5, 500, 100, 90, 110]);
+        perto(estatisticas.cvPct, Math.sqrt(62.5));
+        assert.equal(estatisticas.uniforme, true);
+        assert.equal(ind.calcularEstatisticasPesos([50, 150]).uniforme, false, 'CV acima de 20%');
+        assert.equal(ind.calcularEstatisticasPesos([80]).cvPct, null, 'um peso só não tem CV');
+    });
+    it('RN26: pesos individuais definem a amostra; pelo menos 2, todos maiores que zero', () => {
+        const tanque = comCiclo();
+        const salvar = (pesosIndividuaisG) => () => biometrias.salvarBiometria({ tanqueId: tanque.id, data: dia(-1), biometria: { pesosIndividuaisG } });
+        recusa(salvar([100]), 'pesosIndividuaisG', /pelo menos 2/);
+        recusa(salvar([100, 0, 90]), 'pesosIndividuaisG', /2º peso/);
+        const registro = salvar([100, 110, 90, 105, 95])();
+        assert.equal(registro.pesoMedioG, 100);
+        assert.deepEqual([registro.biometria.peixesAmostra, registro.biometria.pesoAmostraG], [5, 500]);
+        assert.ok(biometrias.ehRegistroDeBiometria(registro));
+    });
+    it('biometria pelo painel: só o peso; num registro misto, troca o peso e mantém a rotina', () => {
+        const tanque = comCiclo();
+        const misto = registros.salvarRegistro({ tanqueId: tanque.id, data: dia(-2), racaoKg: 3, mortalidade: 2, pesoMedioG: 40 });
+        assert.equal(biometrias.ehRegistroDeBiometria(misto), false);
+        const editado = biometrias.salvarBiometria({ id: misto.id, data: dia(-2), biometria: { peixesAmostra: 10, pesoAmostraG: 450 } });
+        assert.deepEqual([editado.pesoMedioG, editado.racaoKg, editado.mortalidade], [45, 3, 2]);
+        const so = biometrias.salvarBiometria({ tanqueId: tanque.id, data: dia(-1), pesoMedioG: 50 });
+        assert.ok(biometrias.ehRegistroDeBiometria(so));
+        const situacao = tanques.obterSituacao(tanque.id);
+        assert.deepEqual(biometrias.listarBiometriasDoCiclo(situacao.cicloAtivo.id).map((item) => item.pesoMedioG), [10, 45, 50]);
+        assert.equal(biometrias.obterUltimaAmostra(situacao), 10);
+    });
+    it('prévia: ganho, g/dia, alvo, biomassa e ração antes e depois; aviso de queda', () => {
+        const tanque = comCiclo({ pesoAlvoG: 800 });
+        biometrias.salvarBiometria({ tanqueId: tanque.id, data: dia(-15), pesoMedioG: 40 });
+        const situacao = tanques.obterSituacao(tanque.id);
+        const plano = { tipo: 'fixo', taxaPct: 3, refeicoes: 4 };
+        const previa = biometrias.calcularPreviaBiometria({ situacao, plano, data: hoje, pesoMedioG: 88 });
+        assert.deepEqual([previa.anterior.pesoMedioG, previa.ganhoG, previa.dias], [40, 48, 15]);
+        perto(previa.ganhoDiarioG, 3.2);
+        perto(previa.percentualAlvo, 11);
+        assert.deepEqual([previa.biomassaAntesKg, previa.biomassaDepoisKg], [40, 88]);
+        perto(previa.racaoDepois.racaoDiaKg, 2.64);
+        assert.equal(previa.caiuMuito, false);
+        assert.equal(biometrias.calcularPreviaBiometria({ situacao, plano, data: hoje, pesoMedioG: 35 }).caiuMuito, true, 'caiu 12,5%');
+    });
+    it('RN25 e próxima biometria: intervalo de 1 a 90 dias, padrão 15; alerta de atraso', () => {
+        recusa(() => tanques.salvarTanque({ nome: 'X', especie: 'Y', volumeM3: 1, intervaloBiometriaDias: 91 }), 'intervaloBiometriaDias');
+        recusa(() => tanques.salvarTanque({ nome: 'X', especie: 'Y', volumeM3: 1, intervaloBiometriaDias: 2.5 }), 'intervaloBiometriaDias');
+        const tanque = comCiclo();
+        assert.equal(tanques.obterTanque(tanque.id).intervaloBiometriaDias, 15);
+        biometrias.salvarBiometria({ tanqueId: tanque.id, data: dia(-20), pesoMedioG: 30 });
+        const situacao = tanques.obterSituacao(tanque.id);
+        const proxima = ind.calcularProximaBiometria({ tanque: situacao.tanque, ciclo: situacao.cicloAtivo, registros: situacao.registros, hoje });
+        assert.deepEqual([proxima.dataUltima, proxima.dataProxima, proxima.diasAtraso], [dia(-20), dia(-5), 5]);
+        const { alertas: lista } = alertas.analisarTanque(situacao, { limitesPadrao: alertas.LIMITES_PADRAO, hoje });
+        const atraso = lista.find((alerta) => alerta.tipo === 'biometria-atrasada');
+        assert.equal(atraso.gravidade, 'baixa');
+        assert.equal(atraso.descricao, `Última biometria em ${format.formatarData(dia(-20))}, há 20 dias (a cada 15 dias).`);
+    });
+    it('plano fixo: 3% e 4 refeições com 500 kg → 15 kg por dia, 3,75 kg por refeição', () => {
+        const { sugestao } = ind.calcularRacaoSugerida({ indicadores: { pesoMedioG: 100, biomassaKg: 500, dataPesoAtual: hoje }, tabela: { tipo: 'fixo', taxaPct: 3, refeicoes: 4 }, houvePesagem: false });
+        assert.deepEqual([sugestao.racaoDiaKg, sugestao.racaoRefeicaoKg, sugestao.faixa], [15, 3.75, null]);
+        recusa(() => arracoamento.salvarTabela({ nome: 'Fixo', tipo: 'fixo', taxaPct: 25, refeicoes: 4 }), 'taxaPct');
+        const plano = arracoamento.salvarTabela({ nome: 'Fixo', tipo: 'fixo', taxaPct: 3, refeicoes: 4 });
+        assert.deepEqual([plano.tipo, plano.taxaPct, plano.faixas], ['fixo', 3, []]);
+        recusa(() => arracoamento.salvarTabela({ nome: 'F', tipo: 'faixas', faixas: [
+            { pesoDeG: 190, pesoAteG: 225, taxaPct: 3, refeicoes: 4 }, { pesoDeG: 200, pesoAteG: 250, taxaPct: 2, refeicoes: 4 },
+        ] }), 'faixas.1.pesoDeG', /sobrepõe à de 190 a 225 g/);
+    });
+    it('unidades: conversão para a base e exibição pela preferência, sem trocar sozinha', () => {
+        assert.equal(format.converterParaBase(500, 'g', 'racao'), 0.5);
+        assert.equal(format.converterParaBase(1.25, 't', 'biomassa'), 1250);
+        assert.equal(format.converterParaBase(32.55, 'kg', 'pesoAmostra'), 32550);
+        format.definirUnidadesExibicao({ biomassa: 't', racao: 'g' });
+        assert.equal(format.formatarBiomassa(1820), '1,82 t');
+        assert.equal(format.formatarBiomassa(5), '0,01 t', 'continua em t mesmo pequeno');
+        assert.equal(format.formatarRacao(0.5), '500 g');
+        format.definirUnidadesExibicao({ biomassa: 'kg', racao: 'kg' });
+        assert.equal(format.formatarBiomassa(1820), '1.820 kg');
+        config.salvarUnidades({ biomassa: 't', racao: 'g' });
+        assert.deepEqual(config.obterUnidades(), { biomassa: 't', racao: 'g' });
+        recusa(() => config.salvarUnidades({ biomassa: 'lb', racao: 'kg' }), 'biomassa');
+    });
+    it('rodada de biometria: o próximo é o mais atrasado, e some quem já pesou na data', () => {
+        const a = comCicloNome('A');
+        const b = comCicloNome('B');
+        const c = comCicloNome('C');
+        biometrias.salvarBiometria({ tanqueId: b, data: dia(-9), pesoMedioG: 2 });
+        assert.equal(biometrias.obterProximoTanqueBiometria({ tanqueIdAtual: a }).id, c, 'C nunca pesou: mais atrasado');
+        biometrias.salvarBiometria({ tanqueId: c, data: hoje, pesoMedioG: 2 });
+        assert.equal(biometrias.obterProximoTanqueBiometria({ tanqueIdAtual: a }).id, b);
+        biometrias.salvarBiometria({ tanqueId: b, data: hoje, pesoMedioG: 3 });
+        assert.equal(biometrias.obterProximoTanqueBiometria({ tanqueIdAtual: a }), null);
+    });
+    it('migra da versão 4 para a 5: intervalo, tipo do plano, pesos individuais e unidades', () => {
+        const v4 = {
+            versao: 4, lembretes: [], ciclos: [],
+            tanques: [{ id: 't' }],
+            registros: [{ id: 'a', biometria: { peixesAmostra: 2, pesoAmostraG: 10 } }, { id: 'b', biometria: null }],
+            config: { limitesAlerta: {}, metaFca: 1.6, ultimoBackupEm: null, tabelasArracoamento: [{ id: 'p', nome: 'P', faixas: [] }] },
+        };
+        const dados = storage.migrarDados(v4);
+        assert.equal(dados.versao, 5);
+        assert.equal(dados.tanques[0].intervaloBiometriaDias, 15);
+        assert.equal(dados.registros[0].biometria.pesosIndividuaisG, null);
+        assert.equal(dados.registros[1].biometria, null);
+        assert.equal(dados.config.tabelasArracoamento[0].tipo, 'faixas');
+        assert.deepEqual(dados.config.unidades, { biomassa: 'kg', racao: 'kg' });
     });
 });

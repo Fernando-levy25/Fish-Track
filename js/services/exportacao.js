@@ -5,7 +5,8 @@
 import { lerDados, salvarDados, validarEstrutura } from '../core/storage.js';
 import { agoraISO, compararTexto, criarSlug, hojeISO } from '../core/utils.js';
 import { formatarData } from '../core/format.js';
-import { ordenarRegistros } from '../domain/indicadores.js';
+import { calcularEstatisticasPesos, ordenarRegistros } from '../domain/indicadores.js';
+import { ehRegistroDeBiometria } from '../domain/biometrias.js';
 import { CAUSAS_MORTALIDADE } from '../domain/registros.js';
 import { falharRegra } from '../domain/validacao.js';
 
@@ -16,6 +17,7 @@ const COLUNAS_REGISTROS = [
     ['Espécie', ({ tanque }) => texto(tanque.especie)],
     ['Ciclo (povoamento)', ({ ciclo }) => formatarData(ciclo.dataInicio)],
     ['Data', ({ registro }) => formatarData(registro.data)],
+    ['Tipo', ({ registro }) => (ehRegistroDeBiometria(registro) ? 'Biometria' : 'Rotina')],
     ['Peso médio (g)', ({ registro }) => numero(registro.pesoMedioG)],
     ['Ração (kg)', ({ registro }) => numero(registro.racaoKg)],
     ['Sobra (kg)', ({ registro }) => numero(registro.racaoSobraKg)],
@@ -25,6 +27,9 @@ const COLUNAS_REGISTROS = [
     ['Peixes na amostra', ({ registro }) => numero(registro.biometria?.peixesAmostra)],
     ['Peso da amostra (g)', ({ registro }) => numero(registro.biometria?.pesoAmostraG)],
     ['Comprimento médio (cm)', ({ registro }) => numero(registro.biometria?.comprimentoMedioCm)],
+    ['CV dos pesos (%)', ({ registro }) => numero(registro.biometria?.pesosIndividuaisG
+        ? Math.round(calcularEstatisticasPesos(registro.biometria.pesosIndividuaisG).cvPct * 10) / 10
+        : null)],
     ['Observações', ({ registro }) => texto(registro.observacoes)],
 ];
 // Uma linha por lembrete (não por ocorrência): as datas concluídas vão juntas.

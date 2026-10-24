@@ -47,6 +47,7 @@ export function montarAgenda(raiz, { tanqueId = null, nivelTitulo = 2 } = {}) {
         hrefRegistro: (data) => montarUrl('registro.html', { tanqueId, data }),
         hrefEditarRegistro: (id) => montarUrl('registro.html', { id }),
         hrefTanque: (id) => montarUrl('tanque.html', { id }),
+        hrefBiometria: (id, data) => montarUrl('tanque.html', { id, acao: 'biometria', data }),
     });
     // Conclusões feitas no menu lateral aparecem na hora na agenda aberta.
     document.addEventListener(EVENTO_LEMBRETES, () => agenda.atualizar());

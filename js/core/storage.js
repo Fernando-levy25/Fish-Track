@@ -7,7 +7,7 @@
 // A chave continua "v1" mesmo com o formato na versão 2: trocar a chave faria
 // os dados existentes parecerem perdidos. A versão do formato fica no campo versao.
 export const CHAVE_DADOS = 'fishtrack:v1';
-export const VERSAO_DADOS = 4;
+export const VERSAO_DADOS = 5;
 
 const CHAVE_COPIA_ILEGIVEL = `${CHAVE_DADOS}:ilegivel`;
 // Preferências de tela (como o período do dashboard) ficam fora dos dados do
@@ -23,7 +23,7 @@ export function criarDadosVazios() {
         ciclos: [],
         registros: [],
         lembretes: [],
-        config: { limitesAlerta: {}, metaFca: META_FCA_PADRAO, ultimoBackupEm: null, tabelasArracoamento: [] },
+        config: { limitesAlerta: {}, metaFca: META_FCA_PADRAO, ultimoBackupEm: null, tabelasArracoamento: [], unidades: { biomassa: 'kg', racao: 'kg' } },
     };
 }
 
@@ -160,6 +160,23 @@ export function migrarDados(dados) {
             registros: (atuais.registros ?? []).map((registro) => ({ ...registro, biometria: null, racaoSobraKg: null, causaMortalidade: null })),
             tanques: (atuais.tanques ?? []).map((tanque) => ({ ...tanque, tabelaArracoamentoId: null })),
             config: { ...atuais.config, tabelasArracoamento: [] },
+        };
+    }
+    if (atuais.versao === 4) {
+        atuais = {
+            ...atuais,
+            versao: 5,
+            // Biometria a cada 15 dias, o costume do laboratório (seção 13).
+            tanques: (atuais.tanques ?? []).map((tanque) => ({ ...tanque, intervaloBiometriaDias: 15 })),
+            registros: (atuais.registros ?? []).map((registro) => (registro.biometria
+                ? { ...registro, biometria: { ...registro.biometria, pesosIndividuaisG: null } }
+                : registro)),
+            config: {
+                ...atuais.config,
+                // As tabelas que existiam são todas por faixa de peso.
+                tabelasArracoamento: (atuais.config?.tabelasArracoamento ?? []).map((tabela) => ({ ...tabela, tipo: 'faixas' })),
+                unidades: { biomassa: 'kg', racao: 'kg' },
+            },
         };
     }
     return atuais;

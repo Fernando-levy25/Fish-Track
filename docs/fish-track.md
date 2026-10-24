@@ -197,26 +197,30 @@ Ações: editar tanque, iniciar ciclo, registrar despesca, novo registro, export
 
 Cria ou edita um tanque (nome, espécie, volume, capacidade máxima, status, observações). A capacidade é opcional e pode ser informada em **kg por m³** ou como **carga máxima total (kg)**; o formulário mostra a equivalência na outra unidade, e o sistema guarda sempre kg/m³.
 
+- **Biometria a cada (dias):** de 1 a 90, padrão 15 (RN25). Define a próxima biometria e o alerta de atraso (seção 9.11).
+- **Alimentação** (`#alimentacao`): o plano de alimentação do tanque, com o resumo do plano escolhido, "Editar este plano" e "Criar plano", que abrem o editor da seção 7.14 já com o peso médio e a biomassa do tanque no simulador.
+
 ### 7.5 Formulário de ciclo (`ciclo-form.html`)
 
 - **Iniciar ciclo:** data de povoamento; "Como você vai informar o lote?" com **"Contei os peixes"** (quantidade + peso médio) ou **"Pesei o lote"** (biomassa do lote em kg + peso médio da amostra), RN21; peso alvo (opcional) e data prevista de despesca (opcional). O valor calculado aparece ao vivo abaixo dos campos: "Biomassa inicial: 10 kg" ou "≈ 2.471 peixes (estimado)".
 - **Iniciar ciclo:** com ciclo encerrado anterior, mostra a caixa "Último ciclo: sobrevivência de X%, FCA de Y, Z dias."
-- **Registrar despesca:** data, **biomassa final (kg)** ("Peso total dos peixes despescados."), peso médio final ("Peso médio da amostra.") e quantidade despescada opcional ("Só se os peixes foram contados."), com RN19 e RN20. Encerra o ciclo e leva à página do tanque com o resumo do ciclo (seção 9.4.1).
+- **Biomassa do lote** e **biomassa final** têm seletor kg · t, com a conversão visível abaixo do campo (seção 8.1).
+- **Registrar despesca:** data, **biomassa final** ("Peso total dos peixes despescados."), peso médio final ("Peso médio da amostra.") e quantidade despescada opcional ("Só se os peixes foram contados."), com RN19 e RN20. Encerra o ciclo e leva à página do tanque com o resumo do ciclo (seção 9.4.1).
 
-### 7.6 Novo registro (`registro.html`)
+### 7.6 Registro de um tanque (`registro.html`)
 
-Formulário rápido, com poucos campos e otimizado para o celular:
+Só a rotina do dia; a biometria tem painel próprio (seção 7.13).
 
 - Tanque (pré-selecionado quando vier da página do tanque);
 - Data (padrão: hoje; vindo da agenda, `registro.html?data=AAAA-MM-DD` preenche o dia escolhido, e uma data futura é ignorada);
-- Três seções recolhíveis, abertas por padrão e todas opcionais (RN11 continua valendo):
-  - **Alimentação:** ração fornecida (kg) e sobra (kg, RN23), com a ração sugerida para hoje e o botão "Usar sugestão" (seção 9.10).
+- Duas seções recolhíveis, abertas por padrão e opcionais (RN11 continua valendo):
+  - **Alimentação:** ração fornecida e sobra (RN23), cada uma com seletor kg · g e a conversão visível ("= 0,5 kg"); a ração sugerida para hoje e o botão "Usar sugestão" (seção 9.10). Sem sugestão, o motivo e o link que resolve ("Sem plano de alimentação · Configurar").
   - **Mortalidade:** mortos encontrados (com a ajuda "Peixes mortos vistos neste dia. O número real só é conhecido na despesca." e a quantidade estimada atual) e causa provável: Desconhecida, Manejo, Predação, Doença, Qualidade da água ou Outra.
-  - **Biometria:** "Pesei uma amostra" (peixes na amostra, peso total da amostra em kg ou g, guardado em gramas, e comprimento médio opcional; o peso médio aparece ao vivo, RN22) ou "Informar só o peso médio".
+- Aviso discreto: "Vai pesar os peixes? Use a Biometria do tanque" (link para `tanque.html?id=...&acao=biometria`).
 - Observações e, recolhida em "Mais campos", a natalidade (rara).
 - Se houver erro num campo de uma seção recolhida, a seção abre.
 
-A edição usa o endereço `registro.html?id=...`, e o registro continua no mesmo tanque.
+A edição usa o endereço `registro.html?id=...`, e o registro continua no mesmo tanque. Um registro só de biometria abre o painel de biometria do tanque. Um registro antigo com peso **e** rotina mostra o peso só para leitura, com "Editar na biometria"; salvar a rotina mantém o peso.
 
 ### 7.7 Alertas (`alertas.html`)
 
@@ -263,7 +267,8 @@ O link "Adicionar lembrete" do menu lateral abre `calendario.html?lembrete=novo`
 ### 7.9 Configurações (`configuracoes.html`)
 
 - Limites padrão dos alertas e meta de conversão alimentar.
-- **Tabelas de alimentação:** lista das tabelas (editar, excluir), "Nova tabela" e "Carregar modelo" (o "Modelo Embrapa — tilápia em tanque-rede, ração 32% PB (190 a 1.045 g)", com a fonte no nome). O editor tem o nome e uma linha por faixa: peso de (g), peso até (g), taxa (% da biomassa por dia) e refeições por dia (RN24). Texto de ajuda: "A taxa depende da espécie, da ração e da temperatura. Use a tabela do fabricante da ração ou do seu técnico." Excluir uma tabela deixa os tanques que a usavam sem tabela.
+- **Planos de alimentação:** os planos salvos para reutilizar (editar, excluir) e "Novo plano", com o editor da seção 7.14. Excluir um plano deixa os tanques que o usavam sem plano.
+- **Unidades:** biomassa em kg ou t; ração em kg ou g (padrão: kg e kg), em `config.unidades` (seção 8.1).
 - Exportar CSV de registros ou de lembretes (por tanque ou geral).
 - Fazer backup e restaurar dados (JSON).
 - Carregar dados de exemplo e apagar todos os dados.
@@ -271,6 +276,36 @@ O link "Adicionar lembrete" do menu lateral abre `calendario.html?lembrete=novo`
 ### 7.10 Navegação
 
 Barra inferior fixa no celular (Dashboard, Tanques, **+ Registro**, Alertas, Mais) e menu lateral em telas largas. O item **Mais** abre Agenda, Relatórios e Configurações.
+
+### 7.13 Painel de biometria (na página do tanque)
+
+A biometria é feita a cada ~15 dias por amostragem, e não junto da rotina diária. Por isso tem um painel próprio (`<dialog>` em `tanque.html`), aberto **a partir do tanque**: o laboratório pensa "vou pesar o tanque 3". Lógica da interface em `js/ui/painel-biometria.js`; orquestração em `js/pages/tanque.js`; domínio em `js/domain/biometrias.js`. A biometria continua gravada como registro (com `pesoMedioG` e `biometria`), para os indicadores não mudarem de fonte.
+
+- **Como se chega:** botão "Fazer biometria" no cabeçalho e no cartão de peso do tanque, aba "Biometrias", ação do alerta "Biometria atrasada" e o quadro do dia da agenda. Endereço: `tanque.html?id=...&acao=biometria` (com `&data=AAAA-MM-DD` opcional, ou `&registro=ID` para editar). Não há item "Biometria" no menu.
+- **Topo:** faixa na cor do tanque, o **nome em destaque**, a espécie, o dia do ciclo e "Última biometria: 381 g em 09/10". Não há como trocar de tanque dentro do painel.
+- **Modos:**
+  - **Amostra** (padrão): data, peixes na amostra (já preenchido com o tamanho da última amostra do tanque), peso total da amostra (kg · g) e, em "Medir comprimento", o comprimento médio. "Pesei em partes" troca o peso total por uma lista de pesagens parciais (peixes e peso de cada uma), que o app soma.
+  - **Pesos individuais:** um peso por linha, em g (aceita colar de planilha). O app calcula peixes, total, média, menor e maior peso e o coeficiente de variação (seção 9.11), e guarda a lista em `biometria.pesosIndividuaisG` (RN26).
+  - **"Já tenho o peso médio":** só o peso médio.
+- **Prévia ao vivo** (ao lado no computador, abaixo no celular): peso médio; comparação com a biometria anterior ("+48,2 g em 15 dias · 3,2 g/dia"); peso alvo ("800 g (68%)"); biomassa ≈ antes e depois; nova ração sugerida, se o tanque tiver plano. Nos pesos individuais, menor e maior peso e o CV com "Lote uniforme" (até 20%) ou "Lote desuniforme: considere classificar". Se o peso médio cair mais de 10% em relação à anterior, um aviso (não bloqueia): "O peso médio caiu em relação à última biometria. Confira os valores."
+- **Salvar:** fecha o painel, atualiza a página e mostra "biometria salva … Próxima biometria: dd/mm".
+- **Salvar e ir para o próximo tanque** (rodada de biometria): salva e abre o painel do próximo tanque com ciclo ativo ainda não pesado na data, primeiro os mais atrasados e os previstos para hoje. O topo mostra "Agora: Tanque 05" com uma animação curta. Sem próximo, o botão não aparece.
+- **Fechar** com algo digitado pede "Descartar esta biometria?".
+- **Aba "Biometrias"** na página do tanque: data, como pesou (povoamento, amostra, pesos individuais, peso médio), peixes na amostra, peso médio, ganho desde a anterior, g/dia e CV; editar abre o painel; excluir só no ciclo ativo e só registros só de biometria.
+- No Histórico, os registros de biometria aparecem com a etiqueta "Biometria" e o resumo "50 peixes · 60 g".
+
+### 7.14 Plano de alimentação
+
+Na interface, "tabela de alimentação" / "arraçoamento" passou a se chamar **Plano de alimentação**; o termo técnico só aparece no texto de ajuda. Os nomes internos (`tabelasArracoamento`, `tabelaArracoamentoId`, `arracoamento.js`) ficaram. O editor (`js/ui/editor-plano.js`, num `<dialog>`) é o mesmo em Configurações e no formulário do tanque:
+
+- **Explicação no topo:** "O plano diz quanto de ração dar por dia, como uma porcentagem do peso total dos peixes no tanque. Exemplo: se o tanque tem 500 kg de peixe e o plano diz 3%, você dá 15 kg de ração por dia. Com 4 refeições, são 3,75 kg em cada."
+- **Dois tipos:** "Porcentagem fixa" (`tipo: "fixo"`: uma taxa e as refeições) e "Muda com o tamanho do peixe" (`tipo: "faixas"`).
+- **Faixas como frases:** "Peixes de 190 g a 225 g → 3,4% do peso total por dia, em 4 refeições", editadas com rótulos completos ("Peso dos peixes: de ___ g até ___ g", "Quanto dar por dia: ___ % do peso total do tanque", "Dividir em ___ refeições"). "Adicionar faixa" começa no "até" da faixa anterior.
+- **Régua** com as faixas lado a lado e o marcador "seus peixes estão aqui" no peso médio do simulador.
+- **Simulador**, atualizado na hora (no tanque, já com o peso médio e a biomassa dele): "Faixa usada: 520 a 565 g → 1,9% → 19,4 kg por dia, 4 refeições de 4,85 kg". Fora das faixas: "Nenhuma faixa cobre 112 g. Adicione uma faixa para peixes menores."
+- **"Usar um modelo":** o modelo Embrapa, com a fonte no nome e o aviso: "Este modelo vale para tilápia de 190 g a 1 kg com ração de 32% de proteína. A porcentagem certa depende da espécie, da ração e da temperatura da água: confira com o fabricante da ração ou com o seu técnico."
+- Mensagens de validação em linguagem simples ("Esta faixa se sobrepõe à de 190 a 225 g.", "O peso final da faixa precisa ser maior que o inicial.").
+- Na página do tanque, o cartão "Ração de hoje" mostra "Plano: <nome> · Ver plano".
 
 ### 7.12 Relatórios (`relatorio.html`)
 
@@ -292,6 +327,18 @@ O conteúdo exato ainda será refinado depois dos primeiros testes com produtore
 
 Os valores são sempre armazenados nestas unidades e convertidos apenas na exibição.
 
+**Na interface:** todo campo e todo valor de peso mostram a unidade. Onde a escala varia, o campo tem um seletor explícito (o mesmo segmentado), com a conversão visível abaixo enquanto se digita ("= 500 g", "= 1,25 t"); a última unidade escolhida em cada campo fica lembrada no aparelho (preferência de tela, fora de `fishtrack:v1`). Nunca se adivinha a unidade.
+
+| Campo | Unidades | Padrão |
+|---|---|---|
+| Peso total da amostra (biometria) | kg · g | kg |
+| Ração fornecida e sobra (registro) | kg · g | kg |
+| Biomassa do lote (povoamento por pesagem) | kg · t | kg |
+| Biomassa final (despesca) | kg · t | kg |
+| Peso médio (povoamento, despesca, "já tenho o peso médio") | g | g (sem seletor) |
+
+**Exibição:** biomassa e ração seguem a preferência de Configurações (`config.unidades = { biomassa: "kg" | "t", racao: "kg" | "g" }`, padrão kg e kg) em todas as telas, gráficos (com a unidade no título) e relatórios, e **nunca trocam de unidade sozinhas** conforme o tamanho do número. Em `core/format.js`: `converterParaBase(valor, unidade, grandeza)`, `formatarBiomassa(kg)` e `formatarRacao(kg)`; a página define a preferência ao abrir (`definirUnidadesExibicao`). O CSV continua em kg, com a unidade no cabeçalho. As conversões arredondam o ruído do ponto flutuante (32,55 kg viraria 32.549,999… g).
+
 | Grandeza | Unidade |
 |---|---|
 | Peso médio | gramas (g) |
@@ -311,7 +358,8 @@ Os valores são sempre armazenados nestas unidades e convertidos apenas na exibi
   especie: "Tilápia",
   volumeM3: 300,
   densidadeMaximaKgM3: 4,      // kg de peixe por m³ de água; null = não definida
-  tabelaArracoamentoId: null,  // tabela de alimentação (config.tabelasArracoamento) ou null
+  tabelaArracoamentoId: null,  // plano de alimentação (config.tabelasArracoamento) ou null
+  intervaloBiometriaDias: 15,  // biometria a cada N dias (RN25)
   status: "ativo",             // "ativo" | "vazio" | "manutencao" | "arquivado"
   limitesAlerta: null,         // null = usa os limites padrão; ou objeto parcial
   observacoes: "",
@@ -354,7 +402,8 @@ Os valores são sempre armazenados nestas unidades e convertidos apenas na exibi
   biometria: {                  // opcional: amostra pesada (o pesoMedioG sai dela)
     peixesAmostra: 50,
     pesoAmostraG: 10500,
-    comprimentoMedioCm: 24.5    // opcional
+    comprimentoMedioCm: 24.5,   // opcional
+    pesosIndividuaisG: null     // opcional: [102.5, 98, ...] no modo de pesos individuais (RN26)
   },
   racaoSobraKg: null,           // opcional: consumida = racaoKg − sobra
   mortalidade: 4,               // opcional: mortos encontrados no dia (observação parcial)
@@ -388,12 +437,12 @@ Os valores são sempre armazenados nestas unidades e convertidos apenas na exibi
 
 ### 8.3 Armazenamento
 
-Uma única chave no `localStorage`. Ela continua se chamando `fishtrack:v1` na versão 4 do formato, para não perder os dados existentes; a versão do formato fica no campo `versao`.
+Uma única chave no `localStorage`. Ela continua se chamando `fishtrack:v1` na versão 5 do formato, para não perder os dados existentes; a versão do formato fica no campo `versao`.
 
 ```js
 // chave: "fishtrack:v1"
 {
-  versao: 4,
+  versao: 5,
   tanques: [],
   ciclos: [],
   registros: [],
@@ -409,7 +458,8 @@ Uma única chave no `localStorage`. Ela continua se chamando `fishtrack:v1` na v
     },
     metaFca: 1.6,                // meta de conversão alimentar
     ultimoBackupEm: null,        // data e hora do último backup (ISO)
-    tabelasArracoamento: []      // [{ id, nome, faixas: [{ pesoDeG, pesoAteG, taxaPct, refeicoes }] }]
+    tabelasArracoamento: [],     // planos: [{ id, nome, tipo: "fixo" | "faixas", taxaPct?, refeicoes?, faixas: [{ pesoDeG, pesoAteG, taxaPct, refeicoes }] }]
+    unidades: { biomassa: "kg", racao: "kg" }  // exibição: biomassa kg | t, ração kg | g
   }
 }
 ```
@@ -441,7 +491,14 @@ O `limitesAlerta` de cada tanque usa as mesmas chaves e pode conter só as que f
 3. Tanques: `tabelaArracoamentoId = null`.
 4. Config: `tabelasArracoamento = []`.
 
-Backups das versões 1, 2 e 3 continuam podendo ser restaurados: passam pelas migrações em sequência.
+**Da versão 4 para a 5** (biometria no tanque, unidades e plano de alimentação):
+
+1. Tanques: `intervaloBiometriaDias = 15`.
+2. Planos de alimentação existentes: `tipo = "faixas"`.
+3. Registros com `biometria`: acrescenta `pesosIndividuaisG = null` dentro de `biometria`.
+4. Config: `unidades = { biomassa: "kg", racao: "kg" }`.
+
+Backups das versões 1 a 4 continuam podendo ser restaurados: passam pelas migrações em sequência.
 4. Define `versao = 2`.
 
 ---
@@ -477,7 +534,9 @@ Backups das versões 1, 2 e 3 continuam podendo ser restaurados: passam pelas mi
 - **RN21.** No povoamento, o lote é informado de um de dois jeitos: **contado** (quantidade inteira > 0 e peso médio > 0; a biomassa inicial é calculada) ou **pesado** (biomassa do lote > 0 e peso médio da amostra > 0; a quantidade é calculada, `biomassa × 1000 ÷ peso médio`, arredondada, e precisa dar pelo menos 1 peixe).
 - **RN22.** Na biometria por amostra, peixes na amostra (inteiro) e peso da amostra vêm juntos e são maiores que zero; o comprimento médio, se informado, é maior que zero. A amostra não pode passar da quantidade estimada no tanque naquela data. O peso médio do registro é `peso da amostra ÷ peixes na amostra`. Continua valendo informar só o peso médio.
 - **RN23.** A sobra de ração é ≥ 0, só pode ser informada com a ração fornecida e não pode ser maior que ela. A causa da mortalidade é uma da lista e só pode ser informada com mortos encontrados.
-- **RN24.** Numa tabela de alimentação, o nome é obrigatório (até 80 caracteres) e há pelo menos uma faixa. Em cada faixa, "peso até" é maior que "peso de", a taxa vai de 0,1 a 20% da biomassa por dia e as refeições de 1 a 12. As faixas não se sobrepõem (podem encostar, como 190–225 e 225–265). Os erros aparecem no campo da faixa. O tanque, se tiver tabela, aponta para uma existente.
+- **RN24.** Num plano de alimentação, o nome é obrigatório (até 80 caracteres). No plano **fixo**, a taxa vai de 0,1 a 20% do peso total por dia e as refeições de 1 a 12. No plano **por faixas**, há pelo menos uma faixa; em cada uma, "peso até" é maior que "peso de", com a mesma taxa e refeições; as faixas não se sobrepõem (podem encostar, como 190–225 e 225–265). Os erros aparecem no campo da faixa, em linguagem simples. O tanque, se tiver plano, aponta para um existente.
+- **RN25.** O intervalo da biometria do tanque é um número inteiro de 1 a 90 dias (padrão 15).
+- **RN26.** Na biometria por pesos individuais, há pelo menos 2 pesos, todos maiores que zero; deles saem os peixes na amostra (quantidade) e o peso da amostra (soma).
 
 ### 9.3.1 Lembretes
 
@@ -583,6 +642,7 @@ Os alertas são calculados sempre que os dados mudam e não são armazenados. Ca
 | **Tanque próximo da capacidade** | capacidade utilizada (biomassa ÷ carga máxima) ≥ X%; não avaliado sem densidade máxima | 90% | Média |
 | **Peso médio abaixo do esperado** | peso atual < X% do peso esperado na data* | 85% | Baixa |
 | **Tanque sem registro** | nenhum registro há mais de X dias | 7 dias | Baixa |
+| **Biometria atrasada** | passou da próxima biometria (seção 9.11): "Última biometria em dd/mm, há N dias (a cada X dias)"; ação "Fazer biometria" | intervalo do tanque (15 dias) | Baixa |
 
 \* O **peso esperado** é uma interpolação linear entre o peso inicial (na data de início) e o peso alvo (na data prevista de despesca). Esse alerta só é avaliado se o ciclo tiver peso alvo e data prevista.
 
@@ -605,7 +665,7 @@ Na agenda geral, tanques arquivados ficam de fora. A despesca prevista só apare
 
 ### 9.7 Exportação e backup
 
-- **CSV de registros:** um arquivo por tanque ou geral, com uma linha por registro e colunas para tanque, espécie, ciclo, data e todos os campos.
+- **CSV de registros:** um arquivo por tanque ou geral, com uma linha por registro e colunas para tanque, espécie, ciclo, data, tipo ("Biometria" ou "Rotina"), todos os campos e o CV dos pesos individuais, quando houver.
 - **CSV de lembretes:** uma linha por lembrete (não por ocorrência): título, tanque ("Geral" quando não tem), primeira data, repetição, datas concluídas e observação.
 - Nos dois: separador `;` e decimal com vírgula, para abrir corretamente no Excel em português. O arquivo começa com BOM UTF-8 para manter os acentos, e textos que começam com `=`, `+`, `-` ou `@` recebem um apóstrofo, para o Excel não tratá-los como fórmula.
 - **Backup JSON:** exporta o objeto completo do `localStorage` e registra a data em `config.ultimoBackupEm`. A restauração valida a `versao`, migra backups antigos (seção 8.4) e pede confirmação antes de substituir os dados.
@@ -649,6 +709,15 @@ Onde aparece: no registro (seção Alimentação, com "Usar sugestão", que pree
 
 ---
 
+### 9.11 Biometria
+
+- **Próxima biometria** = data da última pesagem do ciclo (ou o povoamento) + `intervaloBiometriaDias` do tanque (RN25, padrão 15). Atrasada quando hoje passa dessa data: o cartão de peso fica âmbar com "Fazer biometria", entra o alerta "Biometria atrasada" (seção 9.5), e a ração sugerida avisa "Biometria atrasada há N dias: a sugestão pode estar desatualizada." (no plano por faixas; o fixo não depende do peso).
+- **Agenda:** a próxima biometria de cada tanque com ciclo ativo aparece como "Biometria prevista · T01" (etiqueta no estilo de lembrete; atrasada, fica na data em que venceu). No quadro do dia, "Fazer biometria" abre o tanque com o painel na data do dia.
+- **Coeficiente de variação (CV)** dos pesos individuais = desvio padrão amostral (n − 1) ÷ média × 100. Até 20% (`LIMITE_CV_UNIFORME_PCT`, a validar), "Lote uniforme"; acima, "Lote desuniforme: considere classificar". Um peso só não tem CV.
+- `calcularEstatisticasPesos` e `calcularProximaBiometria` (puras, em `indicadores.js`); `ehRegistroDeBiometria`, `listarBiometriasDoCiclo`, `salvarBiometria`, `calcularPreviaBiometria` e `obterProximoTanqueBiometria` em `domain/biometrias.js`. Registro só de biometria: tem peso e nada de ração, sobra, mortos ou natalidade.
+
+---
+
 ## 10. Estrutura de arquivos
 
 ```
@@ -685,7 +754,8 @@ fish-track/
 │   │   ├── indicadores.js    # Cálculos (funções puras)
 │   │   ├── alertas.js        # Avaliação de alertas (funções puras)
 │   │   ├── lembretes.js      # Lembretes da agenda e suas ocorrências (RN16 a RN18)
-│   │   ├── arracoamento.js   # Tabelas de alimentação (RN24) e o modelo Embrapa
+│   │   ├── arracoamento.js   # Planos de alimentação (RN24) e o modelo Embrapa
+│   │   ├── biometrias.js     # Biometria: salvar, listar, prévia e rodada (RN26)
 │   │   ├── configuracoes.js  # Limites de alerta: padrão e por tanque
 │   │   └── validacao.js      # Validações compartilhadas
 │   ├── ui/
@@ -693,6 +763,8 @@ fish-track/
 │   │   ├── componentes.js    # Cartões, badges, mensagens, modais
 │   │   ├── graficos.js       # Gráficos em SVG e cor fixa por tanque
 │   │   ├── icones.js         # Ícones em traço
+│   │   ├── painel-biometria.js # Painel de biometria do tanque (seção 7.13)
+│   │   ├── editor-plano.js   # Editor do plano de alimentação (seção 7.14)
 │   │   └── calendario.js     # Agenda: grade com etiquetas, quadro do dia e formulário de lembrete
 │   ├── services/
 │   │   ├── exportacao.js     # CSV, backup JSON e PNG dos gráficos
@@ -854,5 +926,8 @@ fish-track/
 | Corrigir ou cancelar um ciclo iniciado com dados errados | Não previsto no MVP: hoje só é possível registrar a despesca | Produtores |
 | Conteúdo exato dos relatórios em PDF | O da seção 7.12 | Produtores |
 | Tabela de alimentação padrão por espécie | Só o modelo Embrapa de tilápia em tanque-rede, como exemplo; cada produtor cria a sua | Laboratório de piscicultura |
+| Limite de CV para "lote uniforme" | 20% (`LIMITE_CV_UNIFORME_PCT`) | Laboratório de piscicultura |
+| Intervalo padrão da biometria | 15 dias, ajustável por tanque (RN25) | Laboratório de piscicultura |
+| Unidades preferidas (inclusive se a tonelada é usada) | Biomassa em kg ou t, ração em kg ou g; padrão kg e kg | Laboratório de piscicultura |
 | Escala da TCE e do fator K (com ou sem × 100) | Com × 100, em `FATOR_TCE` e `FATOR_K` | Laboratório de piscicultura |
 | Fórmulas do fechamento do ciclo (seção 9.4.1) | As da tabela, com a quantidade final estimada pela biomassa quando não houver contagem | Laboratório de piscicultura |

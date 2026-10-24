@@ -2,8 +2,15 @@
 // os dados mudam e nunca ficam salvos.
 
 import { diasEntre } from '../core/utils.js';
-import { formatarData, formatarGramas, formatarKg, formatarPercentual, pluralizar } from '../core/format.js';
-import { calcularIndicadores, calcularLinhaDoTempo } from './indicadores.js';
+import {
+    formatarBiomassa,
+    formatarData,
+    formatarGramas,
+    formatarPercentual,
+    formatarRacao,
+    pluralizar,
+} from '../core/format.js';
+import { calcularIndicadores, calcularLinhaDoTempo, calcularProximaBiometria } from './indicadores.js';
 
 export const LIMITES_PADRAO = Object.freeze({
     mortalidadeRegistroPct: 1,
@@ -83,7 +90,7 @@ export function avaliarAlertas({ tanque, ciclo, registros, indicadores, limites,
         const percentual = (ultimoDia.racaoDiaKg / ultimoDia.biomassaKg) * 100;
         if (percentual > limites.racaoDiariaPct) {
             adicionar('racao', 'media', 'Ração acima do limite',
-                `${formatarKg(ultimoDia.racaoDiaKg)} em ${formatarData(ultimoDia.data)}: `
+                `${formatarRacao(ultimoDia.racaoDiaKg)} em ${formatarData(ultimoDia.data)}: `
                 + `${formatarPercentual(percentual)} da biomassa (limite de ${formatarPercentual(limites.racaoDiariaPct)}).`,
                 ultimoDia.data);
         }
@@ -93,7 +100,7 @@ export function avaliarAlertas({ tanque, ciclo, registros, indicadores, limites,
     if (indicadores.capacidadeUtilizada !== null && indicadores.capacidadeUtilizada >= limites.capacidadePct) {
         adicionar('capacidade', 'media', 'Tanque próximo da capacidade',
             `${formatarPercentual(indicadores.capacidadeUtilizada)} da capacidade: `
-            + `${formatarKg(indicadores.biomassaKg)} de ${formatarKg(indicadores.cargaMaximaKg)} `
+            + `${formatarBiomassa(indicadores.biomassaKg)} de ${formatarBiomassa(indicadores.cargaMaximaKg)} `
             + `(limite de ${formatarPercentual(limites.capacidadePct)}).`,
             dataReferencia);
     }
@@ -110,6 +117,17 @@ export function avaliarAlertas({ tanque, ciclo, registros, indicadores, limites,
                 + `(mínimo de ${formatarPercentual(limites.pesoEsperadoPct)}).`,
                 indicadores.dataPesoAtual);
         }
+    }
+
+    // Biometria atrasada (seção 9.11): passou do intervalo do tanque desde a última pesagem.
+    const biometria = calcularProximaBiometria({ tanque, ciclo, registros, hoje });
+    if (biometria.diasAtraso > 0) {
+        const desde = biometria.houveBiometria
+            ? `Última biometria em ${formatarData(biometria.dataUltima)}`
+            : `Nenhuma biometria desde o povoamento (${formatarData(biometria.dataUltima)})`;
+        adicionar('biometria-atrasada', 'baixa', 'Biometria atrasada',
+            `${desde}, há ${pluralizar(diasEntre(biometria.dataUltima, hoje), 'dia', 'dias')} (a cada ${pluralizar(biometria.intervaloDias, 'dia', 'dias')}).`,
+            biometria.dataProxima);
     }
 
     const diasSemRegistro = diasEntre(dataReferencia, hoje);
@@ -142,7 +160,7 @@ export function avaliarAlertasDosDias({ ciclo, registros, limites }) {
             const percentual = (dia.racaoDiaKg / dia.biomassaKg) * 100;
             if (percentual > limites.racaoDiariaPct) {
                 alertas.push({ data: dia.data, tipo: 'racao', gravidade: 'media', titulo: 'Ração acima do limite',
-                    descricao: `${formatarKg(dia.racaoDiaKg)}: ${formatarPercentual(percentual)} da biomassa.` });
+                    descricao: `${formatarRacao(dia.racaoDiaKg)}: ${formatarPercentual(percentual)} da biomassa.` });
             }
         }
     }

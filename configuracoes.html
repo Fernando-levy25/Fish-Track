@@ -122,45 +122,41 @@
         </section>
 
         <section class="secao" aria-labelledby="titulo-tabelas">
-            <h2 class="secao__titulo" id="titulo-tabelas">Tabelas de alimentação</h2>
-            <p class="secao__descricao">Para cada faixa de peso, a taxa de arraçoamento (% da biomassa por dia) e as refeições. Cada tanque escolhe a sua, em Editar tanque, e o app sugere a ração do dia. A taxa depende da espécie, da ração e da temperatura. Use a tabela do fabricante da ração ou do seu técnico.</p>
+            <h2 class="secao__titulo" id="titulo-tabelas">Planos de alimentação</h2>
+            <p class="secao__descricao">O plano diz quanto de ração dar por dia, como uma porcentagem do peso total dos peixes. Cada tanque escolhe o seu (em Editar tanque, na parte Alimentação); aqui ficam os planos salvos para reutilizar.</p>
 
             <ul class="lista-tabelas" id="lista-tabelas"></ul>
 
             <div class="secao__acoes">
-                <button class="botao botao--primario" id="botao-nova-tabela" type="button">Nova tabela</button>
-                <button class="botao botao--secundario" id="botao-modelo-tabela" type="button">Carregar modelo</button>
+                <button class="botao botao--primario" id="botao-nova-tabela" type="button">Novo plano</button>
             </div>
             <p class="mensagem" id="mensagem-tabelas" role="status"></p>
+        </section>
 
-            <form class="formulario editor-tabela" id="formulario-tabela" novalidate hidden>
-                <h3 class="editor-tabela__titulo" id="titulo-editor-tabela">Nova tabela</h3>
-                <input type="hidden" name="id">
-                <div class="campo">
-                    <label class="campo__rotulo" for="campo-nome-tabela">Nome da tabela</label>
-                    <input class="campo__input" id="campo-nome-tabela" name="nome" type="text" maxlength="80" autocomplete="off" aria-describedby="erro-nome-tabela">
-                    <p class="campo__erro" id="erro-nome-tabela"></p>
+        <section class="secao" aria-labelledby="titulo-unidades">
+            <h2 class="secao__titulo" id="titulo-unidades">Unidades</h2>
+            <p class="secao__descricao">Como os pesos aparecem em todo o app. A unidade nunca muda sozinha conforme o tamanho do número.</p>
+
+            <form class="formulario" id="formulario-unidades" novalidate>
+                <fieldset class="campo campo--grupo">
+                    <legend class="campo__rotulo">Peso total dos peixes (biomassa)</legend>
+                    <div class="segmentado">
+                        <label class="segmentado__opcao"><input type="radio" name="biomassa" value="kg">Quilos (kg)</label>
+                        <label class="segmentado__opcao"><input type="radio" name="biomassa" value="t">Toneladas (t)</label>
+                    </div>
+                </fieldset>
+                <fieldset class="campo campo--grupo">
+                    <legend class="campo__rotulo">Ração</legend>
+                    <div class="segmentado">
+                        <label class="segmentado__opcao"><input type="radio" name="racao" value="kg">Quilos (kg)</label>
+                        <label class="segmentado__opcao"><input type="radio" name="racao" value="g">Gramas (g)</label>
+                    </div>
+                </fieldset>
+                <p class="formulario__erro-geral" id="erro-geral-unidades" role="alert" hidden></p>
+                <div class="secao__acoes">
+                    <button class="botao botao--primario" type="submit">Salvar unidades</button>
                 </div>
-                <div class="tabela-rolagem">
-                    <table class="tabela editor-tabela__faixas">
-                        <thead>
-                            <tr>
-                                <th scope="col">Peso de (g)</th>
-                                <th scope="col">Peso até (g)</th>
-                                <th scope="col">Taxa (% da biomassa/dia)</th>
-                                <th scope="col">Refeições por dia</th>
-                                <th scope="col"><span class="visualmente-oculto">Ações</span></th>
-                            </tr>
-                        </thead>
-                        <tbody id="corpo-faixas"></tbody>
-                    </table>
-                </div>
-                <button class="botao botao--secundario botao--pequeno editor-tabela__adicionar" id="botao-adicionar-faixa" type="button">Adicionar faixa</button>
-                <p class="formulario__erro-geral" id="erro-geral-tabela" role="alert" hidden></p>
-                <div class="formulario__acoes">
-                    <button class="botao botao--secundario" id="botao-cancelar-tabela" type="button">Cancelar</button>
-                    <button class="botao botao--primario" type="submit">Salvar tabela</button>
-                </div>
+                <p class="mensagem" id="mensagem-unidades" role="status"></p>
             </form>
         </section>
 
@@ -216,6 +212,8 @@
             <p class="mensagem" id="mensagem-dados" role="status"></p>
         </section>
     </main>
+
+    <dialog class="dialogo dialogo--formulario dialogo--largo" id="dialogo-plano" aria-labelledby="titulo-editor-plano"></dialog>
 
     <dialog class="dialogo" id="dialogo-confirmacao" aria-labelledby="mensagem-confirmacao">
         <form class="dialogo__conteudo" method="dialog">

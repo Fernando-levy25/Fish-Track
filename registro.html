@@ -95,13 +95,13 @@
                         </div>
                         <div class="formulario__grade">
                             <div class="campo">
-                                <label class="campo__rotulo" for="campo-racao">Ração fornecida (kg)</label>
+                                <label class="campo__rotulo" for="campo-racao">Ração fornecida</label>
                                 <input class="campo__input" id="campo-racao" name="racaoKg" type="text" autocomplete="off" pattern="[0-9]*[.,]?[0-9]*" inputmode="decimal" aria-describedby="erro-racao">
                                 <p class="campo__erro" id="erro-racao"></p>
                             </div>
 
                             <div class="campo">
-                                <label class="campo__rotulo" for="campo-sobra">Sobra (kg, opcional)</label>
+                                <label class="campo__rotulo" for="campo-sobra">Sobra (opcional)</label>
                                 <input class="campo__input" id="campo-sobra" name="racaoSobraKg" type="text" autocomplete="off" pattern="[0-9]*[.,]?[0-9]*" inputmode="decimal" aria-describedby="ajuda-sobra erro-sobra">
                                 <p class="campo__ajuda" id="ajuda-sobra">Ração que os peixes não comeram. A conversão alimentar usa a ração consumida.</p>
                                 <p class="campo__erro" id="erro-sobra"></p>
@@ -136,53 +136,14 @@
                     </div>
                 </details>
 
-                <details class="secao-registro" open>
-                    <summary class="secao-registro__titulo">Biometria</summary>
-                    <div class="secao-registro__corpo">
-                        <fieldset class="campo campo--grupo">
-                            <legend class="campo__rotulo">Como você vai informar o peso?</legend>
-                            <div class="segmentado">
-                                <label class="segmentado__opcao"><input type="radio" name="modoBiometria" value="amostra" checked>Pesei uma amostra</label>
-                                <label class="segmentado__opcao"><input type="radio" name="modoBiometria" value="peso">Informar só o peso médio</label>
-                            </div>
-                        </fieldset>
+                <p class="aviso-info aviso-biometria" id="aviso-biometria" hidden>
+                    Vai pesar os peixes? Use a <a class="link" id="link-biometria" href="tanques.html">Biometria do tanque</a>.
+                </p>
 
-                        <div class="formulario__grade" id="grupo-amostra">
-                            <div class="campo">
-                                <label class="campo__rotulo" for="campo-peixes-amostra">Peixes na amostra</label>
-                                <input class="campo__input" id="campo-peixes-amostra" name="peixesAmostra" type="text" autocomplete="off" pattern="[0-9]*" inputmode="numeric" aria-describedby="ajuda-peixes-amostra erro-peixes-amostra">
-                                <p class="campo__ajuda" id="ajuda-peixes-amostra">Em geral, de 50 a 100 peixes.</p>
-                                <p class="campo__erro" id="erro-peixes-amostra"></p>
-                            </div>
-
-                            <div class="campo">
-                                <label class="campo__rotulo" for="campo-peso-amostra">Peso total da amostra</label>
-                                <div class="campo__com-unidade">
-                                    <input class="campo__input" id="campo-peso-amostra" name="pesoAmostraG" type="text" autocomplete="off" pattern="[0-9.]*[,]?[0-9]*" inputmode="decimal" aria-describedby="erro-peso-amostra">
-                                    <div class="segmentado segmentado--compacto" role="radiogroup" aria-label="Unidade do peso da amostra">
-                                        <label class="segmentado__opcao"><input type="radio" name="unidadePesoAmostra" value="kg" checked>kg</label>
-                                        <label class="segmentado__opcao"><input type="radio" name="unidadePesoAmostra" value="g">g</label>
-                                    </div>
-                                </div>
-                                <p class="campo__erro" id="erro-peso-amostra"></p>
-                            </div>
-
-                            <div class="campo">
-                                <label class="campo__rotulo" for="campo-comprimento">Comprimento médio (cm, opcional)</label>
-                                <input class="campo__input" id="campo-comprimento" name="comprimentoMedioCm" type="text" autocomplete="off" pattern="[0-9]*[.,]?[0-9]*" inputmode="decimal" aria-describedby="erro-comprimento">
-                                <p class="campo__erro" id="erro-comprimento"></p>
-                            </div>
-
-                            <p class="resultado-calculado" id="peso-medio-calculado" aria-live="polite"></p>
-                        </div>
-
-                        <div class="campo" id="grupo-peso-medio" hidden>
-                            <label class="campo__rotulo" for="campo-peso-medio">Peso médio (g)</label>
-                            <input class="campo__input" id="campo-peso-medio" name="pesoMedioG" type="text" autocomplete="off" pattern="[0-9]*[.,]?[0-9]*" inputmode="decimal" aria-describedby="erro-peso-medio">
-                            <p class="campo__erro" id="erro-peso-medio"></p>
-                        </div>
-                    </div>
-                </details>
+                <div class="peso-registro" id="peso-registro" hidden>
+                    <p class="peso-registro__texto" id="texto-peso-registro"></p>
+                    <a class="link" id="link-editar-peso" href="tanques.html">Editar na biometria</a>
+                </div>
 
                 <div class="campo">
                     <label class="campo__rotulo" for="campo-observacoes">Observações</label>

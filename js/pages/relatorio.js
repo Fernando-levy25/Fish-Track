@@ -4,6 +4,7 @@
 
 import { hojeISO } from '../core/utils.js';
 import {
+    formatarBiomassa,
     formatarData,
     formatarDataCompleta,
     formatarDensidade,
@@ -11,10 +12,11 @@ import {
     formatarGramas,
     formatarGramasPorDia,
     formatarInteiro,
-    formatarKg,
     formatarNumero,
     formatarPercentual,
+    formatarRacao,
     formatarVolume,
+    obterUnidadesExibicao,
     pluralizar,
 } from '../core/format.js';
 import { listarSituacoes, obterSituacao, ROTULOS_STATUS } from '../domain/tanques.js';
@@ -81,7 +83,7 @@ function montarRelatorioTanque(situacao) {
             classe: 'relatorio__nota',
             texto: ultimo
                 ? `Sem ciclo em andamento. Último ciclo: povoamento em ${formatarData(ultimo.dataInicio)}, despesca em ${formatarData(ultimo.dataDespesca)} `
-                    + `com ${formatarKg(ultimo.biomassaFinalKg)} e peso médio de ${formatarGramas(ultimo.pesoMedioFinalG)}.`
+                    + `com ${formatarBiomassa(ultimo.biomassaFinalKg)} e peso médio de ${formatarGramas(ultimo.pesoMedioFinalG)}.`
                 : 'Este tanque ainda não teve ciclos.',
         }));
         conteudo.replaceChildren(...secoes);
@@ -95,10 +97,10 @@ function montarRelatorioTanque(situacao) {
         criarSecao('Indicadores', [criarIndicadores([
             { rotulo: 'Peixes (estimado)', valor: formatarInteiro(indicadores.quantidade), apoio: `${pluralizar(indicadores.mortalidadeAcumulada, 'morto encontrado', 'mortos encontrados')} · sobrevivência estimada de ${formatarPercentual(indicadores.taxaSobrevivencia)}` },
             { rotulo: 'Peso médio', valor: formatarGramas(indicadores.pesoMedioG), apoio: [`pesado em ${formatarData(indicadores.dataPesoAtual)}`, cicloAtivo.pesoAlvoG && `alvo de ${formatarGramas(cicloAtivo.pesoAlvoG)}`] },
-            { rotulo: 'Biomassa (estimada)', valor: formatarKg(indicadores.biomassaKg), apoio: `${formatarDensidade(indicadores.densidadeKgM3)} de água` },
-            { rotulo: 'FCA (estimada)', valor: formatarFca(indicadores.fca), apoio: [`meta de ${formatarFca(metaFca)}`, `${formatarKg(indicadores.racaoAcumuladaKg)} de ração para ${formatarKg(indicadores.ganhoBiomassaKg)} de ganho`] },
+            { rotulo: 'Biomassa (estimada)', valor: formatarBiomassa(indicadores.biomassaKg), apoio: `${formatarDensidade(indicadores.densidadeKgM3)} de água` },
+            { rotulo: 'FCA (estimada)', valor: formatarFca(indicadores.fca), apoio: [`meta de ${formatarFca(metaFca)}`, `${formatarRacao(indicadores.racaoAcumuladaKg)} de ração para ${formatarBiomassa(indicadores.ganhoBiomassaKg)} de ganho`] },
             { rotulo: 'Mortalidade observada', valor: formatarPercentual(indicadores.taxaMortalidade), apoio: `real só na despesca · limite de ${formatarPercentual(limites.mortalidadeAcumuladaPct)}` },
-            { rotulo: 'Capacidade (estimada)', valor: formatarPercentual(indicadores.capacidadeUtilizada), apoio: indicadores.cargaMaximaKg ? `de ${formatarKg(indicadores.cargaMaximaKg)} de carga máxima` : 'capacidade não definida' },
+            { rotulo: 'Capacidade (estimada)', valor: formatarPercentual(indicadores.capacidadeUtilizada), apoio: indicadores.cargaMaximaKg ? `de ${formatarBiomassa(indicadores.cargaMaximaKg)} de carga máxima` : 'capacidade não definida' },
             { rotulo: 'Crescimento', valor: formatarGramasPorDia(indicadores.taxaCrescimentoGDia), apoio: `média do ciclo: ${formatarGramasPorDia(indicadores.crescimentoCicloGDia)}` },
             { rotulo: 'Dias de cultivo', valor: formatarInteiro(indicadores.diasCultivo), apoio: cicloAtivo.dataPrevistaDespesca ? `despesca prevista para ${formatarData(cicloAtivo.dataPrevistaDespesca)}` : '' },
         ])]),
@@ -114,7 +116,7 @@ function criarDadosTanque({ tanque, cicloAtivo }) {
     const itens = [
         ['Espécie', tanque.especie],
         ['Volume', formatarVolume(tanque.volumeM3)],
-        ['Capacidade', cargaMaxima ? `${formatarDensidade(tanque.densidadeMaximaKgM3)} (${formatarKg(cargaMaxima)})` : 'Não definida'],
+        ['Capacidade', cargaMaxima ? `${formatarDensidade(tanque.densidadeMaximaKgM3)} (${formatarBiomassa(cargaMaxima)})` : 'Não definida'],
         ['Situação', ROTULOS_STATUS[tanque.status]],
     ];
     if (cicloAtivo) {
@@ -133,7 +135,7 @@ function criarDadosTanque({ tanque, cicloAtivo }) {
 function criarSecaoGraficos(series) {
     const graficos = [
         ['Peso médio (g)', series.pesoMedio, formatarGramas, 'Peso médio'],
-        ['Biomassa (kg)', series.biomassa, formatarKg, 'Biomassa'],
+        [`Biomassa (${obterUnidadesExibicao().biomassa})`, series.biomassa, formatarBiomassa, 'Biomassa'],
         ['Mortalidade acumulada (%)', series.mortalidade, formatarPercentual, 'Mortalidade acumulada'],
     ].map(([titulo, pontos, formatarValor, rotulo]) => {
         const area = criarElemento('div', { classe: 'cartao-grafico__area' });
@@ -183,8 +185,8 @@ function montarRelatorioGeral(situacoes) {
             criarIndicadores([
                 { rotulo: 'Tanques em cultivo', valor: formatarInteiro(resumo.tanquesAtivos), apoio: `de ${pluralizar(situacoes.length, 'tanque cadastrado', 'tanques cadastrados')}` },
                 { rotulo: 'Peixes (estimado)', valor: formatarInteiro(resumo.totalPeixes) },
-                { rotulo: 'Biomassa (estimada)', valor: formatarKg(resumo.biomassaTotalKg) },
-                { rotulo: 'Ração consumida', valor: formatarKg(resumo.racaoAcumuladaKg), apoio: 'nos ciclos em andamento' },
+                { rotulo: 'Biomassa (estimada)', valor: formatarBiomassa(resumo.biomassaTotalKg) },
+                { rotulo: 'Ração consumida', valor: formatarRacao(resumo.racaoAcumuladaKg), apoio: 'nos ciclos em andamento' },
                 { rotulo: 'Mortalidade média', valor: formatarPercentual(resumo.mortalidadeMedia), apoio: 'ponderada pelo povoamento' },
                 { rotulo: 'Alertas', valor: formatarInteiro(alertas.length), apoio: alertas.length > 0 ? 'detalhes no fim do relatório' : 'nenhum no momento' },
             ]),
@@ -204,7 +206,7 @@ function montarRelatorioGeral(situacoes) {
 
 function criarBlocoTanque({ tanque, ciclo, registros, indicadores, alertas }) {
     const area = criarElemento('div', { classe: 'cartao-grafico__area' });
-    const desenhou = desenharGraficoLinha(area, calcularSeries(ciclo, registros).biomassa, { formatarValor: formatarKg, rotulo: `Biomassa do ${tanque.nome}` });
+    const desenhou = desenharGraficoLinha(area, calcularSeries(ciclo, registros).biomassa, { formatarValor: formatarBiomassa, rotulo: `Biomassa do ${tanque.nome}` });
     return criarSecao(tanque.nome, [
         criarElemento('p', { classe: 'relatorio__nota', texto: `${tanque.especie} · ${formatarVolume(tanque.volumeM3)} · povoado em ${formatarData(ciclo.dataInicio)} · `
             + `${pluralizar(alertas.length, 'alerta', 'alertas')}` }),
@@ -212,7 +214,7 @@ function criarBlocoTanque({ tanque, ciclo, registros, indicadores, alertas }) {
             criarIndicadores([
                 { rotulo: 'Peixes (estimado)', valor: formatarInteiro(indicadores.quantidade) },
                 { rotulo: 'Peso médio', valor: formatarGramas(indicadores.pesoMedioG) },
-                { rotulo: 'Biomassa (estimada)', valor: formatarKg(indicadores.biomassaKg) },
+                { rotulo: 'Biomassa (estimada)', valor: formatarBiomassa(indicadores.biomassaKg) },
                 { rotulo: 'FCA (estimada)', valor: formatarFca(indicadores.fca) },
                 { rotulo: 'Mortalidade observada', valor: formatarPercentual(indicadores.taxaMortalidade) },
                 { rotulo: 'Capacidade (estimada)', valor: formatarPercentual(indicadores.capacidadeUtilizada) },
@@ -220,7 +222,7 @@ function criarBlocoTanque({ tanque, ciclo, registros, indicadores, alertas }) {
                 { rotulo: 'Último registro', valor: indicadores.ultimoRegistro ? formatarData(indicadores.ultimoRegistro.data) : '—' },
             ], { compacto: true }),
             criarElemento('figure', { classe: 'cartao-grafico' }, [
-                criarElemento('figcaption', { classe: 'cartao-grafico__titulo', texto: 'Biomassa (kg)' }),
+                criarElemento('figcaption', { classe: 'cartao-grafico__titulo', texto: `Biomassa (${obterUnidadesExibicao().biomassa})` }),
                 desenhou ? area : criarElemento('p', { classe: 'cartao-grafico__vazio', texto: 'Sem dados suficientes para o gráfico.' }),
             ]),
         ]),

@@ -1,7 +1,7 @@
 // Lista de tanques com filtro por status (seção 7.2).
 
 import { hojeISO } from '../core/utils.js';
-import { formatarData, formatarInteiro, formatarKg } from '../core/format.js';
+import { formatarBiomassa, formatarData, formatarInteiro } from '../core/format.js';
 import { listarSituacoes, listarTanques, ROTULOS_STATUS } from '../domain/tanques.js';
 import { calcularIndicadores } from '../domain/indicadores.js';
 import { resolverLimites } from '../domain/alertas.js';
@@ -55,7 +55,7 @@ function criarCartao({ tanque, cicloAtivo, registros, ultimoRegistro }, hoje, li
         selo: { texto: ROTULOS_STATUS[tanque.status], variante: tanque.status },
         metricas: [
             { rotulo: 'Peixes (estimado)', valor: formatarInteiro(indicadores?.quantidade) },
-            { rotulo: 'Biomassa (estimada)', valor: formatarKg(indicadores?.biomassaKg) },
+            { rotulo: 'Biomassa (estimada)', valor: formatarBiomassa(indicadores?.biomassaKg) },
             { rotulo: 'Último registro', valor: formatarData(ultimoRegistro?.data) },
             cicloAtivo && { rotulo: 'Ração sugerida', valor: descreverRacaoSugerida({ tanque, cicloAtivo, registros }, hoje).textoDia ?? '—' },
         ].filter(Boolean),

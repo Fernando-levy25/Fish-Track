@@ -9,7 +9,7 @@ import { arquivarTanque, salvarTanque } from '../domain/tanques.js';
 import { iniciarCiclo, registrarDespesca } from '../domain/ciclos.js';
 import { salvarRegistro } from '../domain/registros.js';
 import { alternarConclusao, salvarLembrete } from '../domain/lembretes.js';
-import { carregarModeloEmbrapa } from '../domain/arracoamento.js';
+import { carregarModeloEmbrapa, salvarTabela } from '../domain/arracoamento.js';
 
 const SEMENTE = 20261016;
 const OBSERVACOES = [
@@ -38,8 +38,11 @@ function criarExemplo(hoje) {
     const sortear = criarSorteio(SEMENTE);
     const dia = (deslocamento) => somarDias(hoje, deslocamento);
 
-    // Tabela de alimentação de exemplo (seção 9.10), usada pelo Tanque 01.
+    // Planos de alimentação de exemplo (seção 9.10): o modelo Embrapa, por faixa
+    // de peso, no Tanque 01; um fixo no Tanque 02, com "exemplo" no nome para não
+    // parecer recomendação para a espécie.
     const tabelaEmbrapa = carregarModeloEmbrapa();
+    const planoFixo = salvarTabela({ nome: 'Exemplo — 3% fixo, 3 refeições', tipo: 'fixo', taxaPct: 3, refeicoes: 3 });
 
     // Bom crescimento. Capacidade informada como carga total; ração sugerida pela tabela.
     const tanque01 = salvarTanque({
@@ -52,10 +55,10 @@ function criarExemplo(hoje) {
     });
 
     // Crescimento abaixo do esperado e mortalidade alta no último registro.
-    const tanque02 = salvarTanque({ nome: 'Tanque 02', especie: 'Tambaqui', volumeM3: 450, densidadeMaximaKgM3: 2 });
+    const tanque02 = salvarTanque({ nome: 'Tanque 02', especie: 'Tambaqui', volumeM3: 450, densidadeMaximaKgM3: 2, tabelaArracoamentoId: planoFixo.id });
     simularCiclo(tanque02.id, {
         inicio: dia(-63), dias: 63, quantidadeInicial: 3200, pesoInicialG: 3, pesoFinalG: 230,
-        pesoAlvoG: 1200, duracaoPrevista: 240, sortear,
+        pesoAlvoG: 1200, duracaoPrevista: 240, pesosIndividuaisNoDia: 56, sortear,
         ultimoRegistro: { mortalidade: 45, observacoes: 'Peixes na superfície pela manhã. Possível falta de oxigênio.' },
     });
 
@@ -110,6 +113,7 @@ function simularCiclo(tanqueId, {
     duracaoPrevista = null,
     ultimoRegistro = null,
     despesca = null,
+    pesosIndividuaisNoDia = null,
     sortear,
 }) {
     iniciarCiclo(tanqueId, {
@@ -132,17 +136,23 @@ function simularCiclo(tanqueId, {
             data: somarDias(inicio, dia),
             racaoKg: arredondar(ganhoKg * (1.3 + sortear() * 0.3), 1),
         };
+        // A biometria é um registro à parte no mesmo dia (seção 9.11), como no painel do tanque.
+        let biometria = null;
         if (dia % 7 === 0) {
             const pesoMedioG = arredondar(pesoNoDia(dia) * (0.97 + sortear() * 0.06), 1);
-            // Biometrias a cada 14 dias são por amostra de 50 peixes, algumas com comprimento.
-            if (dia % 14 === 0) {
-                registro.biometria = {
+            biometria = { tanqueId, data: registro.data };
+            if (dia === pesosIndividuaisNoDia) {
+                // Um laboratório pesando peixe por peixe: 20 pesos em volta da média.
+                biometria.biometria = { pesosIndividuaisG: Array.from({ length: 20 }, (_, i) => arredondar(pesoMedioG * (1 + 0.12 * Math.sin(i * 1.7)), 1)) };
+            } else if (dia % 14 === 0) {
+                // Amostra de 50 peixes, às vezes com comprimento.
+                biometria.biometria = {
                     peixesAmostra: 50,
                     pesoAmostraG: arredondar(pesoMedioG * 50, 0),
                     comprimentoMedioCm: dia % 28 === 0 ? arredondar(4.6 * Math.cbrt(pesoMedioG), 1) : null,
                 };
             } else {
-                registro.pesoMedioG = pesoMedioG;
+                biometria.pesoMedioG = pesoMedioG;
             }
         }
         // De vez em quando sobra ração (pesada e anotada).
@@ -161,6 +171,9 @@ function simularCiclo(tanqueId, {
         }
         estoque -= registro.mortalidade ?? 0;
         salvarRegistro(registro);
+        if (biometria) {
+            salvarRegistro(biometria);
+        }
     }
 
     if (despesca) {

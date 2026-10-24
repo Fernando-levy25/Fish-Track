@@ -3,7 +3,20 @@
 // 10): recebe das páginas os textos já formatados. Texto do usuário entra
 // sempre por textContent (seção 11.2).
 
-import { formatarFca, formatarGramasPorDia, formatarInteiro, formatarKg, formatarNumero, formatarPercentual, pluralizar } from '../core/format.js';
+import {
+    converterParaBase,
+    converterUnidade,
+    formatarBiomassa,
+    formatarFca,
+    formatarGramasPorDia,
+    formatarInteiro,
+    formatarMassa,
+    formatarNumero,
+    formatarPercentual,
+    formatarRacao,
+    pluralizar,
+} from '../core/format.js';
+import { paraNumero } from '../core/utils.js';
 import { criarIcone } from './icones.js';
 
 // ---------- Elementos ----------
@@ -213,7 +226,7 @@ export function criarBarraCapacidade({
     if (faixa) {
         classes.push(`barra-agua--${faixa.variante}`);
     }
-    const textoValor = `${formatarPercentual(percentual)}, ${formatarNumero(cargaKg, 1)} de ${formatarKg(cargaMaximaKg)}`;
+    const textoValor = `${formatarPercentual(percentual)}, ${formatarBiomassa(cargaKg)} de ${formatarBiomassa(cargaMaximaKg)}`;
 
     const agua = criarElemento('div', { classe: 'barra-agua__agua' }, [
         criarElemento('div', { classe: 'barra-agua__preenchimento' }, [
@@ -228,8 +241,8 @@ export function criarBarraCapacidade({
     marca.style.setProperty('--posicao', `${Math.min(limiteAlerta, 100)}%`);
 
     const detalhe = compacta
-        ? `${formatarKg(cargaKg)} de ${formatarKg(cargaMaximaKg)}`
-        : `${formatarKg(cargaKg)} de ${formatarKg(cargaMaximaKg)} · ${formatarNumero(densidade, 2, 2)} de ${formatarNumero(densidadeMaxima, 2, 2)} kg/m³`;
+        ? `${formatarBiomassa(cargaKg)} de ${formatarBiomassa(cargaMaximaKg)}`
+        : `${formatarBiomassa(cargaKg)} de ${formatarBiomassa(cargaMaximaKg)} · ${formatarNumero(densidade, 2, 2)} de ${formatarNumero(densidadeMaxima, 2, 2)} kg/m³`;
 
     return criarElemento('div', { classe: classes.join(' ') }, [
         topo([
@@ -317,8 +330,8 @@ export function criarResumoCiclo(resultado, anterior = null) {
             `${formatarInteiro(resultado.quantidadeFinal)} peixes no fim${resultado.quantidadeFinalEstimada ? ' (estimada pela biomassa)' : ''}`],
         ['Mortalidade real', comparar(resultado.mortalidadeReal, formatarPercentual, 'mortalidadeReal'),
             `${pluralizar(resultado.mortalidadeNaoObservada, 'não observado', 'não observados')} · ${pluralizar(resultado.mortosEncontrados, 'encontrado', 'encontrados')}`],
-        ['Biomassa final', formatarKg(resultado.biomassaFinalKg), `ganho de ${formatarKg(resultado.ganhoBiomassaKg)}`],
-        ['FCA final', comparar(resultado.fcaFinal, formatarFca, 'fcaFinal'), `${formatarKg(resultado.racaoTotalKg)} de ração`],
+        ['Biomassa final', formatarBiomassa(resultado.biomassaFinalKg), `ganho de ${formatarBiomassa(resultado.ganhoBiomassaKg)}`],
+        ['FCA final', comparar(resultado.fcaFinal, formatarFca, 'fcaFinal'), `${formatarRacao(resultado.racaoTotalKg)} de ração`],
         ['Ganho de peso diário', formatarGramasPorDia(resultado.ganhoPesoDiarioG), resultado.tceCiclo === null ? '' : `TCE de ${formatarNumero(resultado.tceCiclo, 2)}%/dia`],
         ['Produtividade', `${formatarNumero(resultado.produtividadeKgM3, 2)} kg/m³`, ''],
         ['Dias de cultivo', comparar(resultado.diasCultivo, formatarInteiro, 'diasCultivo'), ''],
@@ -329,6 +342,63 @@ export function criarResumoCiclo(resultado, anterior = null) {
         apoio && criarElemento('dd', { classe: 'resumo-ciclo__apoio', texto: apoio }),
     ])));
 }
+
+// ---------- Campo com unidade (seção 8.1) ----------
+
+// Transforma um campo de peso num campo com seletor de unidade (o segmentado
+// "kg · g") e a conversão visível embaixo ("= 0,5 kg"). A unidade nunca é
+// adivinhada: é a escolhida, e a página lembra a última (aoTrocarUnidade).
+// lerBase() devolve o valor na unidade de armazenamento da grandeza.
+export function iniciarCampoUnidade(entrada, { grandeza, unidades, unidadeInicial, aoTrocarUnidade = () => {} }) {
+    let unidade = unidades.includes(unidadeInicial) ? unidadeInicial : unidades[0];
+    const nomeGrupo = `${entrada.name}Unidade`;
+    const grupo = criarElemento('div', {
+        classe: 'segmentado segmentado--compacto',
+        atributos: { role: 'radiogroup', 'aria-label': `Unidade de ${entrada.labels?.[0]?.textContent?.toLowerCase() ?? 'peso'}` },
+    }, unidades.map((opcao) => criarElemento('label', { classe: 'segmentado__opcao' }, [
+        criarElemento('input', { atributos: { type: 'radio', name: nomeGrupo, value: opcao, checked: opcao === unidade } }),
+        opcao,
+    ])));
+    const conversao = criarElemento('p', { classe: 'campo__conversao', atributos: { 'aria-live': 'polite', id: `conversao-${entrada.id}` } });
+    const caixa = criarElemento('div', { classe: 'campo__com-unidade' });
+    entrada.replaceWith(caixa);
+    caixa.append(entrada, grupo);
+    caixa.after(conversao);
+    entrada.setAttribute('aria-describedby', [entrada.getAttribute('aria-describedby'), conversao.id].filter(Boolean).join(' '));
+
+    const lerBase = () => {
+        const valor = paraNumero(entrada.value);
+        return valor === null || Number.isNaN(valor) ? valor : converterParaBase(valor, unidade, grandeza);
+    };
+    const atualizar = () => {
+        const valor = paraNumero(entrada.value);
+        const outras = unidades.filter((opcao) => opcao !== unidade);
+        conversao.textContent = valor > 0
+            ? outras.map((opcao) => `= ${formatarMassa(converterParaBase(valor, unidade, grandeza), grandeza, opcao)}`).join(' · ')
+            : '';
+    };
+    entrada.addEventListener('input', atualizar);
+    grupo.addEventListener('change', (evento) => {
+        unidade = evento.target.value;
+        aoTrocarUnidade(unidade);
+        atualizar();
+    });
+    atualizar();
+    return {
+        unidade: () => unidade,
+        lerBase,
+        // Mostra um valor guardado (na unidade base) convertido para a unidade escolhida.
+        definirBase(valorBase) {
+            entrada.value = valorBase === null || valorBase === undefined
+                ? ''
+                : formatarNumero(converterUnidade(valorBase, UNIDADE_BASE_DO_CAMPO[grandeza], unidade), 3).replace(/\./g, '');
+            atualizar();
+        },
+        atualizar,
+    };
+}
+
+const UNIDADE_BASE_DO_CAMPO = Object.freeze({ racao: 'kg', biomassa: 'kg', pesoAmostra: 'g' });
 
 // ---------- Formulários ----------
 

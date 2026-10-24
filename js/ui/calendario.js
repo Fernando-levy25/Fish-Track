@@ -23,6 +23,8 @@ const GRUPO_DO_TIPO = {
     povoamento: 'ciclo',
     'despesca-prevista': 'ciclo',
     'despesca-realizada': 'ciclo',
+    // A biometria prevista é um lembrete gerado pelo próprio app (seção 9.11).
+    'biometria-prevista': 'lembretes',
     alerta: 'alertas',
 };
 const ROTULO_CURTO = { povoamento: 'Povoamento', 'despesca-prevista': 'Despesca prevista', 'despesca-realizada': 'Despesca' };
@@ -46,6 +48,7 @@ export function criarAgenda(raiz, {
     carregarAtrasados,
     acoes,
     hrefRegistro,
+    hrefBiometria,
     hrefEditarRegistro,
     hrefTanque,
     abrirQuadroAoIniciar = true,
@@ -179,6 +182,9 @@ export function criarAgenda(raiz, {
         for (const evento of eventos.filter((item) => item.tipo in ROTULO_CURTO)) {
             etiquetas.push({ tipo: evento.tipo, texto: juntar(ROTULO_CURTO[evento.tipo], abreviacao(evento)), completo: `${evento.rotulo}: ${evento.tanqueNome}` });
         }
+        for (const evento of eventos.filter((item) => item.tipo === 'biometria-prevista')) {
+            etiquetas.push({ tipo: 'lembrete', texto: juntar('Biometria prevista', abreviacao(evento)), completo: `Biometria prevista: ${evento.tanqueNome}` });
+        }
         for (const evento of eventos.filter((item) => item.tipo === 'lembrete')) {
             etiquetas.push({
                 tipo: 'lembrete',
@@ -295,6 +301,7 @@ export function criarAgenda(raiz, {
             : [];
         const secoes = [
             atrasados.length > 0 && criarSecao('Atrasados', atrasados.map((item) => criarItemLembrete({ ...item, tipo: 'lembrete' }, { atrasado: true }))),
+            criarSecao('Biometria', eventos.filter((item) => item.tipo === 'biometria-prevista').map(criarItemBiometria)),
             criarSecao('Lembretes', eventos.filter((item) => item.tipo === 'lembrete').map((item) => criarItemLembrete(item))),
             criarSecao('Registros', eventos.filter((item) => item.tipo === 'registro').map(criarItemRegistro)),
             criarSecao('Ciclo', eventos.filter((item) => item.tipo in ROTULO_CURTO).map(criarItemCiclo)),
@@ -373,6 +380,19 @@ export function criarAgenda(raiz, {
             criarElemento('p', { classe: 'quadro__item-titulo' }, [marcaDoTanque(item.tanqueId, item.tanqueNome)]),
             criarElemento('p', { classe: 'quadro__item-detalhe', texto: item.descricao }),
             item.editavel && criarElemento('a', { classe: 'link quadro__acoes', texto: 'Editar registro', atributos: { href: hrefEditarRegistro(item.registroId) } }),
+        ]);
+    }
+
+    // Biometria prevista: o botão abre o painel do tanque já na data do dia.
+    function criarItemBiometria(item) {
+        return criarElemento('li', { classe: 'quadro__item quadro__item--lembrete' }, [
+            criarElemento('p', { classe: 'quadro__item-titulo', texto: item.atrasada ? 'Biometria atrasada' : 'Biometria prevista' }),
+            criarElemento('p', { classe: 'quadro__item-detalhe' }, [marcaDoTanque(item.tanqueId, item.tanqueNome), ` · ${item.descricao}`]),
+            criarElemento('a', {
+                classe: 'botao botao--secundario botao--pequeno quadro__acoes',
+                texto: 'Fazer biometria',
+                atributos: { href: hrefBiometria(item.tanqueId, selecionado <= hoje ? selecionado : hoje) },
+            }),
         ]);
     }
 

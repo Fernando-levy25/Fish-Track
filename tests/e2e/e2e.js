@@ -159,20 +159,23 @@ async function roteiro() {
     verificar('ponto de milhar: 1.000 peixes', dados().ciclos[0].quantidadeInicial === 1000, dados().ciclos[0].quantidadeInicial);
     verificar('tanque ativo', texto('selo-status-tanque') === 'Ativo');
     const barra = porId('destaques-tanque').querySelector('[role="progressbar"]');
-    verificar('barra de capacidade acessível', barra?.getAttribute('aria-valuetext') === '1,1%, 10 de 900 kg', barra?.getAttribute('aria-valuetext'));
+    verificar('barra de capacidade acessível, com unidade', barra?.getAttribute('aria-valuetext') === '1,1%, 10 kg de 900 kg', barra?.getAttribute('aria-valuetext'));
     verificar('densidade de povoamento em "Ver todos"', porId('corpo-todos-indicadores').textContent.includes('6,6 peixes/m³'), texto('corpo-todos-indicadores'));
     verificar('indicadores iniciais', indicador('quantidade') === '1.000' && indicador('diasCultivo') === '30' && indicador('fca') === '—',
         `${indicador('quantidade')} ${indicador('diasCultivo')} ${indicador('fca')}`);
     verificar('ações com ciclo ativo', !porId('link-novo-registro').hidden && !porId('link-registrar-despesca').hidden
         && porId('link-iniciar-ciclo').hidden && porId('botao-excluir-tanque').hidden && porId('botao-arquivar-tanque').hidden);
-    verificar('alerta de 30 dias sem registro', doc().querySelectorAll('#lista-alertas-tanque .lista-alertas__item--baixa').length === 1, texto('lista-alertas-tanque'));
+    verificar('alertas de 30 dias sem registro e sem biometria', doc().querySelectorAll('#lista-alertas-tanque .lista-alertas__item--baixa').length === 2
+        && texto('lista-alertas-tanque').includes('Biometria atrasada'), texto('lista-alertas-tanque'));
 
     etapa = 'Registros';
     await navegarCom(() => porId('link-novo-registro').click());
     verificar('tanque já escolhido', porId('campo-tanque').value === tanqueId);
     verificar('data padrão é hoje', porId('campo-data').value === HOJE);
     verificar('"Mortos encontrados" com ajuda e estimativa', doc().querySelector('label[for="campo-mortalidade"]').textContent === 'Mortos encontrados'
-        && texto('ajuda-mortalidade').endsWith('Estimativa atual: 1.000 peixes.') && !porId('campo-quantidade-contada'), texto('ajuda-mortalidade'));
+        && texto('ajuda-mortalidade').endsWith('Estimativa atual: ≈ 1.000 peixes.') && !porId('campo-quantidade-contada'), texto('ajuda-mortalidade'));
+    verificar('registro diário sem a seção de biometria', !porId('campo-peixes-amostra') && !porId('campo-peso-medio')
+        && !porId('aviso-biometria').hidden && porId('link-biometria').getAttribute('href') === `tanque.html?id=${tanqueId}&acao=biometria`);
     await enviarSemSair('formulario-registro');
     verificar('RN11 pede alguma medição', texto('erro-geral-registro') === 'Preencha pelo menos uma medição ou observação.', texto('erro-geral-registro'));
     preencher({ 'campo-mortalidade': '2000' });
@@ -184,25 +187,62 @@ async function roteiro() {
         await enviarSemSair('formulario-registro');
         verificar(`"${invalido}" recusado na ração`, texto('erro-racao') === 'Digite um número válido.', texto('erro-racao'));
     }
-    verificar('sem tabela, a sugestão diz o motivo', texto('texto-sugestao-racao') === 'Defina uma tabela de alimentação para este tanque.' && porId('botao-usar-sugestao').hidden);
-    doc().querySelector('[name="modoBiometria"][value="peso"]').click();
-    verificar('"Informar só o peso médio" mostra o campo', !porId('grupo-peso-medio').hidden && porId('grupo-amostra').hidden);
-    preencher({ 'campo-racao': '', 'campo-data': somarDias(HOJE, 1), 'campo-peso-medio': '30' });
+    verificar('sem plano, o motivo e a ação', texto('texto-sugestao-racao') === 'Sem plano de alimentação · Configurar' && porId('botao-usar-sugestao').hidden, texto('texto-sugestao-racao'));
+    preencher({ 'campo-racao': '', 'campo-data': somarDias(HOJE, 1), 'campo-mortalidade': '1' });
     await enviarSemSair('formulario-registro');
     verificar('RN12 data futura', texto('erro-data') === 'A data não pode ser futura.', texto('erro-data'));
     preencher({ 'campo-data': somarDias(HOJE, -20), 'campo-racao': '2,5', 'campo-mortalidade': '5' });
+    verificar('conversão visível da ração', texto('conversao-campo-racao') === '= 2.500 g', texto('conversao-campo-racao'));
     await enviarENavegar('formulario-registro');
     verificar('quantidade 995', indicador('quantidade') === '995', indicador('quantidade'));
     verificar('vírgula decimal: 2,5 kg', indicador('racaoAcumulada') === '2,5 kg', indicador('racaoAcumulada'));
     await navegarCom(() => porId('link-novo-registro').click());
-    // Biometria por amostra: 50 peixes, 3 kg → 60 g; sobra maior que a ração é recusada (RN23).
-    preencher({ 'campo-data': somarDias(HOJE, -1), 'campo-peixes-amostra': '50', 'campo-peso-amostra': '3', 'campo-racao': '7', 'campo-sobra': '8', 'campo-mortalidade': '15', 'campo-observacoes': 'Peixes agitados' });
-    verificar('peso médio calculado ao vivo', texto('peso-medio-calculado') === 'Peso médio: 60 g', texto('peso-medio-calculado'));
+    // Sobra maior que a ração é recusada (RN23).
+    preencher({ 'campo-data': somarDias(HOJE, -1), 'campo-racao': '7', 'campo-sobra': '8', 'campo-mortalidade': '15', 'campo-observacoes': 'Peixes agitados' });
     await enviarSemSair('formulario-registro');
     verificar('RN23 sobra maior que a ração', texto('erro-sobra') === 'A sobra não pode ser maior que a ração fornecida.', texto('erro-sobra'));
     preencher({ 'campo-sobra': '', 'campo-causa': 'doenca' });
     await enviarENavegar('formulario-registro');
     verificar('quantidade 980', indicador('quantidade') === '980', indicador('quantidade'));
+
+    etapa = 'Biometria pelo painel do tanque';
+    const painel = () => porId('painel-biometria');
+    porId('botao-fazer-biometria').click();
+    await esperar(60);
+    verificar('painel aberto com o tanque fixo no topo', painel().open && texto('titulo-painel-biometria') === 'Tanque Teste'
+        && !painel().querySelector('select'), texto('titulo-painel-biometria'));
+    preencher({ 'biometria-data': somarDias(HOJE, -1), 'biometria-peixes': '50', 'biometria-peso': '3' });
+    verificar('conversão do peso da amostra', texto('conversao-biometria-peso') === '= 3.000 g', texto('conversao-biometria-peso'));
+    const previa = () => painel().querySelector('.painel-biometria__previa').textContent;
+    verificar('prévia ao vivo: peso médio e comparação', previa().includes('Peso médio60 g') && previa().includes('+50 g em 29 dias'), previa());
+    painel().querySelector('form').requestSubmit();
+    await esperar(150);
+    verificar('salvo: painel fechado e próxima biometria', !painel().open && texto('mensagem-tanque').includes('Próxima biometria:'), texto('mensagem-tanque'));
+    verificar('peso médio da biometria', indicador('pesoMedio') === '60 g', indicador('pesoMedio'));
+    verificar('próxima biometria no cartão de peso', /^Próxima biometria em \d\d\/\d\d$/.test(indicador('proximaBiometria') ?? ''), indicador('proximaBiometria'));
+    porId('aba-biometrias').click();
+    await esperar(40);
+    const linhasBiometria = () => [...porId('corpo-tabela-biometrias').rows].map((linha) => linha.cells[1].textContent);
+    verificar('aba Biometrias com povoamento e amostra', linhasBiometria().join('|') === 'Amostra|Povoamento', linhasBiometria().join('|'));
+    await abrir(`tanque.html?id=${tanqueId}&acao=biometria`);
+    verificar('acao=biometria abre o painel; peixes da última amostra', painel().open && porId('biometria-peixes').value === '50', porId('biometria-peixes').value);
+    // "Pesei em partes": 2 baldes (20 peixes com 1,2 kg e 30 com 1,8 kg) → 50 peixes, 3 kg → 60 g.
+    painel().querySelector('[data-acao-biometria="partes"]').click();
+    const partes = painel().querySelectorAll('.pesagens-parciais__item');
+    [['20', '1,2'], ['30', '1,8']].forEach(([peixes, peso], indice) => {
+        partes[indice].querySelector('[data-parte="peixes"]').value = peixes;
+        partes[indice].querySelector('[data-parte="peso"]').value = peso;
+    });
+    partes[0].querySelector('input').dispatchEvent(new Event('input', { bubbles: true }));
+    verificar('pesei em partes: o app soma as pesagens', previa().includes('Peso médio60 g'), previa());
+    painel().querySelector('[data-acao-biometria="partes"]').click();
+    doc().querySelector('[name="modoBiometria"][value="individuais"]').click();
+    preencher({ 'biometria-individuais': '100\n110\n90\n105\n95' });
+    verificar('pesos individuais: média, CV e lote uniforme', previa().includes('Peso médio100 g') && previa().includes('7,9%') && previa().includes('Lote uniforme'), previa());
+    painel().dispatchEvent(new Event('cancel', { cancelable: true }));
+    await responderConfirmacao(true);
+    await esperar(80);
+    verificar('fechar com dados pede confirmação e não grava', !painel().open && dados().registros.filter((registro) => registro.biometria?.pesosIndividuaisG).length === 0);
     verificar('ração de hoje é o primeiro cartão', porId('cartao-racao').querySelector('.cartao-racao__titulo')?.textContent === 'Ração de hoje'
         && porId('cartao-racao').querySelector('a[href*="data="]')?.textContent.trim() === 'Registrar alimentação');
     verificar('3 destaques e 3 de acompanhamento', [...doc().querySelectorAll('#destaques-tanque .cartao-indicador__rotulo')].map((r) => r.textContent).join('|') === 'Peso médio|Biomassa (estimada)|Capacidade (estimada)'
@@ -213,7 +253,7 @@ async function roteiro() {
     verificar('botão "i" explica a estimativa', !porId('texto-info-estimativa').hidden && porId('botao-info-estimativa').getAttribute('aria-expanded') === 'true');
     verificar('alerta alto de mortalidade', doc().querySelector('#lista-alertas-tanque .lista-alertas__item--alta')?.textContent.includes('Mortalidade elevada no registro'));
     verificar('gráficos desenhados', porId('grafico-peso-medio').querySelector('svg') && porId('aviso-grafico-peso-medio').hidden);
-    verificar('registros recentes, o mais novo primeiro', doc().querySelectorAll('#lista-registros-recentes .lista-registros__item').length === 2
+    verificar('registros recentes, o mais novo primeiro', doc().querySelectorAll('#lista-registros-recentes .lista-registros__item').length === 3
         && doc().querySelector('#lista-registros-recentes .lista-registros__data').textContent === emBr(somarDias(HOJE, -1)));
 
     etapa = 'Abas, histórico e calendário do tanque';
@@ -221,36 +261,46 @@ async function roteiro() {
     await esperar(40);
     verificar('aba Histórico ativa', porId('aba-historico').getAttribute('aria-selected') === 'true' && !porId('painel-historico').hidden);
     verificar('aba no endereço', doc().location.hash === '#historico', doc().location.hash);
-    verificar('duas linhas no histórico', linhas() === 2, linhas());
+    verificar('três linhas no histórico, a biometria com etiqueta', linhas() === 3
+        && porId('corpo-tabela-registros').querySelector('.tabela__linha--biometria')?.textContent.includes('Biometria 50 peixes · 60 g'), linhas());
     porId('aba-historico').focus();
     porId('aba-historico').dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
     await esperar(40);
-    verificar('seta troca de aba e leva o foco', porId('aba-calendario').getAttribute('aria-selected') === 'true' && doc().activeElement === porId('aba-calendario'));
+    verificar('seta troca de aba e leva o foco', porId('aba-biometrias').getAttribute('aria-selected') === 'true' && doc().activeElement === porId('aba-biometrias'));
 
     etapa = 'Editar e excluir registro';
     await abrir(`tanque.html?id=${tanqueId}&recarregar=1#historico`);
     verificar('#historico abre a aba', !porId('painel-historico').hidden);
-    await navegarCom(() => porId('corpo-tabela-registros').querySelector('a.link').click());
+    const linhaRotina = () => [...porId('corpo-tabela-registros').rows].find((linha) => !linha.classList.contains('tabela__linha--biometria'));
+    await navegarCom(() => linhaRotina().querySelector('a.link').click());
     verificar('modo edição', texto('titulo-pagina-registro') === 'Editar registro' && porId('campo-tanque').disabled);
-    verificar('valores preenchidos, com a amostra em gramas', porId('campo-peixes-amostra').value === '50' && porId('campo-peso-amostra').value === '3000'
-        && doc().querySelector('[name="unidadePesoAmostra"]:checked').value === 'g' && porId('campo-racao').value === '7' && porId('campo-causa').value === 'doenca',
-        `${porId('campo-peixes-amostra').value} ${porId('campo-peso-amostra').value}`);
+    verificar('valores preenchidos', porId('campo-racao').value === '7' && porId('campo-causa').value === 'doenca' && porId('peso-registro').hidden);
     preencher({ 'campo-racao': '8,75' });
     await enviarENavegar('formulario-registro');
     verificar('volta ao histórico', doc().location.hash === '#historico' && !porId('painel-historico').hidden);
-    verificar('valor editado na tabela', porId('corpo-tabela-registros').rows[0].cells[2].textContent === '8,75', porId('corpo-tabela-registros').rows[0].cells[2].textContent);
-    const idEditado = new URL(porId('corpo-tabela-registros').querySelector('a.link').href).searchParams.get('id');
+    verificar('valor editado na tabela, com unidade', linhaRotina().cells[2].textContent === '8,8 kg', linhaRotina().cells[2].textContent);
+    const idEditado = new URL(linhaRotina().querySelector('a.link').href).searchParams.get('id');
     await abrir(`registro.html?id=${idEditado}`);
     verificar('edição mostra o valor com vírgula', porId('campo-racao').value === '8,75', porId('campo-racao').value);
+    // Registro antigo (de antes do painel) com peso e ração juntos: o peso fica só para leitura.
+    const comPeso = dados();
+    comPeso.registros.find((registro) => registro.id === idEditado).pesoMedioG = 61;
+    localStorage.setItem(CHAVE, JSON.stringify(comPeso));
+    await abrir(`registro.html?id=${idEditado}`);
+    verificar('peso antigo só leitura, com "Editar na biometria"', !porId('peso-registro').hidden && texto('texto-peso-registro').startsWith('Peso médio: 61 g')
+        && porId('link-editar-peso').getAttribute('href') === `tanque.html?id=${tanqueId}&acao=biometria&registro=${idEditado}`);
+    preencher({ 'campo-racao': '9' });
+    await enviarENavegar('formulario-registro');
+    verificar('salvar a rotina mantém o peso', dados().registros.find((registro) => registro.id === idEditado).pesoMedioG === 61);
     await abrir(`tanque.html?id=${tanqueId}&recarregar=2#historico`);
-    porId('corpo-tabela-registros').querySelector('[data-excluir-registro]').click();
+    linhaRotina().querySelector('[data-excluir-registro]').click();
     await responderConfirmacao(false);
     await esperar(60);
-    verificar('cancelar mantém o registro', linhas() === 2);
-    porId('corpo-tabela-registros').querySelector('[data-excluir-registro]').click();
+    verificar('cancelar mantém o registro', linhas() === 3);
+    linhaRotina().querySelector('[data-excluir-registro]').click();
     await responderConfirmacao(true);
     await esperar(80);
-    verificar('registro excluído', linhas() === 1 && texto('mensagem-historico') === 'Registro excluído.', `${linhas()} ${texto('mensagem-historico')}`);
+    verificar('registro excluído', linhas() === 2 && texto('mensagem-historico') === 'Registro excluído.', `${linhas()} ${texto('mensagem-historico')}`);
 
     etapa = 'Limites de alerta do tanque';
     porId('botao-limites-alerta').click();
@@ -275,7 +325,7 @@ async function roteiro() {
     verificar('RN20 valores que não batem', texto('erro-quantidade-despescada') === 'Os valores não batem: confira a biomassa, o peso médio ou a quantidade.', texto('erro-quantidade-despescada'));
     preencher({ 'campo-data-despesca': somarDias(HOJE, -25), 'campo-quantidade-despescada': '' });
     await enviarSemSair('formulario-registrar-despesca');
-    verificar('RN09 antes do último registro', texto('erro-data-despesca') === `A despesca não pode ser anterior ao último registro (${emBr(somarDias(HOJE, -20))}).`, texto('erro-data-despesca'));
+    verificar('RN09 antes do último registro', texto('erro-data-despesca') === `A despesca não pode ser anterior ao último registro (${emBr(somarDias(HOJE, -1))}).`, texto('erro-data-despesca'));
     preencher({ 'campo-data-despesca': HOJE });
     await enviarENavegar('formulario-registrar-despesca');
     // 60 kg / 80 g = 750 peixes de 1.000: 75% de sobrevivência; 250 perdidos, 5 encontrados (o outro registro foi excluído antes).
@@ -337,7 +387,7 @@ async function roteiro() {
     verificar('limites padrão preenchidos', porId('campo-mortalidade-registro').value === '1' && porId('campo-dias-sem-registro').value === '7');
     porId('botao-exportar-csv').click();
     await esperar(80);
-    verificar('CSV exportado', texto('mensagem-exportar') === `1 registro exportado para fish-track-registros-${HOJE}.csv.`, texto('mensagem-exportar'));
+    verificar('CSV exportado', texto('mensagem-exportar') === `2 registros exportados para fish-track-registros-${HOJE}.csv.`, texto('mensagem-exportar'));
     porId('botao-fazer-backup').click();
     await esperar(80);
     verificar('backup gerado', texto('mensagem-backup') === `Backup salvo em fish-track-backup-${HOJE}.json.`, texto('mensagem-backup'));
@@ -355,14 +405,31 @@ async function roteiro() {
     const carregou = await esperarAte(() => (texto('mensagem-dados') ?? '').startsWith('Dados de exemplo carregados'), 15000);
     verificar('exemplo carregado', carregou && texto('mensagem-dados').includes('6 tanques, 5 ciclos'), texto('mensagem-dados'));
     await abrir('index.html');
-    etapa = 'Tabela de alimentação e ração sugerida';
+    etapa = 'Plano de alimentação e ração sugerida';
     await abrir('configuracoes.html');
-    verificar('modelo Embrapa no exemplo', porId('lista-tabelas').textContent.includes('Modelo Embrapa') && porId('lista-tabelas').textContent.includes('17 faixas'));
+    verificar('planos do exemplo', porId('lista-tabelas').textContent.includes('Modelo Embrapa') && porId('lista-tabelas').textContent.includes('17 faixas')
+        && porId('lista-tabelas').textContent.includes('3% do peso total por dia, em 3 refeições'), texto('lista-tabelas'));
     porId('botao-nova-tabela').click();
-    preencher({ 'campo-nome-tabela': 'Teste', 'campo-faixa-0-pesoDeG': '100', 'campo-faixa-0-pesoAteG': '50', 'campo-faixa-0-taxaPct': '2', 'campo-faixa-0-refeicoes': '4' });
-    await enviarSemSair('formulario-tabela');
-    verificar('RN24 no campo da faixa', texto('erro-faixa-0-pesoAteG') === 'O peso final deve ser maior que o inicial.', texto('erro-faixa-0-pesoAteG'));
-    porId('botao-cancelar-tabela').click();
+    await esperar(40);
+    const editor = () => porId('dialogo-plano');
+    verificar('editor com explicação e exemplo', editor().open && editor().textContent.includes('se o tanque tem 500 kg de peixe e o plano diz 3%'));
+    preencher({ 'plano-nome': 'Teste', 'plano-faixa-0-pesoDeG': '100', 'plano-faixa-0-pesoAteG': '50', 'plano-faixa-0-taxaPct': '2', 'plano-faixa-0-refeicoes': '4' });
+    await enviarSemSair('formulario-plano');
+    verificar('RN24 no campo da faixa, em linguagem simples', texto('erro-plano-faixa-0-pesoAteG') === 'O peso final da faixa precisa ser maior que o inicial.', texto('erro-plano-faixa-0-pesoAteG'));
+    doc().querySelector('#dialogo-plano [name="tipo"][value="fixo"]').click();
+    preencher({ 'plano-taxa': '3', 'plano-refeicoes': '4' });
+    editor().querySelector('[name="simuladorPeso"]').value = '200';
+    const simuladorBiomassa = editor().querySelector('[name="simuladorBiomassa"]');
+    simuladorBiomassa.value = '500';
+    simuladorBiomassa.dispatchEvent(new Event('input', { bubbles: true }));
+    const resultadoPlano = () => editor().querySelector('.plano__resultado').textContent;
+    verificar('simulador do plano fixo: 15 kg por dia, 3,75 kg por refeição', resultadoPlano().includes('15 kg por dia') && resultadoPlano().includes('4 refeições de 3,8 kg'), resultadoPlano());
+    editor().querySelector('[data-acao-plano="modelo"]').click();
+    editor().querySelector('[name="simuladorPeso"]').value = '112';
+    simuladorBiomassa.dispatchEvent(new Event('input', { bubbles: true }));
+    verificar('modelo Embrapa com aviso; 112 g fora das faixas', editor().textContent.includes('Este modelo vale para tilápia de 190 g a 1 kg')
+        && resultadoPlano() === 'Nenhuma faixa cobre 112 g. Adicione uma faixa para peixes menores.', resultadoPlano());
+    editor().querySelector('[data-acao-plano="cancelar"]').click();
     const t01 = dados().tanques.find((tanque) => tanque.nome === 'Tanque 01').id;
     await abrir(`tanque.html?id=${t01}`);
     verificar('ração sugerida no cartão do tanque', /kg por dia$/.test(indicador('racaoSugerida') ?? '')
@@ -374,6 +441,40 @@ async function roteiro() {
     verificar('"Usar sugestão" preenche a ração', /^\d+,\d$/.test(porId('campo-racao').value), porId('campo-racao').value);
     await abrir('tanques.html');
     verificar('ração sugerida na lista', [...doc().querySelectorAll('.cartao-tanque')].find((cartao) => cartao.textContent.includes('Tanque 01'))?.textContent.includes('kg por dia'));
+    await abrir(`tanque-form.html?id=${t01}`);
+    verificar('plano e intervalo no formulário do tanque', porId('campo-intervalo-biometria').value === '15'
+        && texto('resumo-plano').startsWith('Muda com o tamanho do peixe: 17 faixas') && !porId('botao-editar-plano').hidden, texto('resumo-plano'));
+
+    etapa = 'Unidades e rodada de biometria';
+    await abrir('configuracoes.html');
+    doc().querySelector('#formulario-unidades [name="biomassa"][value="t"]').click();
+    doc().querySelector('#formulario-unidades [name="racao"][value="g"]').click();
+    await enviarSemSair('formulario-unidades');
+    await abrir(`tanque.html?id=${t01}`);
+    verificar('preferência de exibição: biomassa em t, ração em g', /^\d+,\d\d t$/.test(indicador('biomassa') ?? '') && /^[\d.]+ g por dia$/.test(indicador('racaoSugerida') ?? ''),
+        `${indicador('biomassa')} ${indicador('racaoSugerida')}`);
+    await abrir('configuracoes.html');
+    doc().querySelector('#formulario-unidades [name="biomassa"][value="kg"]').click();
+    doc().querySelector('#formulario-unidades [name="racao"][value="kg"]').click();
+    await enviarSemSair('formulario-unidades');
+    await abrir(`registro.html?tanqueId=${t01}`);
+    doc().querySelector('[name="racaoKgUnidade"][value="g"]').click();
+    preencher({ 'campo-racao': '500' });
+    verificar('ração em g com a conversão visível', texto('conversao-campo-racao') === '= 0,5 kg', texto('conversao-campo-racao'));
+    await abrir(`registro.html?tanqueId=${t01}`);
+    verificar('a unidade escolhida fica lembrada', doc().querySelector('[name="racaoKgUnidade"]:checked').value === 'g');
+    doc().querySelector('[name="racaoKgUnidade"][value="kg"]').click();
+    await abrir(`tanque.html?id=${t01}&acao=biometria`);
+    const nomeAntes = texto('titulo-painel-biometria');
+    preencher({ 'biometria-peixes': '30', 'biometria-peso': '12' });
+    painel().querySelector('[data-proximo]').click();
+    await esperar(150);
+    verificar('"Salvar e ir para o próximo tanque" troca o tanque e destaca', painel().open && texto('titulo-painel-biometria') !== nomeAntes
+        && painel().querySelector('.painel-biometria__troca').textContent === `Agora: ${texto('titulo-painel-biometria')}`, `${nomeAntes} → ${texto('titulo-painel-biometria')}`);
+    painel().querySelector('.quadro__fechar').click();
+    await esperar(60);
+    await abrir('calendario.html');
+    verificar('agenda mostra a biometria prevista', [...doc().querySelectorAll('.etiqueta')].some((etiqueta) => etiqueta.textContent.startsWith('Biometria prevista')));
     const viveiroPesagem = dados().tanques.find((tanque) => tanque.nome === 'Viveiro Norte').id;
     await abrir(`ciclo-form.html?tanqueId=${viveiroPesagem}&acao=iniciar`);
     doc().querySelector('[name="modoPovoamento"][value="pesagem"]').click();
@@ -470,7 +571,7 @@ async function roteiro() {
     porId('botao-restaurar-backup').click();
     await responderConfirmacao(true);
     await esperarAte(() => (texto('mensagem-backup') ?? '').startsWith('Backup restaurado'), 3000);
-    verificar('backup restaurado', texto('mensagem-backup') === 'Backup restaurado: 1 tanque, 1 ciclo e 1 registro.', texto('mensagem-backup'));
+    verificar('backup restaurado', texto('mensagem-backup') === 'Backup restaurado: 1 tanque, 1 ciclo e 2 registros.', texto('mensagem-backup'));
     porId('botao-apagar-dados').click();
     await responderConfirmacao(true);
     await esperar(80);
@@ -545,10 +646,15 @@ async function testarAgenda() {
     verificar('registro com resumo e link de edição', quadroDia().querySelector('a[href^="registro.html?id="]')?.textContent === 'Editar registro');
     verificar('"Registro neste dia" em hoje', quadroDia().querySelector('a[href*="registro.html"][href*="data="]')?.getAttribute('href').includes(`data=${HOJE}`));
     const amanha = somarDias(HOJE, 1);
-    celula(amanha).click();
+    // Um dia futuro sem nenhum evento (biometrias e lembretes previstos ocupam alguns).
+    const diaVazio = [...grade().querySelectorAll('[data-data]')].map((dia) => dia.dataset.data)
+        .find((data) => data > HOJE && !celula(data).querySelector('.etiqueta'));
+    celula(diaVazio).click();
     await esperar(40);
     verificar('dia sem nada', quadroDia().querySelector('.quadro__vazio')?.textContent === 'Nada marcado para este dia.', quadroDia().textContent);
-    verificar('sem "Registro neste dia" no futuro (RN12)', !quadroDia().querySelector('a[href*="data="]'));
+    celula(amanha).click();
+    await esperar(40);
+    verificar('sem "Registro neste dia" no futuro (RN12)', !quadroDia().querySelector('a[href^="registro.html"]'));
     celula(amanha).dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
     await esperar(40);
     verificar('setas mudam o dia e levam o foco', doc().activeElement === celula(HOJE));

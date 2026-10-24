@@ -78,6 +78,7 @@
                 <div class="cabecalho-tanque__acoes">
                     <a class="botao botao--primario" id="link-novo-registro" href="registro.html" hidden>Novo registro</a>
                     <a class="botao botao--primario" id="link-iniciar-ciclo" href="ciclo-form.html" hidden>Iniciar ciclo</a>
+                    <button class="botao botao--secundario" id="botao-fazer-biometria" type="button" data-abrir-biometria hidden><svg class="icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.5 8h11l2 12h-15Z"/><circle cx="12" cy="5" r="2"/></svg>Fazer biometria</button>
                     <a class="botao botao--secundario" id="link-registrar-despesca" href="ciclo-form.html" hidden>Registrar despesca</a>
                     <a class="botao botao--secundario" id="link-editar-tanque" href="tanque-form.html">Editar</a>
                     <button class="botao botao--secundario" id="botao-limites-alerta" type="button">Limites de alerta</button>
@@ -93,6 +94,7 @@
             <div class="abas" id="abas-tanque" role="tablist" aria-label="Seções do tanque">
                 <button class="abas__aba" id="aba-resumo" type="button" role="tab" aria-selected="true" aria-controls="painel-resumo">Resumo</button>
                 <button class="abas__aba" id="aba-historico" type="button" role="tab" aria-selected="false" aria-controls="painel-historico" tabindex="-1">Histórico</button>
+                <button class="abas__aba" id="aba-biometrias" type="button" role="tab" aria-selected="false" aria-controls="painel-biometrias" tabindex="-1">Biometrias</button>
                 <button class="abas__aba" id="aba-calendario" type="button" role="tab" aria-selected="false" aria-controls="painel-calendario" tabindex="-1">Calendário</button>
             </div>
 
@@ -152,7 +154,7 @@
                                 <p class="cartao-grafico__vazio" id="aviso-grafico-peso-medio">Sem dados suficientes para exibir o gráfico.</p>
                             </figure>
                             <figure class="cartao-grafico">
-                                <figcaption class="cartao-grafico__titulo">Biomassa (kg)</figcaption>
+                                <figcaption class="cartao-grafico__titulo" data-campo="tituloGraficoBiomassa">Biomassa</figcaption>
                                 <button class="botao botao--secundario botao--pequeno cartao-grafico__baixar" type="button" data-baixar-grafico="biomassa" hidden><svg class="icone icone--descer" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Baixar imagem</button>
                                 <div class="cartao-grafico__area" id="grafico-biomassa"></div>
                                 <p class="cartao-grafico__vazio" id="aviso-grafico-biomassa">Sem dados suficientes para exibir o gráfico.</p>
@@ -205,8 +207,8 @@
                             <thead>
                                 <tr>
                                     <th scope="col">Data</th>
-                                    <th scope="col">Peso&nbsp;médio (g)</th>
-                                    <th scope="col">Ração (kg)</th>
+                                    <th scope="col">Peso&nbsp;médio</th>
+                                    <th scope="col">Ração</th>
                                     <th scope="col">Mortos encontrados</th>
                                     <th scope="col">Natalidade</th>
                                     <th scope="col">Observações</th>
@@ -224,6 +226,34 @@
                 </section>
             </div>
 
+            <div class="abas__painel" id="painel-biometrias" role="tabpanel" aria-labelledby="aba-biometrias" hidden>
+                <section class="secao" aria-labelledby="titulo-biometrias">
+                    <div class="secao__cabecalho">
+                        <h2 class="secao__titulo" id="titulo-biometrias">Biometrias do ciclo</h2>
+                        <button class="botao botao--secundario botao--pequeno" type="button" data-abrir-biometria>Fazer biometria</button>
+                    </div>
+                    <p class="secao__descricao" id="resumo-biometrias"></p>
+                    <p class="mensagem" id="mensagem-biometrias" role="status"></p>
+                    <div class="tabela-rolagem" id="rolagem-tabela-biometrias">
+                        <table class="tabela" aria-labelledby="titulo-biometrias">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Data</th>
+                                    <th scope="col">Como pesou</th>
+                                    <th scope="col">Peixes na amostra</th>
+                                    <th scope="col">Peso médio</th>
+                                    <th scope="col">Ganho desde a anterior</th>
+                                    <th scope="col">Por dia</th>
+                                    <th scope="col">Variação (CV)</th>
+                                    <th scope="col">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="corpo-tabela-biometrias"></tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
             <div class="abas__painel" id="painel-calendario" role="tabpanel" aria-labelledby="aba-calendario" hidden>
                 <section class="secao" aria-labelledby="titulo-calendario">
                     <h2 class="secao__titulo" id="titulo-calendario">Agenda do tanque</h2>
@@ -233,6 +263,8 @@
             </div>
         </div>
     </main>
+
+    <dialog class="dialogo painel-biometria" id="painel-biometria" aria-labelledby="titulo-painel-biometria"></dialog>
 
     <dialog class="dialogo dialogo--formulario" id="dialogo-limites" aria-labelledby="titulo-dialogo-limites">
         <form class="formulario dialogo__conteudo" id="formulario-limites-tanque" novalidate>

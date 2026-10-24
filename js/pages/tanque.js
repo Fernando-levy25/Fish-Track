@@ -3,6 +3,7 @@
 
 import { criarSlug, diasEntre, hojeISO, paraNumero } from '../core/utils.js';
 import {
+    formatarBiomassa,
     formatarData,
     formatarDataCurta,
     formatarDensidade,
@@ -10,16 +11,26 @@ import {
     formatarGramas,
     formatarGramasPorDia,
     formatarInteiro,
-    formatarKg,
     formatarNumero,
     formatarPercentual,
+    formatarRacao,
     formatarVolume,
+    obterUnidadesExibicao,
     pluralizar,
 } from '../core/format.js';
-import { arquivarTanque, desarquivarTanque, excluirTanque, obterSituacao, ROTULOS_STATUS } from '../domain/tanques.js';
+import { arquivarTanque, desarquivarTanque, excluirTanque, listarTanques, obterSituacao, ROTULOS_STATUS } from '../domain/tanques.js';
 import { listarResultadosCiclos } from '../domain/ciclos.js';
 import { excluirRegistro, listarRegistrosDoCiclo, resumirRegistro } from '../domain/registros.js';
-import { calcularAcompanhamento, calcularCargaMaximaKg, calcularSeries } from '../domain/indicadores.js';
+import { calcularAcompanhamento, calcularCargaMaximaKg, calcularEstatisticasPesos, calcularProximaBiometria, calcularSeries } from '../domain/indicadores.js';
+import {
+    calcularPreviaBiometria,
+    ehRegistroDeBiometria,
+    listarBiometriasDoCiclo,
+    obterPlanoDoTanque,
+    obterProximoTanqueBiometria,
+    obterUltimaAmostra,
+    salvarBiometria,
+} from '../domain/biometrias.js';
 import { analisarTanque, resolverLimites } from '../domain/alertas.js';
 import { obterLimitesPadrao, obterMetaFca, salvarLimitesTanque } from '../domain/configuracoes.js';
 import { lerPreferencia, salvarPreferencia } from '../core/storage.js';
@@ -31,6 +42,7 @@ import {
     criarBarraLimite,
     criarElemento,
     criarResumoCiclo,
+    criarSelo,
     criarItemRegistro,
     iniciarAbas,
     iniciarFormulario,
@@ -41,10 +53,11 @@ import {
     preencherFormulario,
     renderizarAlertas,
 } from '../ui/componentes.js';
-import { desenharGraficoLinha } from '../ui/graficos.js';
+import { desenharGraficoLinha, obterCorTanque } from '../ui/graficos.js';
 import { criarIcone } from '../ui/icones.js';
+import { criarPainelBiometria } from '../ui/painel-biometria.js';
 import { montarAgenda } from './agenda.js';
-import { atualizarMenu, descreverRacaoSugerida, DIAS_BIOMETRIA_ANTIGA, iniciarPagina, obterAcaoDoAlerta } from './comum.js';
+import { atualizarMenu, descreverRacaoSugerida, iniciarPagina, obterAcaoDoAlerta } from './comum.js';
 
 const MAXIMO_REGISTROS_RECENTES = 5;
 
@@ -60,6 +73,9 @@ const porId = (id) => document.getElementById(id);
 let situacao = null;
 let abas = null;
 let calendario = null;
+let painelBiometria = null;
+// Tanque mostrado no painel de biometria: começa no da página e muda na rodada de biometria.
+let tanqueDoPainel = null;
 
 iniciarPagina();
 try {
@@ -84,7 +100,9 @@ function iniciar() {
     mostrarDespescaRecente();
     configurarHistorico();
     configurarLimites();
+    configurarBiometria();
     renderizar();
+    abrirBiometriaDoEndereco();
 }
 
 function recarregar() {
@@ -97,6 +115,7 @@ function recarregar() {
 function renderizar() {
     renderizarCabecalho();
     renderizarResumo();
+    renderizarBiometrias();
     renderizarHistorico();
 }
 
@@ -111,7 +130,7 @@ function renderizarCabecalho() {
     selo.className = `selo selo--${tanque.status}`;
     const cargaMaxima = calcularCargaMaximaKg(tanque.densidadeMaximaKgM3, tanque.volumeM3);
     porId('especie-tanque').textContent = `${tanque.especie} · ${formatarVolume(tanque.volumeM3)} de água · `
-        + (cargaMaxima ? `carga máxima de ${formatarKg(cargaMaxima)}` : 'capacidade não definida');
+        + (cargaMaxima ? `carga máxima de ${formatarBiomassa(cargaMaxima)}` : 'capacidade não definida');
     porId('resumo-ciclo').textContent = cicloAtivo ? descreverCicloAtivo(cicloAtivo) : '';
     renderizarProgressoCiclo(cicloAtivo);
     porId('observacoes-tanque').textContent = tanque.observacoes;
@@ -123,6 +142,7 @@ function renderizarCabecalho() {
     mostrarLink('link-editar-tanque', true, montarUrl('tanque-form.html', { id: tanque.id }));
     mostrarLink('link-exportar-relatorio', true, montarUrl('relatorio.html', { tanqueId: tanque.id, imprimir: 1 }));
     porId('botao-limites-alerta').hidden = arquivado;
+    porId('botao-fazer-biometria').hidden = !cicloAtivo;
     porId('botao-desarquivar-tanque').hidden = !arquivado;
     // RN04: com histórico, o tanque é arquivado; sem nenhum ciclo, pode ser excluído.
     porId('botao-arquivar-tanque').hidden = arquivado || Boolean(cicloAtivo) || ciclos.length === 0;
@@ -239,7 +259,8 @@ function renderizarResumo() {
 
     const series = calcularSeries(cicloAtivo, registros);
     desenharGrafico('peso-medio', series.pesoMedio, formatarGramas, 'Peso médio');
-    desenharGrafico('biomassa', series.biomassa, formatarKg, 'Biomassa');
+    document.querySelector('[data-campo="tituloGraficoBiomassa"]').textContent = `Biomassa (${obterUnidadesExibicao().biomassa})`;
+    desenharGrafico('biomassa', series.biomassa, formatarBiomassa, 'Biomassa');
     desenharGrafico('mortalidade', series.mortalidade, formatarPercentual, 'Mortalidade observada');
 
     renderizarAlertas(porId('lista-alertas-tanque'), alertas, { obterAcao: obterAcaoDoAlerta, textoVazio: 'Nenhum alerta para este tanque.' });
@@ -273,16 +294,29 @@ function criarCartao({ rotulo, valor, indicador, apoio = [], extra = null, class
     ]);
 }
 
-function textoBiometria({ indicadores, acompanhamento }) {
-    if (!acompanhamento.houvePesagem) {
-        return criarElemento('p', { classe: 'cartao-indicador__apoio', texto: 'Sem biometria desde o povoamento' });
+// Última e próxima biometria (seção 9.11); atrasada, em âmbar e com o botão.
+function textoBiometria({ indicadores, acompanhamento, proxima }) {
+    const linhas = [];
+    if (acompanhamento.houvePesagem) {
+        const dias = acompanhamento.diasDesdePesagem;
+        const quando = dias === 0 ? 'hoje' : dias === 1 ? 'ontem' : `há ${dias} dias`;
+        linhas.push(criarElemento('p', { classe: 'cartao-indicador__apoio', texto: `Biometria em ${formatarDataCurta(indicadores.dataPesoAtual)} · ${quando}` }));
+    } else {
+        linhas.push(criarElemento('p', { classe: 'cartao-indicador__apoio', texto: 'Sem biometria desde o povoamento' }));
     }
-    const dias = acompanhamento.diasDesdePesagem;
-    const quando = dias === 0 ? 'hoje' : dias === 1 ? 'ontem' : `há ${dias} dias`;
-    return criarElemento('p', {
-        classe: `cartao-indicador__apoio${dias > DIAS_BIOMETRIA_ANTIGA ? ' cartao-indicador__apoio--atencao' : ''}`,
-        texto: `Biometria em ${formatarDataCurta(indicadores.dataPesoAtual)} · ${quando}`,
-    });
+    const atrasada = proxima.diasAtraso > 0;
+    linhas.push(criarElemento('p', {
+        classe: `cartao-indicador__apoio${atrasada ? ' cartao-indicador__apoio--atencao' : ''}`,
+        texto: atrasada
+            ? `Biometria atrasada há ${pluralizar(proxima.diasAtraso, 'dia', 'dias')}`
+            : proxima.diasAteProxima === 0 ? 'Próxima biometria: hoje' : `Próxima biometria em ${formatarDataCurta(proxima.dataProxima)}`,
+        atributos: { 'data-indicador': 'proximaBiometria' },
+    }));
+    linhas.push(criarElemento('button', {
+        classe: `botao ${atrasada ? 'botao--primario' : 'botao--secundario'} botao--pequeno cartao-indicador__acao`,
+        atributos: { type: 'button', 'data-abrir-biometria': '' },
+    }, [criarIcone('balanca'), 'Fazer biometria']));
+    return linhas;
 }
 
 // Ração de hoje (seção 7.3): a sugerida pela tabela de alimentação do tanque
@@ -299,28 +333,28 @@ function criarConteudoRacao({ tanque, acompanhamento }) {
             criarElemento('p', { classe: 'cartao-racao__detalhe', texto: descricao.textoDetalhe }),
             criarElemento('p', {
                 classe: 'cartao-racao__registrado',
-                texto: `Registrado hoje: ${formatarKg(acompanhamento.racaoHojeKg)} de ${formatarKg(sugestao.racaoDiaKg)}`,
+                texto: `Registrado hoje: ${formatarRacao(acompanhamento.racaoHojeKg)} de ${formatarRacao(sugestao.racaoDiaKg)}`,
                 atributos: { 'data-indicador': 'racaoHoje' },
             }),
             criarBarraLimite({ valor: (acompanhamento.racaoHojeKg / sugestao.racaoDiaKg) * 100, limite: 100 }),
         );
     } else {
         conteudo.push(
-            criarElemento('p', { classe: 'cartao-racao__registrado', texto: `Registrado hoje: ${formatarKg(acompanhamento.racaoHojeKg)}`, atributos: { 'data-indicador': 'racaoHoje' } }),
+            criarElemento('p', { classe: 'cartao-racao__registrado', texto: `Registrado hoje: ${formatarRacao(acompanhamento.racaoHojeKg)}`, atributos: { 'data-indicador': 'racaoHoje' } }),
             criarElemento('p', { classe: 'cartao-racao__motivo' }, [
-                descricao.textoMotivo,
-                descricao.motivo === 'sem-tabela' && ' ',
-                descricao.motivo === 'sem-tabela' && criarElemento('a', { classe: 'link', texto: 'Escolher a tabela', atributos: { href: montarUrl('tanque-form.html', { id: tanque.id }) } }),
+                `${descricao.textoMotivo} · `,
+                criarElemento('a', { classe: 'link', texto: descricao.acaoMotivo.texto, atributos: { href: descricao.acaoMotivo.href } }),
             ]),
         );
     }
     if (descricao.aviso) {
         conteudo.push(criarElemento('p', { classe: 'cartao-racao__aviso', texto: descricao.aviso }));
-    } else if (acompanhamento.diasDesdePesagem > DIAS_BIOMETRIA_ANTIGA) {
-        conteudo.push(criarElemento('p', {
-            classe: 'cartao-racao__aviso',
-            texto: `A última biometria tem ${acompanhamento.diasDesdePesagem} dias: pese uma amostra para a ração acompanhar o crescimento.`,
-        }));
+    }
+    if (descricao.plano) {
+        conteudo.push(criarElemento('p', { classe: 'cartao-racao__plano' }, [
+            `Plano: ${descricao.plano.nome} · `,
+            criarElemento('a', { classe: 'link', texto: 'Ver plano', atributos: { href: montarUrl('tanque-form.html', { id: tanque.id }, 'alimentacao') } }),
+        ]));
     }
     conteudo.push(criarElemento('a', {
         classe: 'botao botao--primario cartao-racao__acao',
@@ -341,15 +375,15 @@ function criarDestaques({ tanque, ciclo, indicadores, acompanhamento, limites })
             extra: pesoAlvo,
             apoio: [
                 ciclo.pesoAlvoG && `${formatarGramas(indicadores.pesoMedioG)} de ${formatarGramas(ciclo.pesoAlvoG)} · ${formatarPercentual(acompanhamento.percentualPesoAlvo)}`,
-                textoBiometria({ indicadores, acompanhamento }),
+                ...textoBiometria({ indicadores, acompanhamento, proxima: calcularProximaBiometria({ tanque, ciclo, registros: situacao.registros, hoje: hojeISO() }) }),
             ],
         }),
         criarCartao({
             rotulo: 'Biomassa (estimada)',
-            valor: formatarKg(indicadores.biomassaKg),
+            valor: formatarBiomassa(indicadores.biomassaKg),
             indicador: 'biomassa',
             apoio: [
-                acompanhamento.ganhoBiomassaSemanaKg !== null && `${acompanhamento.ganhoBiomassaSemanaKg >= 0 ? '+' : ''}${formatarKg(acompanhamento.ganhoBiomassaSemanaKg)} nos últimos 7 dias`,
+                acompanhamento.ganhoBiomassaSemanaKg !== null && `${acompanhamento.ganhoBiomassaSemanaKg >= 0 ? '+' : ''}${formatarBiomassa(acompanhamento.ganhoBiomassaSemanaKg)} nos últimos 7 dias`,
                 `≈ ${formatarInteiro(indicadores.quantidade)} peixes`,
             ],
         }),
@@ -389,7 +423,7 @@ function criarAcompanhamento({ tanque, ciclo, indicadores, acompanhamento }) {
             indicador: 'fca',
             classe: 'cartao-indicador--compacto',
             apoio: [
-                `${formatarKg(indicadores.racaoAcumuladaKg)} de ração consumida para ${formatarKg(indicadores.ganhoBiomassaKg)} de ganho`,
+                `${formatarRacao(indicadores.racaoAcumuladaKg)} de ração consumida para ${formatarBiomassa(indicadores.ganhoBiomassaKg)} de ganho`,
                 metaFca && `Meta de ${formatarFca(metaFca)}`,
             ],
         }),
@@ -412,9 +446,9 @@ function criarLinhasTodos({ indicadores, acompanhamento }) {
     const linhas = [
         ['Peixes (estimado)', formatarInteiro(indicadores.quantidade), 'quantidade', 'Povoamento − mortos encontrados + nascimentos'],
         ['Peso médio', formatarGramas(indicadores.pesoMedioG), null, 'Última biometria (ou o peso do povoamento)'],
-        ['Biomassa (estimada)', formatarKg(indicadores.biomassaKg), null, 'Peixes estimados × peso médio'],
-        ['Ração consumida', formatarKg(indicadores.racaoAcumuladaKg), 'racaoAcumulada', 'Ração fornecida − sobras, somadas no ciclo'],
-        ['Ganho de biomassa (estimado)', formatarKg(indicadores.ganhoBiomassaKg), 'ganhoBiomassa', 'Biomassa atual − biomassa do povoamento'],
+        ['Biomassa (estimada)', formatarBiomassa(indicadores.biomassaKg), null, 'Peixes estimados × peso médio'],
+        ['Ração consumida', formatarRacao(indicadores.racaoAcumuladaKg), 'racaoAcumulada', 'Ração fornecida − sobras, somadas no ciclo'],
+        ['Ganho de biomassa (estimado)', formatarBiomassa(indicadores.ganhoBiomassaKg), 'ganhoBiomassa', 'Biomassa atual − biomassa do povoamento'],
         ['FCA (estimada)', formatarFca(indicadores.fca), null, 'Ração acumulada ÷ ganho de biomassa'],
         ['Mortalidade observada', formatarPercentual(indicadores.taxaMortalidade), null, 'Mortos encontrados ÷ peixes do povoamento'],
         ['Sobrevivência (estimada)', formatarPercentual(indicadores.taxaSobrevivencia), 'taxaSobrevivencia', '100% − mortalidade observada'],
@@ -493,12 +527,13 @@ function mostrarDespescaRecente() {
 function configurarHistorico() {
     porId('botao-ver-historico').addEventListener('click', () => abas.ativar('aba-historico'));
     porId('seletor-ciclo').addEventListener('change', renderizarTabela);
-    porId('corpo-tabela-registros').addEventListener('click', async (evento) => {
+    // Excluir funciona igual no Histórico e na aba Biometrias (só no ciclo ativo, RN10).
+    const aoExcluir = (idSaida) => async (evento) => {
         const botao = evento.target.closest('[data-excluir-registro]');
         if (!botao) {
             return;
         }
-        const saida = porId('mensagem-historico');
+        const saida = porId(idSaida);
         mostrarMensagem(saida, '');
         const confirmado = await confirmar('Excluir este registro? Os indicadores do ciclo serão recalculados.', { textoConfirmar: 'Excluir' });
         if (!confirmado) {
@@ -512,7 +547,9 @@ function configurarHistorico() {
         }
         recarregar();
         mostrarMensagem(saida, 'Registro excluído.');
-    });
+    };
+    porId('corpo-tabela-registros').addEventListener('click', aoExcluir('mensagem-historico'));
+    porId('corpo-tabela-biometrias').addEventListener('click', aoExcluir('mensagem-biometrias'));
 }
 
 function renderizarHistorico() {
@@ -556,7 +593,7 @@ function descreverCicloHistorico(ciclo, quantidadeRegistros) {
     const partes = [`Povoamento em ${formatarData(ciclo.dataInicio)} com ${pluralizar(ciclo.quantidadeInicial, 'peixe', 'peixes')} `
         + `de ${formatarGramas(ciclo.pesoMedioInicialG)}`];
     if (ciclo.status === 'encerrado') {
-        partes.push(`despesca em ${formatarData(ciclo.dataDespesca)}: ${formatarKg(ciclo.biomassaFinalKg)} `
+        partes.push(`despesca em ${formatarData(ciclo.dataDespesca)}: ${formatarBiomassa(ciclo.biomassaFinalKg)} `
             + `com peso médio de ${formatarGramas(ciclo.pesoMedioFinalG)}`);
     }
     partes.push(pluralizar(quantidadeRegistros, 'registro', 'registros'));
@@ -568,12 +605,17 @@ function descreverCicloHistorico(ciclo, quantidadeRegistros) {
 
 function criarLinhaRegistro(registro, editavel) {
     const data = formatarData(registro.data);
+    const biometria = ehRegistroDeBiometria(registro);
+    // Biometria se edita no painel do tanque; a rotina, no registro.
+    const urlEditar = biometria
+        ? montarUrl('tanque.html', { id: registro.tanqueId, acao: 'biometria', registro: registro.id })
+        : montarUrl('registro.html', { id: registro.id });
     const acoes = editavel
         ? criarElemento('div', { classe: 'tabela__acoes' }, [
             criarElemento('a', {
                 classe: 'link',
                 texto: 'Editar',
-                atributos: { href: montarUrl('registro.html', { id: registro.id }), 'aria-label': `Editar o registro de ${data}` },
+                atributos: { href: urlEditar, 'aria-label': `Editar o registro de ${data}` },
             }),
             criarElemento('button', {
                 classe: 'link',
@@ -582,15 +624,149 @@ function criarLinhaRegistro(registro, editavel) {
             }),
         ])
         : '—';
+    if (biometria) {
+        // Linha de biometria: etiqueta e o resumo "60 peixes · 542,5 g" (seção 7.3).
+        const resumo = [registro.biometria && pluralizar(registro.biometria.peixesAmostra, 'peixe', 'peixes'), formatarGramas(registro.pesoMedioG)].filter(Boolean).join(' · ');
+        return criarElemento('tr', { classe: 'tabela__linha--biometria' }, [
+            criarElemento('td', { texto: data }),
+            criarElemento('td', { atributos: { colspan: '4' } }, [criarSelo('Biometria', 'info'), ` ${resumo}`]),
+            criarElemento('td', { texto: registro.observacoes || '' }),
+            criarElemento('td', {}, [acoes]),
+        ]);
+    }
+    const vazio = (valor, formatar) => (valor === null || valor === undefined ? '' : formatar(valor));
     return criarElemento('tr', {}, [
         criarElemento('td', { texto: data }),
-        criarElemento('td', { texto: formatarNumero(registro.pesoMedioG, 1) }),
-        criarElemento('td', { texto: formatarNumero(registro.racaoKg, 2) }),
-        criarElemento('td', { texto: formatarInteiro(registro.mortalidade) }),
-        criarElemento('td', { texto: formatarInteiro(registro.natalidade) }),
-        criarElemento('td', { texto: registro.observacoes || '—' }),
+        criarElemento('td', { texto: vazio(registro.pesoMedioG, formatarGramas) }),
+        criarElemento('td', { texto: vazio(registro.racaoKg, formatarRacao) }),
+        criarElemento('td', { texto: vazio(registro.mortalidade, formatarInteiro) }),
+        criarElemento('td', { texto: vazio(registro.natalidade, formatarInteiro) }),
+        criarElemento('td', { texto: registro.observacoes || '' }),
         criarElemento('td', {}, [acoes]),
     ]);
+}
+
+// ---------- Biometria (seção 7.13) ----------
+
+function configurarBiometria() {
+    painelBiometria = criarPainelBiometria(porId('painel-biometria'), {
+        salvar: salvarDoPainel,
+        calcularPrevia: ({ data, pesoMedioG, idEditado }) => {
+            const doPainel = obterSituacao(tanqueDoPainel);
+            return calcularPreviaBiometria({ situacao: doPainel, plano: obterPlanoDoTanque(doPainel.tanque), data, pesoMedioG, idEditado, hoje: hojeISO() });
+        },
+        calcularEstatisticas: calcularEstatisticasPesos,
+        unidadeAmostra: {
+            inicial: lerPreferencia('unidadePesoAmostra', 'kg'),
+            aoTrocar: (unidade) => salvarPreferencia('unidadePesoAmostra', unidade),
+        },
+    });
+    document.addEventListener('click', (evento) => {
+        if (evento.target.closest('[data-abrir-biometria]')) {
+            abrirBiometria(tanqueId);
+        }
+    });
+    // Ao fechar (salvo ou não), a página mostra o que mudou.
+    porId('painel-biometria').addEventListener('close', () => recarregar());
+}
+
+function abrirBiometria(id, { data = null, registroId = null } = {}) {
+    const doPainel = obterSituacao(id);
+    if (!doPainel?.cicloAtivo) {
+        return;
+    }
+    tanqueDoPainel = id;
+    const hoje = hojeISO();
+    const { tanque, cicloAtivo, registros } = doPainel;
+    const registro = registroId ? registros.find((item) => item.id === registroId) ?? null : null;
+    const pesagens = listarBiometriasDoCiclo(cicloAtivo.id).filter((item) => !item.inicial);
+    const ultima = pesagens.at(-1) ?? null;
+    painelBiometria.abrir({
+        tanque: { id: tanque.id, nome: tanque.nome, especie: tanque.especie, cor: obterCorTanque(tanque, listarTanques({ incluirArquivados: true })) },
+        diaCiclo: diasEntre(cicloAtivo.dataInicio, hoje),
+        ultima: ultima ? { pesoMedioG: ultima.pesoMedioG, data: ultima.data } : null,
+        hoje,
+        dataMinima: cicloAtivo.dataInicio,
+        data: data && data <= hoje && data >= cicloAtivo.dataInicio ? data : hoje,
+        peixesSugeridos: obterUltimaAmostra(doPainel),
+        registro,
+        temProximo: !registro && Boolean(obterProximoTanqueBiometria({ tanqueIdAtual: id, data: hoje, hoje })),
+    });
+}
+
+// tanque.html?id=...&acao=biometria(&data=...|&registro=...): chega com o painel aberto.
+function abrirBiometriaDoEndereco() {
+    if (lerParametro('acao') === 'biometria') {
+        abrirBiometria(tanqueId, { data: lerParametro('data'), registroId: lerParametro('registro') });
+    }
+}
+
+function salvarDoPainel(entrada, { irParaProximo }) {
+    const registro = salvarBiometria({ ...entrada, tanqueId: tanqueDoPainel });
+    const doPainel = obterSituacao(tanqueDoPainel);
+    const proxima = calcularProximaBiometria({ tanque: doPainel.tanque, ciclo: doPainel.cicloAtivo, registros: doPainel.registros, hoje: hojeISO() });
+    const resumo = `${doPainel.tanque.nome}: biometria de ${formatarData(registro.data)} salva, ${formatarGramas(registro.pesoMedioG)}. `
+        + `Próxima biometria: ${formatarDataCurta(proxima.dataProxima)}.`;
+    const seguinte = irParaProximo ? obterProximoTanqueBiometria({ tanqueIdAtual: tanqueDoPainel, data: registro.data }) : null;
+    if (seguinte) {
+        mostrarMensagem(porId('mensagem-tanque'), resumo);
+        abrirBiometria(seguinte.id, { data: registro.data });
+        return;
+    }
+    painelBiometria.fechar();
+    mostrarMensagem(porId('mensagem-tanque'), resumo);
+}
+
+function renderizarBiometrias() {
+    const { cicloAtivo } = situacao;
+    const corpo = porId('corpo-tabela-biometrias');
+    if (!cicloAtivo) {
+        porId('resumo-biometrias').textContent = 'Sem ciclo em andamento: as biometrias aparecem quando o tanque for povoado.';
+        corpo.replaceChildren();
+        porId('rolagem-tabela-biometrias').hidden = true;
+        return;
+    }
+    const pesagens = listarBiometriasDoCiclo(cicloAtivo.id);
+    const proxima = calcularProximaBiometria({ tanque: situacao.tanque, ciclo: cicloAtivo, registros: situacao.registros, hoje: hojeISO() });
+    porId('resumo-biometrias').textContent = `A cada ${pluralizar(proxima.intervaloDias, 'dia', 'dias')} · `
+        + (proxima.diasAtraso > 0 ? `atrasada há ${pluralizar(proxima.diasAtraso, 'dia', 'dias')}` : `próxima em ${formatarDataCurta(proxima.dataProxima)}`);
+    porId('rolagem-tabela-biometrias').hidden = false;
+    const linhas = pesagens.map((pesagem, indice) => {
+        const anterior = pesagens[indice - 1];
+        const dias = anterior ? diasEntre(anterior.data, pesagem.data) : null;
+        const ganho = anterior ? pesagem.pesoMedioG - anterior.pesoMedioG : null;
+        const { registro } = pesagem;
+        const estatisticas = registro?.biometria?.pesosIndividuaisG ? calcularEstatisticasPesos(registro.biometria.pesosIndividuaisG) : null;
+        const modo = pesagem.inicial ? 'Povoamento'
+            : registro.biometria?.pesosIndividuaisG ? 'Pesos individuais'
+                : registro.biometria ? 'Amostra' : 'Peso médio';
+        const data = formatarData(pesagem.data);
+        const acoes = registro
+            ? criarElemento('div', { classe: 'tabela__acoes' }, [
+                criarElemento('a', {
+                    classe: 'link',
+                    texto: 'Editar',
+                    atributos: { href: montarUrl('tanque.html', { id: tanqueId, acao: 'biometria', registro: registro.id }), 'aria-label': `Editar a biometria de ${data}` },
+                }),
+                ehRegistroDeBiometria(registro) && criarElemento('button', {
+                    classe: 'link',
+                    texto: 'Excluir',
+                    atributos: { type: 'button', 'data-excluir-registro': registro.id, 'aria-label': `Excluir a biometria de ${data}` },
+                }),
+            ])
+            : '';
+        return criarElemento('tr', {}, [
+            criarElemento('td', { texto: data }),
+            criarElemento('td', { texto: modo }),
+            criarElemento('td', { texto: registro?.biometria ? formatarInteiro(registro.biometria.peixesAmostra) : '' }),
+            criarElemento('td', { texto: formatarGramas(pesagem.pesoMedioG) }),
+            criarElemento('td', { texto: ganho === null ? '' : `${ganho >= 0 ? '+' : '−'}${formatarGramas(Math.abs(ganho))}` }),
+            criarElemento('td', { texto: dias > 0 ? formatarGramasPorDia(ganho / dias) : '' }),
+            criarElemento('td', { texto: estatisticas?.cvPct ? formatarPercentual(estatisticas.cvPct) : '' }),
+            criarElemento('td', {}, [acoes]),
+        ]);
+    });
+    corpo.replaceChildren(...linhas.reverse());
 }
 
 // ---------- Limites de alerta do tanque ----------

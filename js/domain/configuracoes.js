@@ -30,6 +30,25 @@ export function obterMetaFca(tanque = null) {
     return tanque?.limitesAlerta?.metaFca ?? lerDados().config.metaFca;
 }
 
+// Unidades de exibição (seção 8.1): biomassa em kg ou t, ração em kg ou g.
+const UNIDADES_ACEITAS = Object.freeze({ biomassa: ['kg', 't'], racao: ['kg', 'g'] });
+
+export function obterUnidades() {
+    return { biomassa: 'kg', racao: 'kg', ...lerDados().config.unidades };
+}
+
+export function salvarUnidades(entrada) {
+    const erros = {};
+    for (const [grandeza, aceitas] of Object.entries(UNIDADES_ACEITAS)) {
+        erros[grandeza] = aceitas.includes(entrada[grandeza]) ? null : 'Escolha uma das unidades da lista.';
+    }
+    lancarSeHouverErros(erros);
+    const dados = lerDados();
+    dados.config.unidades = { biomassa: entrada.biomassa, racao: entrada.racao };
+    salvarDados(dados);
+    return dados.config.unidades;
+}
+
 export function obterUltimoBackupEm() {
     return lerDados().config.ultimoBackupEm;
 }

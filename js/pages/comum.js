@@ -3,13 +3,20 @@
 // porque junta domínio, services e ui, o que só esta camada pode fazer.
 
 import { diasEntre, hojeISO, paraDataLocalISO } from '../core/utils.js';
-import { formatarGramas, formatarKg, formatarNumero, formatarPercentual, pluralizar } from '../core/format.js';
+import {
+    definirUnidadesExibicao,
+    formatarGramas,
+    formatarNumero,
+    formatarPercentual,
+    formatarRacao,
+    pluralizar,
+} from '../core/format.js';
 import { listarSituacoes } from '../domain/tanques.js';
 import { analisarTanque } from '../domain/alertas.js';
-import { obterLimitesPadrao, obterUltimoBackupEm } from '../domain/configuracoes.js';
+import { obterLimitesPadrao, obterUltimoBackupEm, obterUnidades } from '../domain/configuracoes.js';
 import { alternarConclusao, listarAtrasados, listarOcorrencias } from '../domain/lembretes.js';
 import { obterTabela } from '../domain/arracoamento.js';
-import { calcularIndicadores, calcularRacaoSugerida } from '../domain/indicadores.js';
+import { calcularIndicadores, calcularProximaBiometria, calcularRacaoSugerida } from '../domain/indicadores.js';
 import { exportarBackup } from '../services/exportacao.js';
 import { criarElemento, criarSelo } from '../ui/componentes.js';
 import { iniciarNavegacao, montarUrl } from '../ui/nav.js';
@@ -22,6 +29,12 @@ const MAXIMO_LEMBRETES_MENU = 5;
 export const EVENTO_LEMBRETES = 'fishtrack:lembretes';
 
 export function iniciarPagina() {
+    // Unidades de exibição (config.unidades) valem para toda a página.
+    try {
+        definirUnidadesExibicao(obterUnidades());
+    } catch (erro) {
+        console.error(erro);
+    }
     iniciarNavegacao();
     document.getElementById('botao-backup-rapido')?.addEventListener('click', fazerBackupRapido);
     document.getElementById('lista-lembretes-hoje')?.addEventListener('change', concluirDoMenu);
@@ -29,33 +42,38 @@ export function iniciarPagina() {
     atualizarMenu();
 }
 
-// Biometria com mais de 30 dias deixa a ração sugerida desatualizada (seção 9.10).
-export const DIAS_BIOMETRIA_ANTIGA = 30;
-
 // Ração sugerida de um tanque com ciclo ativo, já em texto, para o registro,
-// a página do tanque e a lista de tanques. Sem como calcular, traz o motivo.
+// a página do tanque, a lista e a Folha do dia (seção 9.10). Sem como
+// calcular, traz o motivo e a ação que resolve (nunca um traço sem motivo).
 export function descreverRacaoSugerida(situacao, hoje = hojeISO()) {
     const { tanque, cicloAtivo, registros } = situacao;
     const indicadores = calcularIndicadores({ tanque, ciclo: cicloAtivo, registros, hoje });
     const houvePesagem = registros.some((registro) => registro.pesoMedioG !== null && registro.pesoMedioG !== undefined);
-    const { sugestao, motivo } = calcularRacaoSugerida({ indicadores, tabela: obterTabela(tanque.tabelaArracoamentoId), houvePesagem });
-    const diasBiometria = diasEntre(indicadores.dataPesoAtual, hoje);
+    const plano = obterTabela(tanque.tabelaArracoamentoId);
+    const { sugestao, motivo } = calcularRacaoSugerida({ indicadores, tabela: plano, houvePesagem });
+    const biometria = calcularProximaBiometria({ tanque, ciclo: cicloAtivo, registros, hoje });
+    const urlPlano = montarUrl('tanque-form.html', { id: tanque.id }, 'alimentacao');
     const motivos = {
-        'sem-tabela': 'Defina uma tabela de alimentação para este tanque.',
-        'sem-biometria': 'Faça uma biometria para calcular a ração.',
-        'fora-da-tabela': `Peso de ${formatarGramas(indicadores.pesoMedioG)} fora da tabela.`,
+        'sem-tabela': { texto: 'Sem plano de alimentação', acao: { texto: 'Configurar', href: urlPlano } },
+        'sem-biometria': { texto: 'Falta a primeira biometria', acao: { texto: 'Fazer biometria', href: montarUrl('tanque.html', { id: tanque.id, acao: 'biometria' }) } },
+        'fora-da-tabela': { texto: `Peso de ${formatarGramas(indicadores.pesoMedioG)} fora do plano`, acao: { texto: 'Ajustar plano', href: urlPlano } },
     };
+    const detalheTaxa = sugestao?.faixa
+        ? `faixa ${formatarNumero(sugestao.faixa.pesoDeG)}–${formatarNumero(sugestao.faixa.pesoAteG)} g (${formatarPercentual(sugestao.taxaPct)})`
+        : sugestao ? `${formatarPercentual(sugestao.taxaPct)} do peso total por dia` : '';
     return {
         sugestao,
         motivo,
-        textoMotivo: motivo ? motivos[motivo] : null,
-        textoDia: sugestao ? `${formatarKg(sugestao.racaoDiaKg)} por dia` : null,
+        plano,
+        textoMotivo: motivo ? motivos[motivo].texto : null,
+        acaoMotivo: motivo ? motivos[motivo].acao : null,
+        textoDia: sugestao ? `${formatarRacao(sugestao.racaoDiaKg)} por dia` : null,
         textoDetalhe: sugestao
-            ? `${pluralizar(sugestao.refeicoes, 'refeição', 'refeições')} de ${formatarKg(sugestao.racaoRefeicaoKg)} · `
-                + `faixa ${formatarNumero(sugestao.faixa.pesoDeG)}–${formatarNumero(sugestao.faixa.pesoAteG)} g (${formatarPercentual(sugestao.faixa.taxaPct)})`
+            ? `${pluralizar(sugestao.refeicoes, 'refeição', 'refeições')} de ${formatarRacao(sugestao.racaoRefeicaoKg)} · ${detalheTaxa}`
             : null,
-        aviso: sugestao && diasBiometria > DIAS_BIOMETRIA_ANTIGA
-            ? `Última biometria há ${diasBiometria} dias: a sugestão pode estar desatualizada.`
+        // A sugestão usa o peso da última biometria: atrasada, ela envelhece (seção 9.11).
+        aviso: sugestao && biometria.diasAtraso > 0 && plano?.tipo !== 'fixo'
+            ? `Biometria atrasada há ${pluralizar(biometria.diasAtraso, 'dia', 'dias')}: a sugestão pode estar desatualizada.`
             : null,
     };
 }
@@ -73,6 +91,8 @@ export function obterAcaoDoAlerta(alerta) {
             return { texto: 'Planejar despesca', href: montarUrl('ciclo-form.html', { tanqueId: alerta.tanqueId, acao: 'despesca' }) };
         case 'peso':
             return { texto: 'Ver evolução', href: tanque() };
+        case 'biometria-atrasada':
+            return { texto: 'Fazer biometria', href: montarUrl('tanque.html', { id: alerta.tanqueId, acao: 'biometria' }) };
         case 'sem-registro':
             return { texto: 'Registrar agora', href: montarUrl('registro.html', { tanqueId: alerta.tanqueId }) };
         default:

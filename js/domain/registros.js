@@ -2,7 +2,13 @@
 
 import { lerDados, salvarDados } from '../core/storage.js';
 import { agoraISO, gerarId, hojeISO, limparTexto } from '../core/utils.js';
-import { formatarData, formatarGramas, formatarInteiro, formatarKg, pluralizar } from '../core/format.js';
+import {
+    formatarData,
+    formatarGramas,
+    formatarInteiro,
+    formatarRacao,
+    pluralizar,
+} from '../core/format.js';
 import { calcularEstoquePorRegistro, encontrarMortalidadeAcimaDoEstoque, ordenarRegistros } from './indicadores.js';
 import { ErroValidacao, falharRegra, lancarSeHouverErros, validarData, validarNumero, validarTexto } from './validacao.js';
 
@@ -39,7 +45,7 @@ export function resumirRegistro(registro) {
         partes.push(`amostra de ${pluralizar(registro.biometria.peixesAmostra, 'peixe', 'peixes')}`);
     }
     if (informado(registro.racaoKg)) {
-        partes.push(`Ração ${formatarKg(registro.racaoKg)}${informado(registro.racaoSobraKg) ? ` (sobra ${formatarKg(registro.racaoSobraKg)})` : ''}`);
+        partes.push(`Ração ${formatarRacao(registro.racaoKg)}${informado(registro.racaoSobraKg) ? ` (sobra ${formatarRacao(registro.racaoSobraKg)})` : ''}`);
     }
     if (informado(registro.mortalidade)) {
         const causa = registro.causaMortalidade ? ` (${CAUSAS_MORTALIDADE[registro.causaMortalidade].toLowerCase()})` : '';
@@ -78,16 +84,31 @@ export function salvarRegistro(entrada) {
 
     // RN22: biometria por amostra. O peso médio sai do peso da amostra dividido
     // pelos peixes pesados (Embrapa, manejos na criação de tilápia, Queiroz, 2019).
-    const amostra = entrada.biometria ?? null;
-    const temAmostra = Boolean(amostra) && [amostra.peixesAmostra, amostra.pesoAmostraG, amostra.comprimentoMedioCm].some(informado);
-    const errosAmostra = temAmostra ? {
+    // RN26: com os pesos de cada peixe, a amostra sai deles (quantidade e soma).
+    const pesosIndividuaisG = Array.isArray(entrada.biometria?.pesosIndividuaisG) ? entrada.biometria.pesosIndividuaisG : null;
+    const erroPesosIndividuais = pesosIndividuaisG === null ? null
+        : pesosIndividuaisG.length < 2 ? 'Informe o peso de pelo menos 2 peixes, um por linha.'
+            : pesosIndividuaisG.some((peso) => !Number.isFinite(peso) || peso <= 0)
+                ? `Confira o ${pesosIndividuaisG.findIndex((peso) => !Number.isFinite(peso) || peso <= 0) + 1}º peso: use um número maior que zero.`
+                : null;
+    const amostra = pesosIndividuaisG && !erroPesosIndividuais
+        ? { ...entrada.biometria, peixesAmostra: pesosIndividuaisG.length, pesoAmostraG: pesosIndividuaisG.reduce((total, peso) => total + peso, 0) }
+        : entrada.biometria ?? null;
+    const temAmostra = Boolean(amostra) && !erroPesosIndividuais
+        && [amostra.peixesAmostra, amostra.pesoAmostraG, amostra.comprimentoMedioCm].some(informado);
+    const errosAmostra = erroPesosIndividuais ? { pesosIndividuaisG: erroPesosIndividuais } : temAmostra ? {
         peixesAmostra: validarNumero(amostra.peixesAmostra ?? null, { rotulo: 'os peixes na amostra', obrigatorio: true, positivo: true, inteiro: true }),
         pesoAmostraG: validarNumero(amostra.pesoAmostraG ?? null, { rotulo: 'o peso da amostra', obrigatorio: true, positivo: true }),
         comprimentoMedioCm: validarNumero(amostra.comprimentoMedioCm ?? null, { positivo: true }),
     } : {};
     const amostraValida = temAmostra && !Object.values(errosAmostra).some(Boolean);
     const biometria = amostraValida
-        ? { peixesAmostra: amostra.peixesAmostra, pesoAmostraG: amostra.pesoAmostraG, comprimentoMedioCm: amostra.comprimentoMedioCm ?? null }
+        ? {
+            peixesAmostra: amostra.peixesAmostra,
+            pesoAmostraG: amostra.pesoAmostraG,
+            comprimentoMedioCm: amostra.comprimentoMedioCm ?? null,
+            pesosIndividuaisG: pesosIndividuaisG ? [...pesosIndividuaisG] : null,
+        }
         : null;
 
     const registro = {

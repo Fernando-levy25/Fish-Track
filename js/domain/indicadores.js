@@ -161,12 +161,65 @@ function obterBiomassaInicialKg(ciclo) {
     return ciclo.biomassaInicialKg ?? (ciclo.quantidadeInicial * ciclo.pesoMedioInicialG) / 1000;
 }
 
+// ---------- Biometria (seção 9.11) ----------
+
+// Lote uniforme até este coeficiente de variação; acima, vale classificar os
+// peixes por tamanho. Valor a validar com o laboratório (seção 13).
+export const LIMITE_CV_UNIFORME_PCT = 20;
+export const INTERVALO_BIOMETRIA_PADRAO_DIAS = 15;
+
+// Pesos individuais (g) → quantidade, total, média, menor, maior e o
+// coeficiente de variação: desvio padrão amostral (n − 1) ÷ média × 100.
+export function calcularEstatisticasPesos(pesosG) {
+    const pesos = pesosG.filter((peso) => Number.isFinite(peso));
+    const quantidade = pesos.length;
+    if (quantidade === 0) {
+        return null;
+    }
+    const totalG = pesos.reduce((total, peso) => total + peso, 0);
+    const mediaG = totalG / quantidade;
+    const variancia = quantidade > 1 ? pesos.reduce((total, peso) => total + (peso - mediaG) ** 2, 0) / (quantidade - 1) : null;
+    const cvPct = variancia === null || mediaG === 0 ? null : (Math.sqrt(variancia) / mediaG) * 100;
+    return {
+        quantidade,
+        totalG,
+        mediaG,
+        menorG: Math.min(...pesos),
+        maiorG: Math.max(...pesos),
+        cvPct,
+        uniforme: cvPct === null ? null : cvPct <= LIMITE_CV_UNIFORME_PCT,
+    };
+}
+
+// Próxima biometria (seção 9.11): a última pesagem do ciclo (ou o povoamento)
+// mais o intervalo do tanque. Atrasada quando hoje passou dessa data.
+export function calcularProximaBiometria({ tanque, ciclo, registros, hoje }) {
+    const intervalo = tanque.intervaloBiometriaDias ?? INTERVALO_BIOMETRIA_PADRAO_DIAS;
+    const pesagens = ordenarRegistros(registros).filter((registro) => informado(registro.pesoMedioG));
+    const ultima = pesagens.at(-1) ?? null;
+    const dataUltima = ultima?.data ?? ciclo.dataInicio;
+    const dataProxima = somarDias(dataUltima, intervalo);
+    return {
+        intervaloDias: intervalo,
+        dataUltima,
+        houveBiometria: Boolean(ultima),
+        pesoUltimaG: ultima?.pesoMedioG ?? ciclo.pesoMedioInicialG,
+        dataProxima,
+        diasAtraso: Math.max(diasEntre(dataProxima, hoje), 0),
+        diasAteProxima: diasEntre(hoje, dataProxima),
+    };
+}
+
 // Ração sugerida (seção 9.10): biomassa × taxa da faixa de peso ÷ refeições
 // (Embrapa, Comunicado Técnico 12: 1.880 peixes × 542,5 g → 19,4 kg/dia).
 // Sem como calcular, devolve { sugestao: null, motivo }.
 export function calcularRacaoSugerida({ indicadores, tabela, houvePesagem = true }) {
     if (!tabela) {
         return { sugestao: null, motivo: 'sem-tabela' };
+    }
+    // Plano fixo: a mesma porcentagem para qualquer peso (não depende da biometria).
+    if (tabela.tipo === 'fixo') {
+        return montarSugestao(indicadores, { taxaPct: tabela.taxaPct, refeicoes: tabela.refeicoes }, null);
     }
     if (!houvePesagem) {
         return { sugestao: null, motivo: 'sem-biometria' };
@@ -179,12 +232,17 @@ export function calcularRacaoSugerida({ indicadores, tabela, houvePesagem = true
     if (!faixa) {
         return { sugestao: null, motivo: 'fora-da-tabela' };
     }
-    const racaoDiaKg = (indicadores.biomassaKg * faixa.taxaPct) / 100;
+    return montarSugestao(indicadores, faixa, faixa);
+}
+
+function montarSugestao(indicadores, { taxaPct, refeicoes }, faixa) {
+    const racaoDiaKg = (indicadores.biomassaKg * taxaPct) / 100;
     return {
         sugestao: {
             racaoDiaKg,
-            racaoRefeicaoKg: racaoDiaKg / faixa.refeicoes,
-            refeicoes: faixa.refeicoes,
+            racaoRefeicaoKg: racaoDiaKg / refeicoes,
+            refeicoes,
+            taxaPct,
             faixa,
             dataBiometria: indicadores.dataPesoAtual,
         },

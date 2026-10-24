@@ -3,13 +3,14 @@
 
 import { criarSlug, diasEntre, hojeISO, somarDias } from '../core/utils.js';
 import {
+    formatarBiomassa,
     formatarDataCompleta,
     formatarFca,
     formatarGramas,
     formatarInteiro,
-    formatarKg,
     formatarNumero,
     formatarPercentual,
+    formatarRacao,
     pluralizar,
 } from '../core/format.js';
 import { lerPreferencia, salvarPreferencia } from '../core/storage.js';
@@ -38,11 +39,11 @@ const PERIODO_PADRAO = '30';
 
 // Cada indicador: como aparece no cartão e qual campo da série vai para o gráfico.
 const INDICADORES = {
-    biomassa: { rotulo: 'Biomassa (estimada)', campo: 'biomassaKg', formatar: formatarKg, rotuloTotal: 'Total' },
+    biomassa: { rotulo: 'Biomassa (estimada)', campo: 'biomassaKg', formatar: formatarBiomassa, rotuloTotal: 'Total' },
     peixes: { rotulo: 'Peixes (estimado)', campo: 'quantidade', formatar: formatarInteiro, rotuloTotal: 'Total' },
     fca: { rotulo: 'FCA (estimada)', campo: 'fca', formatar: formatarFca, rotuloTotal: 'Geral' },
     mortalidade: { rotulo: 'Mortalidade observada', campo: 'taxaMortalidade', formatar: formatarPercentual, rotuloTotal: 'Geral' },
-    racao: { rotulo: 'Ração consumida', campo: 'racaoDiaKg', formatar: formatarKg, rotuloTotal: 'Total' },
+    racao: { rotulo: 'Ração consumida', campo: 'racaoDiaKg', formatar: formatarRacao, rotuloTotal: 'Total' },
 };
 // A FCA dos primeiros dias do ciclo, com pouco ganho de peso, passa de 10:
 // a escala do gráfico para em 3 para a faixa útil continuar legível.
@@ -164,8 +165,8 @@ function montarDestaque(chave) {
         case 'biomassa': {
             const { atual, variacao, percentual } = resumo.biomassa;
             return {
-                valor: formatarKg(atual),
-                apoio: `${variacao >= 0 ? '▲' : '▼'} ${formatarKg(Math.abs(variacao))} ${periodo}`,
+                valor: formatarBiomassa(atual),
+                apoio: `${variacao >= 0 ? '▲' : '▼'} ${formatarBiomassa(Math.abs(variacao))} ${periodo}`,
                 selo: Number.isFinite(percentual)
                     ? { texto: `${percentual >= 0 ? '+' : '−'}${formatarNumero(Math.abs(percentual), 0)}%`, variante: percentual >= 0 ? 'sucesso' : 'perigo' }
                     : null,
@@ -202,8 +203,8 @@ function montarDestaque(chave) {
         }
         default:
             return {
-                valor: formatarKg(resumo.racao.total),
-                apoio: `Média de ${formatarKg(resumo.racao.mediaPorDia)} por dia`,
+                valor: formatarRacao(resumo.racao.total),
+                apoio: `Média de ${formatarRacao(resumo.racao.mediaPorDia)} por dia`,
                 visual: sparkline('racaoDiaKg'),
             };
     }
@@ -342,7 +343,7 @@ function criarCartaoCultivo({ tanque, cicloAtivo, indicadores, alertas, ultimoRe
             anel,
             criarElemento('dl', { classe: 'cartao-cultivo__dados' }, [
                 ['Peixes (estimado)', formatarInteiro(indicadores.quantidade)],
-                ['Biomassa (estimada)', formatarKg(indicadores.biomassaKg)],
+                ['Biomassa (estimada)', formatarBiomassa(indicadores.biomassaKg)],
                 ['FCA (estimada)', formatarFca(indicadores.fca)],
                 ['Despesca', despesca],
             ].map(([rotulo, valor]) => criarElemento('div', { classe: 'cartao-cultivo__dado' }, [

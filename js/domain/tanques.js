@@ -4,7 +4,7 @@
 
 import { lerDados, salvarDados } from '../core/storage.js';
 import { agoraISO, compararTexto, gerarId, limparTexto, mesmoTexto } from '../core/utils.js';
-import { ordenarRegistros } from './indicadores.js';
+import { INTERVALO_BIOMETRIA_PADRAO_DIAS, ordenarRegistros } from './indicadores.js';
 import { falharRegra, lancarSeHouverErros, validarNumero, validarTexto } from './validacao.js';
 
 export const ROTULOS_STATUS = Object.freeze({
@@ -75,6 +75,10 @@ export function salvarTanque(entrada) {
     const informouCarga = entrada.cargaMaximaKg !== undefined;
     const valorCapacidade = (informouCarga ? entrada.cargaMaximaKg : entrada.densidadeMaximaKgM3) ?? null;
     const erroCapacidade = validarNumero(valorCapacidade, { positivo: true });
+    // Sem o campo, mantém o intervalo do tanque (ou o padrão de 15 dias).
+    const intervaloBiometriaDias = entrada.intervaloBiometriaDias === undefined
+        ? existente?.intervaloBiometriaDias ?? INTERVALO_BIOMETRIA_PADRAO_DIAS
+        : entrada.intervaloBiometriaDias;
     // Sem o campo (ex.: formulário antigo), mantém a tabela que o tanque já tinha.
     const tabelaArracoamentoId = entrada.tabelaArracoamentoId === undefined
         ? existente?.tabelaArracoamentoId ?? null
@@ -93,8 +97,10 @@ export function salvarTanque(entrada) {
             : null,
         observacoes: validarTexto(observacoes, { maximo: TAMANHO_MAXIMO_OBSERVACOES }),
         tabelaArracoamentoId: tabelaArracoamentoId && !dados.config.tabelasArracoamento.some((tabela) => tabela.id === tabelaArracoamentoId)
-            ? 'Escolha uma tabela de alimentação existente.'
+            ? 'Escolha um plano de alimentação existente.'
             : null,
+        // RN25: biometria a cada 1 a 90 dias.
+        intervaloBiometriaDias: validarNumero(intervaloBiometriaDias, { rotulo: 'o intervalo da biometria', obrigatorio: true, inteiro: true, minimo: 1, maximo: 90 }),
     });
 
     const agora = agoraISO();
@@ -102,7 +108,7 @@ export function salvarTanque(entrada) {
     const densidadeMaximaKgM3 = valorCapacidade === null || !informouCarga ? valorCapacidade : valorCapacidade / entrada.volumeM3;
     if (existente) {
         Object.assign(existente, {
-            nome, especie, volumeM3: entrada.volumeM3, densidadeMaximaKgM3, tabelaArracoamentoId, status, observacoes, atualizadoEm: agora,
+            nome, especie, volumeM3: entrada.volumeM3, densidadeMaximaKgM3, tabelaArracoamentoId, intervaloBiometriaDias, status, observacoes, atualizadoEm: agora,
         });
         salvarDados(dados);
         return existente;
@@ -114,6 +120,7 @@ export function salvarTanque(entrada) {
         volumeM3: entrada.volumeM3,
         densidadeMaximaKgM3,
         tabelaArracoamentoId,
+        intervaloBiometriaDias,
         status,
         limitesAlerta: null,
         observacoes,

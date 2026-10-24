@@ -2,17 +2,33 @@
 // a ação: ciclo-form.html?tanqueId=...&acao=iniciar (ou acao=despesca).
 
 import { hojeISO, paraNumero } from '../core/utils.js';
-import { formatarFca, formatarGramas, formatarInteiro, formatarKg, formatarPercentual } from '../core/format.js';
+import {
+    formatarBiomassa,
+    formatarFca,
+    formatarGramas,
+    formatarInteiro,
+    formatarPercentual,
+} from '../core/format.js';
 import { obterSituacao } from '../domain/tanques.js';
 import { iniciarCiclo, listarResultadosCiclos, registrarDespesca, verificarInicioCiclo } from '../domain/ciclos.js';
 import { calcularIndicadores } from '../domain/indicadores.js';
 import { irPara, lerParametro, montarUrl } from '../ui/nav.js';
-import { iniciarFormulario, mostrarErroPagina, preencherCampos } from '../ui/componentes.js';
+import { iniciarCampoUnidade, iniciarFormulario, mostrarErroPagina, preencherCampos } from '../ui/componentes.js';
+import { lerPreferencia, salvarPreferencia } from '../core/storage.js';
 import { iniciarPagina } from './comum.js';
 
 const tanqueId = lerParametro('tanqueId');
 const acao = lerParametro('acao') === 'despesca' ? 'despesca' : 'iniciar';
 const porId = (id) => document.getElementById(id);
+// Biomassa do lote e biomassa final em kg ou t (seção 8.1); a unidade fica lembrada.
+const opcoesBiomassa = (chave) => ({
+    grandeza: 'biomassa',
+    unidades: ['kg', 't'],
+    unidadeInicial: lerPreferencia(chave, 'kg'),
+    aoTrocarUnidade: (unidade) => salvarPreferencia(chave, unidade),
+});
+const campoBiomassaInicial = iniciarCampoUnidade(porId('campo-biomassa-inicial'), opcoesBiomassa('unidadeBiomassaLote'));
+const campoBiomassaFinal = iniciarCampoUnidade(porId('campo-biomassa-final'), opcoesBiomassa('unidadeBiomassaFinal'));
 
 iniciarPagina();
 try {
@@ -75,7 +91,7 @@ function prepararInicio({ tanque }, urlTanque) {
                 dataInicio: valores.dataInicio,
                 modoPovoamento: valores.modoPovoamento,
                 quantidadeInicial: paraNumero(valores.quantidadeInicial),
-                biomassaInicialKg: paraNumero(valores.biomassaInicialKg),
+                biomassaInicialKg: campoBiomassaInicial.lerBase(),
                 pesoMedioInicialG: paraNumero(valores.pesoMedioInicialG),
                 pesoAlvoG: paraNumero(valores.pesoAlvoG),
                 dataPrevistaDespesca: valores.dataPrevistaDespesca,
@@ -101,7 +117,7 @@ function prepararDespesca({ tanque, cicloAtivo, registros }, urlTanque) {
     data.min = registros.at(-1)?.data ?? cicloAtivo.dataInicio;
     // As estimativas entram como sugestão, não como valor: a despesca registra o
     // que foi pesado (e, se houver, contado) de fato.
-    porId('campo-biomassa-final').placeholder = `Estimativa: ${formatarKg(indicadores.biomassaKg)}`;
+    porId('campo-biomassa-final').placeholder = `Estimativa: ${formatarBiomassa(indicadores.biomassaKg)}`;
     porId('campo-quantidade-despescada').placeholder = `Estimativa: ${formatarInteiro(indicadores.quantidade)}`;
     porId('campo-peso-final').placeholder = `Último peso: ${formatarGramas(indicadores.pesoMedioG)}`;
 
@@ -110,7 +126,7 @@ function prepararDespesca({ tanque, cicloAtivo, registros }, urlTanque) {
         aoEnviar: (valores) => {
             registrarDespesca(tanque.id, {
                 dataDespesca: valores.dataDespesca,
-                biomassaFinalKg: paraNumero(valores.biomassaFinalKg),
+                biomassaFinalKg: campoBiomassaFinal.lerBase(),
                 pesoMedioFinalG: paraNumero(valores.pesoMedioFinalG),
                 quantidadeDespescada: paraNumero(valores.quantidadeDespescada),
             });
@@ -129,12 +145,12 @@ function configurarModoPovoamento(formulario) {
         porId('grupo-biomassa-inicial').hidden = !pesagem;
         const peso = paraNumero(porId('campo-peso-inicial').value);
         const quantidade = paraNumero(porId('campo-quantidade-inicial').value);
-        const biomassa = paraNumero(porId('campo-biomassa-inicial').value);
+        const biomassa = campoBiomassaInicial.lerBase();
         let texto = '';
         if (pesagem && biomassa > 0 && peso > 0) {
             texto = `≈ ${formatarInteiro(Math.round((biomassa * 1000) / peso))} peixes (estimado)`;
         } else if (!pesagem && quantidade > 0 && peso > 0) {
-            texto = `Biomassa inicial: ${formatarKg((quantidade * peso) / 1000)}`;
+            texto = `Biomassa inicial: ${formatarBiomassa((quantidade * peso) / 1000)}`;
         }
         porId('resultado-povoamento').textContent = texto;
     };

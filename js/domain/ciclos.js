@@ -3,8 +3,8 @@
 
 import { lerDados, salvarDados } from '../core/storage.js';
 import { agoraISO, compararTexto, gerarId, hojeISO, somarDias } from '../core/utils.js';
-import { formatarData, formatarGramas, formatarKg, pluralizar } from '../core/format.js';
-import { calcularResultadoCiclo, ordenarRegistros } from './indicadores.js';
+import { formatarBiomassa, formatarData, formatarGramas, pluralizar } from '../core/format.js';
+import { calcularProximaBiometria, calcularResultadoCiclo, ordenarRegistros } from './indicadores.js';
 import { avaliarAlertasDosDias, resolverLimites } from './alertas.js';
 import { listarOcorrencias } from './lembretes.js';
 import { resumirRegistro } from './registros.js';
@@ -15,6 +15,7 @@ export const ROTULOS_EVENTO = Object.freeze({
     povoamento: 'Povoamento',
     'despesca-prevista': 'Despesca prevista',
     'despesca-realizada': 'Despesca realizada',
+    'biometria-prevista': 'Biometria prevista',
     lembrete: 'Lembrete',
     registro: 'Registro',
 });
@@ -228,9 +229,19 @@ export function listarEventosCalendario({ inicio, fim, tanqueId = null }) {
             adicionar(ciclo.dataPrevistaDespesca, 'despesca-prevista', tanque,
                 ciclo.pesoAlvoG ? `Peso alvo de ${formatarGramas(ciclo.pesoAlvoG)}` : 'Data prevista no povoamento');
         }
+        // Próxima biometria do ciclo em andamento (seção 9.11); atrasada, fica na data em que venceu.
+        if (ciclo.status === 'ativo') {
+            const registrosDoCiclo = dados.registros.filter((registro) => registro.cicloId === ciclo.id);
+            const proxima = calcularProximaBiometria({ tanque, ciclo, registros: registrosDoCiclo, hoje });
+            if (noPeriodo(proxima.dataProxima)) {
+                adicionar(proxima.dataProxima, 'biometria-prevista', tanque,
+                    proxima.diasAtraso > 0 ? `Atrasada há ${pluralizar(proxima.diasAtraso, 'dia', 'dias')}` : `A cada ${pluralizar(proxima.intervaloDias, 'dia', 'dias')}`,
+                    { atrasada: proxima.diasAtraso > 0 });
+            }
+        }
         if (ciclo.status === 'encerrado' && noPeriodo(ciclo.dataDespesca)) {
             adicionar(ciclo.dataDespesca, 'despesca-realizada', tanque,
-                `${formatarKg(ciclo.biomassaFinalKg)} com peso médio de ${formatarGramas(ciclo.pesoMedioFinalG)}`);
+                `${formatarBiomassa(ciclo.biomassaFinalKg)} com peso médio de ${formatarGramas(ciclo.pesoMedioFinalG)}`);
         }
     }
     const ciclosAtivos = new Set(dados.ciclos.filter((ciclo) => ciclo.status === 'ativo').map((ciclo) => ciclo.id));
