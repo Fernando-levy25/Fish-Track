@@ -1,5 +1,5 @@
 // Partes comuns a todas as páginas (seção 3.1): a navegação, os contadores do
-// menu lateral, os lembretes de hoje, o lembrete de backup e o estado do uso offline. Fica em pages
+// menu lateral (inclusive os lembretes pendentes na Agenda), o lembrete de backup e o estado do uso offline. Fica em pages
 // porque junta domínio, services e ui, o que só esta camada pode fazer.
 
 import { diasEntre, hojeISO, paraDataLocalISO } from '../core/utils.js';
@@ -14,18 +14,15 @@ import {
 import { listarSituacoes } from '../domain/tanques.js';
 import { analisarTanque } from '../domain/alertas.js';
 import { obterLimitesPadrao, obterUltimoBackupEm, obterUnidades } from '../domain/configuracoes.js';
-import { alternarConclusao, listarAtrasados, listarOcorrencias } from '../domain/lembretes.js';
+import { listarAtrasados, listarOcorrencias } from '../domain/lembretes.js';
 import { obterTabela } from '../domain/arracoamento.js';
 import { calcularIndicadores, calcularProximaBiometria, calcularRacaoSugerida } from '../domain/indicadores.js';
 import { exportarBackup } from '../services/exportacao.js';
-import { criarElemento, criarSelo } from '../ui/componentes.js';
 import { iniciarNavegacao, montarUrl } from '../ui/nav.js';
 
 // Passado esse prazo sem backup, o aviso do menu fica âmbar.
 const DIAS_PARA_LEMBRAR_BACKUP = 7;
-// O menu mostra poucos lembretes; o resto fica a um clique, na agenda.
-const MAXIMO_LEMBRETES_MENU = 5;
-// Disparado quando um lembrete é concluído no menu, para a agenda aberta se atualizar.
+// Disparado quando um lembrete muda fora da agenda (na tela "Hoje"), para ela se atualizar.
 export const EVENTO_LEMBRETES = 'fishtrack:lembretes';
 
 export function iniciarPagina() {
@@ -37,7 +34,6 @@ export function iniciarPagina() {
     }
     iniciarNavegacao();
     document.getElementById('botao-backup-rapido')?.addEventListener('click', fazerBackupRapido);
-    document.getElementById('lista-lembretes-hoje')?.addEventListener('change', concluirDoMenu);
     mostrarEstadoOffline();
     atualizarMenu();
 }
@@ -78,23 +74,22 @@ export function descreverRacaoSugerida(situacao, hoje = hojeISO()) {
     };
 }
 
-// Link de ação de cada alerta (seção 3.5): o próximo passo mais provável.
+// Ação de cada alerta (seção 3.5), com os nomes padronizados da seção 11.6:
+// o próximo passo mais provável.
 export function obterAcaoDoAlerta(alerta) {
     const tanque = (ancora) => montarUrl('tanque.html', { id: alerta.tanqueId }, ancora);
     switch (alerta.tipo) {
         case 'mortalidade-registro':
         case 'racao':
-            return { texto: 'Ver registro', href: tanque('historico') };
         case 'mortalidade-acumulada':
-            return { texto: 'Ver histórico', href: tanque('historico') };
-        case 'capacidade':
-            return { texto: 'Planejar despesca', href: montarUrl('ciclo-form.html', { tanqueId: alerta.tanqueId, acao: 'despesca' }) };
         case 'peso':
-            return { texto: 'Ver evolução', href: tanque() };
+            return { texto: 'Ver tanque', icone: 'seta', href: tanque() };
+        case 'capacidade':
+            return { texto: 'Planejar despesca', icone: 'rede', href: montarUrl('ciclo-form.html', { tanqueId: alerta.tanqueId, acao: 'despesca' }) };
         case 'biometria-atrasada':
-            return { texto: 'Fazer biometria', href: montarUrl('tanque.html', { id: alerta.tanqueId, acao: 'biometria' }) };
+            return { texto: 'Fazer biometria', icone: 'balanca', href: montarUrl('tanque.html', { id: alerta.tanqueId, acao: 'biometria' }) };
         case 'sem-registro':
-            return { texto: 'Registrar agora', href: montarUrl('registro.html', { tanqueId: alerta.tanqueId }) };
+            return { texto: 'Anotar', icone: 'lapis', href: montarUrl('folha.html', { tanque: alerta.tanqueId }) };
         default:
             return null;
     }
@@ -112,7 +107,10 @@ export function atualizarMenu() {
         definirContador('tanques', situacoes.length);
         definirContador('alertas', alertas.length);
         mostrarUltimoBackup(obterUltimoBackupEm(), hoje);
-        mostrarLembretesDeHoje(hoje);
+        // Os lembretes de hoje ficam na tela "Hoje"; nas outras, o contador da Agenda lembra deles.
+        const pendentes = listarOcorrencias({ inicio: hoje, fim: hoje, hoje }).filter((item) => !item.concluida).length
+            + listarAtrasados({ hoje }).length;
+        definirContador('lembretes', pendentes);
     } catch (erro) {
         // O menu não derruba a página: ela mesma mostra o erro de armazenamento.
         console.error(erro);
@@ -140,58 +138,6 @@ function mostrarUltimoBackup(ultimoBackupEm, hoje) {
     }
     aviso.textContent = texto;
     aviso.classList.toggle('cabecalho__backup--atrasado', atrasado);
-}
-
-// Seção 7.4: os de hoje e os atrasados, com conclusão direto no menu.
-function mostrarLembretesDeHoje(hoje) {
-    const lista = document.getElementById('lista-lembretes-hoje');
-    if (!lista) {
-        return;
-    }
-    const deHoje = listarOcorrencias({ inicio: hoje, fim: hoje, hoje });
-    const atrasados = listarAtrasados({ hoje });
-    const itens = [...atrasados.map((item) => ({ ...item, atrasado: true })), ...deHoje];
-    const concluidos = deHoje.filter((item) => item.concluida).length;
-    document.getElementById('contador-lembretes-hoje').textContent = deHoje.length > 0 ? `${concluidos} de ${deHoje.length}` : '';
-
-    const visiveis = itens.slice(0, MAXIMO_LEMBRETES_MENU);
-    lista.replaceChildren(...visiveis.map(criarItemDoMenu));
-    if (itens.length === 0) {
-        lista.append(criarElemento('li', { classe: 'lembretes-hoje__vazio', texto: 'Nada para hoje.' }));
-    } else if (itens.length > visiveis.length) {
-        lista.append(criarElemento('li', { classe: 'lembretes-hoje__vazio' }, [
-            criarElemento('a', { classe: 'lembretes-hoje__link', texto: `e mais ${itens.length - visiveis.length} na agenda`, atributos: { href: 'calendario.html' } }),
-        ]));
-    }
-}
-
-function criarItemDoMenu(item) {
-    const id = `menu-lembrete-${item.lembreteId}-${item.data}`;
-    return criarElemento('li', { classe: `lembretes-hoje__item${item.concluida ? ' lembretes-hoje__item--concluido' : ''}` }, [
-        criarElemento('input', {
-            classe: 'lembretes-hoje__caixa',
-            atributos: { type: 'checkbox', id, checked: item.concluida, 'data-concluir': item.lembreteId, 'data-ocorrencia': item.data },
-        }),
-        criarElemento('label', { classe: 'lembretes-hoje__texto', atributos: { for: id } }, [
-            item.titulo,
-            item.tanqueNome && criarElemento('span', { classe: 'lembretes-hoje__tanque', texto: item.tanqueNome }),
-        ]),
-        item.atrasado && criarSelo('Atrasado', 'atencao'),
-    ]);
-}
-
-function concluirDoMenu(evento) {
-    const caixa = evento.target.closest('[data-concluir]');
-    if (!caixa) {
-        return;
-    }
-    try {
-        alternarConclusao(caixa.dataset.concluir, caixa.dataset.ocorrencia);
-    } catch (erro) {
-        console.error(erro);
-    }
-    atualizarMenu();
-    document.dispatchEvent(new CustomEvent(EVENTO_LEMBRETES));
 }
 
 function fazerBackupRapido() {

@@ -326,7 +326,7 @@ export function criarAgenda(raiz, {
             criarElemento('button', { classe: 'botao botao--primario', atributos: { type: 'button', 'data-acao-quadro': 'novo-lembrete' } },
                 [criarIcone('mais', { classe: 'icone icone--girar' }), 'Adicionar lembrete']),
             selecionado <= hoje && criarElemento('a', { classe: 'botao botao--secundario', atributos: { href: hrefRegistro(selecionado) } },
-                [criarIcone('mais', { classe: 'icone icone--girar' }), 'Registro neste dia']),
+                [criarIcone('lapis'), 'Anotar este dia']),
         ]);
         quadro.replaceChildren(cabecalho, conteudo, rodape);
     }

@@ -62,22 +62,25 @@ function preencher(raiz, gancho, valores) {
 
 // ---------- Cartões e listas ----------
 
-export function criarCartaoTanque({ nome, nivelTitulo = 2, especie, selo, metricas, extra = null, acoes }) {
+// estado: o de calcularEstadoTanque (seção 9.12); o valor de uma métrica pode
+// ser texto ou um elemento (valor estimado, valor ausente).
+export function criarCartaoTanque({ nome, nivelTitulo = 2, especie, estado = null, selo = null, metricas, extra = null, acoes }) {
     return criarElemento('article', { classe: 'cartao-tanque' }, [
         criarElemento('div', { classe: 'cartao-tanque__cabecalho' }, [
             criarElemento(`h${nivelTitulo}`, { classe: 'cartao-tanque__nome', texto: nome }),
             selo && criarSelo(selo.texto, selo.variante),
         ]),
         criarElemento('p', { classe: 'cartao-tanque__especie', texto: especie }),
+        estado && criarEtiquetaEstado(estado),
         criarElemento('dl', { classe: 'cartao-tanque__metricas' }, metricas.map(({ rotulo, valor }) => (
             criarElemento('div', { classe: 'cartao-tanque__metrica' }, [
                 criarElemento('dt', { texto: rotulo }),
-                criarElemento('dd', { texto: valor }),
+                criarElemento('dd', {}, [valor]),
             ])
         ))),
         extra,
         criarElemento('div', { classe: 'cartao-tanque__acoes' }, acoes.map(({ texto, href }) => (
-            // Vários cartões têm "Ver detalhes": o nome do tanque no rótulo diferencia os links.
+            // Vários cartões têm "Ver tanque": o nome do tanque no rótulo diferencia os links.
             criarElemento('a', { classe: 'link', texto, atributos: { href, 'aria-label': `${texto}: ${nome}` } })
         ))),
     ]);
@@ -207,7 +210,7 @@ export function criarBarraCapacidade({
         classes.push('barra-agua--compacta');
     }
     const topo = (filhos) => criarElemento('div', { classe: 'barra-agua__topo' }, [
-        criarElemento('span', { classe: 'barra-agua__rotulo', texto: 'Capacidade (estimada)' }),
+        criarElemento('span', { classe: 'barra-agua__rotulo', texto: 'Capacidade ≈' }),
         ...filhos,
     ]);
 
@@ -253,7 +256,7 @@ export function criarBarraCapacidade({
             classe: 'barra-agua__trilho',
             atributos: {
                 role: 'progressbar',
-                'aria-label': 'Capacidade (estimada)',
+                'aria-label': 'Capacidade estimada',
                 'aria-valuemin': '0',
                 'aria-valuemax': '100',
                 'aria-valuenow': String(Math.round(Math.min(percentual, 100))),
@@ -278,7 +281,7 @@ function definirFaixaCapacidade(percentual, limiteAlerta) {
         return { variante: 'perto', rotulo: 'Perto do limite' };
     }
     if (percentual > 75) {
-        return { variante: 'atencao', rotulo: 'Atenção' };
+        return { variante: 'atencao', rotulo: 'Acima de 75%' };
     }
     return null;
 }
@@ -341,6 +344,67 @@ export function criarResumoCiclo(resultado, anterior = null) {
         criarElemento('dd', { classe: 'resumo-ciclo__valor', texto: valor }),
         apoio && criarElemento('dd', { classe: 'resumo-ciclo__apoio', texto: apoio }),
     ])));
+}
+
+// ---------- Clareza (seção 11.6) ----------
+
+// Estado do tanque: texto + ícone + cor, nunca só cor; a frase do motivo vem embaixo.
+export function criarEtiquetaEstado({ chave, rotulo, icone, motivo }, { comMotivo = true } = {}) {
+    return criarElemento('div', { classe: `estado-tanque estado-tanque--${chave}` }, [
+        criarElemento('span', { classe: 'estado-tanque__etiqueta' }, [criarIcone(icone), rotulo]),
+        comMotivo && criarElemento('span', { classe: 'estado-tanque__motivo', texto: motivo }),
+    ]);
+}
+
+// Nunca um traço sem motivo: o porquê e o link que resolve.
+export function criarValorAusente({ motivo, acao = null, href = null }) {
+    return criarElemento('span', { classe: 'valor-ausente' }, [
+        motivo,
+        acao && href && ' · ',
+        acao && href && criarElemento('a', { classe: 'link', texto: acao, atributos: { href } }),
+    ]);
+}
+
+// Valor estimado: "≈" antes do número, com o significado para leitores de tela.
+export function criarValorEstimado(texto) {
+    return criarElemento('span', { atributos: { title: 'valor estimado' } }, [
+        criarElemento('span', { classe: 'valor-estimado__sinal', texto: '≈', atributos: { 'aria-label': 'valor estimado:' } }),
+        ` ${texto}`,
+    ]);
+}
+
+export function criarLegendaEstimado() {
+    return criarElemento('p', { classe: 'legenda-estimado', texto: '≈ valor estimado: os números reais saem na despesca.' });
+}
+
+// Termo técnico com sublinhado pontilhado e um balão de ajuda (passar o mouse,
+// tocar ou focar pelo teclado). O balão é ligado por aria-describedby.
+let contadorTermos = 0;
+export function criarTermo({ termo, explicacao, exemplo = null }, texto = termo) {
+    contadorTermos += 1;
+    const id = `termo-ajuda-${contadorTermos}`;
+    const balao = criarElemento('span', { classe: 'termo__balao', atributos: { id, role: 'tooltip' } }, [
+        explicacao,
+        exemplo && criarElemento('span', { classe: 'termo__exemplo', texto: `Exemplo: ${exemplo}` }),
+    ]);
+    const gatilho = criarElemento('button', {
+        classe: 'termo',
+        texto,
+        atributos: { type: 'button', 'aria-describedby': id, 'aria-expanded': 'false' },
+    });
+    const alternar = (aberto) => gatilho.setAttribute('aria-expanded', String(aberto));
+    gatilho.addEventListener('click', (evento) => {
+        evento.preventDefault();
+        evento.stopPropagation();
+        alternar(gatilho.getAttribute('aria-expanded') !== 'true');
+    });
+    gatilho.addEventListener('blur', () => alternar(false));
+    gatilho.addEventListener('keydown', (evento) => {
+        if (evento.key === 'Escape') {
+            alternar(false);
+        }
+    });
+    return criarElemento('span', { classe: 'termo__caixa' }, [gatilho, balao]);
 }
 
 // ---------- Campo com unidade (seção 8.1) ----------

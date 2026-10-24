@@ -35,7 +35,9 @@ O uso segue um fluxo simples:
 
 ## Telas
 
-* **Dashboard:** totais da produção, alertas mais importantes e um resumo de cada tanque ativo.
+* **Hoje:** as tarefas do dia por urgência (alertas, ração a dar, biometrias e lembretes), o estado de cada tanque em uma palavra (Agir agora, Atenção, Tudo certo) e, recolhida, a produção geral.
+* **Anotar o dia:** uma folha com todos os tanques para anotar ração, sobra e mortos de uma vez, já com a ração do plano.
+* **Nomes do dia a dia:** "Fazer biometria", "Povoar tanque" e "Plano de alimentação"; valores estimados levam ≈ e termos técnicos têm um balão de ajuda.
 * **Tanques:** lista com filtro por status (ativo, vazio, em manutenção, arquivado).
 * **Página do tanque:** indicadores, gráficos de evolução, histórico de registros e calendário do tanque.
 * **Alertas:** todos os alertas, agrupados por tanque e ordenados por gravidade.

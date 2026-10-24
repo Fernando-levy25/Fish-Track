@@ -47,7 +47,7 @@ O service worker (`sw.js`) busca na rede primeiro, então alterações aparecem 
 
 Aprendido com os testes do laboratório e com fontes técnicas (Embrapa). Orienta toda decisão de dados e de tela:
 
-- Não se contam os peixes durante o ciclo. A quantidade é sempre **estimada** (inicial − mortos encontrados + natalidade), e tudo que depende dela aparece como "(estimado)". Os números reais (sobrevivência, mortalidade, FCA final) só existem na despesca, a partir da biomassa final pesada.
+- Não se contam os peixes durante o ciclo. A quantidade é sempre **estimada** (inicial − mortos encontrados + natalidade), e tudo que depende dela aparece marcado como estimado, com o símbolo ≈ e uma legenda. Os números reais (sobrevivência, mortalidade, FCA final) só existem na despesca, a partir da biomassa final pesada.
 - Biometria é um evento próprio, feito por amostragem a cada ~15 dias, e não parte da rotina diária (ração, sobra, mortos).
 - O usuário informa só o que mede; o sistema calcula o resto e mostra o resultado na hora, enquanto ele digita.
 - Fale como o produtor fala: evite jargão na interface; termos técnicos (FCA, TCE, biomassa) vêm com uma frase de ajuda e um exemplo. Se algo exige explicação longa, o problema é a tela.

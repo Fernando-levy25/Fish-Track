@@ -174,7 +174,7 @@ function configurarDados() {
         try {
             const dados = carregarDadosExemplo();
             atualizarTela();
-            mostrarMensagem(saida, `Dados de exemplo carregados: ${resumirDados(dados)}. Veja o resultado no Dashboard.`);
+            mostrarMensagem(saida, `Dados de exemplo carregados: ${resumirDados(dados)}. Veja o resultado na tela Hoje.`);
         } catch (erro) {
             mostrarErro(saida, erro);
         } finally {

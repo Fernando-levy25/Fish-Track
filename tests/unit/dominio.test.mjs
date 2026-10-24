@@ -17,6 +17,8 @@ const config = await import(RAIZ + 'domain/configuracoes.js');
 const lembretes = await import(RAIZ + 'domain/lembretes.js');
 const arracoamento = await import(RAIZ + 'domain/arracoamento.js');
 const biometrias = await import(RAIZ + 'domain/biometrias.js');
+const estado = await import(RAIZ + 'domain/estado.js');
+const tarefas = await import(RAIZ + 'domain/tarefas.js');
 
 const hoje = utils.hojeISO();
 const dia = (n) => utils.somarDias(hoje, n);
@@ -54,6 +56,7 @@ function recusa(funcao, campo, trecho) {
 }
 
 beforeEach(() => localStorage.clear());
+const lerTodos = () => storage.lerDados().registros;
 
 describe('core/utils', () => {
     it('gera UUIDs v4 únicos, também sem crypto.randomUUID', () => {
@@ -880,5 +883,72 @@ describe('Prompt 04, parte A: biometria, unidades e plano de alimentação (RN25
         assert.equal(dados.registros[1].biometria, null);
         assert.equal(dados.config.tabelasArracoamento[0].tipo, 'faixas');
         assert.deepEqual(dados.config.unidades, { biomassa: 'kg', racao: 'kg' });
+    });
+});
+
+describe('Prompt 04, parte B: estado dos tanques, tarefas do dia e folha do dia', () => {
+    const alerta = (tipo, gravidade, resumo) => ({ id: `t:${tipo}`, tipo, gravidade, resumo, titulo: resumo });
+    const situacaoAtiva = { tanque: { id: 't', nome: 'Tanque 02', status: 'ativo' }, cicloAtivo: { id: 'c' } };
+    it('estado: agir agora, atenção (inclusive só alerta baixo), tudo certo, vazio e manutenção', () => {
+        const agir = estado.calcularEstadoTanque({ situacao: situacaoAtiva, alertas: [alerta('mortalidade-registro', 'alta', '45 peixes mortos hoje'), alerta('peso', 'baixa', 'Peso abaixo do esperado')] });
+        assert.deepEqual([agir.chave, agir.rotulo, agir.motivo], ['agir', 'Agir agora', '45 peixes mortos hoje (+1)']);
+        const atencao = estado.calcularEstadoTanque({ situacao: situacaoAtiva, alertas: [alerta('peso', 'baixa', 'Peso abaixo do esperado')] });
+        assert.deepEqual([atencao.chave, atencao.motivo], ['atencao', 'Peso abaixo do esperado'], 'alerta baixo nunca é "Tudo certo"');
+        assert.equal(estado.calcularEstadoTanque({ situacao: situacaoAtiva, alertas: [] }).chave, 'certo');
+        assert.equal(estado.calcularEstadoTanque({ situacao: { tanque: { status: 'vazio' }, cicloAtivo: null }, alertas: [] }).rotulo, 'Vazio');
+        assert.equal(estado.calcularEstadoTanque({ situacao: { tanque: { status: 'manutencao' }, cicloAtivo: null }, alertas: [] }).rotulo, 'Em manutenção');
+    });
+    it('estado coerente com os alertas de verdade: cada alerta tem resumo de uma linha', () => {
+        const tanque = comCiclo();
+        registros.salvarRegistro({ tanqueId: tanque.id, data: hoje, mortalidade: 45 });
+        const situacao = tanques.obterSituacao(tanque.id);
+        const { alertas: lista } = alertas.analisarTanque(situacao, { limitesPadrao: alertas.LIMITES_PADRAO, hoje });
+        assert.ok(lista.every((item) => item.resumo && !item.resumo.includes('\n')));
+        assert.equal(estado.calcularEstadoTanque({ situacao, alertas: lista }).motivo.startsWith('45 peixes mortos hoje'), true);
+    });
+    it('tarefas: todo alerta vira tarefa, alta primeiro; "sem registro" não repete em "Alimentar"', () => {
+        const proxima = (dias) => ({ diasAteProxima: dias, diasAtraso: 0 });
+        const itens = [
+            { tanque: { id: 'a', nome: 'Tanque 01' }, alertas: [], racaoSugeridaKg: 24.4, anotadoHoje: false, proxima: proxima(0) },
+            { tanque: { id: 'b', nome: 'Tanque 02' }, alertas: [alerta('mortalidade-registro', 'alta', '45 peixes mortos hoje'), alerta('peso', 'baixa', 'Peso abaixo do esperado')], racaoSugeridaKg: 21.4, anotadoHoje: false, proxima: proxima(3) },
+            { tanque: { id: 'c', nome: 'Tanque 05' }, alertas: [alerta('sem-registro', 'baixa', 'Sem registro há 12 dias')], racaoSugeridaKg: 5, anotadoHoje: false, proxima: proxima(1) },
+            { tanque: { id: 'd', nome: 'Tanque 07' }, alertas: [], racaoSugeridaKg: 9, anotadoHoje: true, proxima: proxima(5) },
+        ];
+        const lembretes = [
+            { lembreteId: 'l1', data: hoje, titulo: 'Comprar ração', tanqueNome: null, concluida: true },
+            { lembreteId: 'l2', data: dia(-2), titulo: 'Revisar o aerador', tanqueNome: 'Tanque 05', concluida: false, atrasado: true },
+        ];
+        const { pendentes, feitas } = tarefas.gerarTarefasDoDia({ itens, lembretes });
+        assert.deepEqual(pendentes.map((tarefa) => tarefa.titulo), [
+            'Tanque 02 · 45 peixes mortos hoje',
+            'Alimentar 2 tanques · 45,8 kg no total',
+            'Revisar o aerador · Tanque 05',
+            'Tanque 02 · Peso abaixo do esperado',
+            'Tanque 05 · Sem registro há 12 dias',
+            'Biometria do Tanque 01 · prevista para hoje',
+        ]);
+        assert.equal(pendentes.filter((tarefa) => tarefa.tipo === 'alerta').length, 3, 'nenhum alerta fica de fora');
+        assert.deepEqual(feitas.map((tarefa) => tarefa.titulo), ['Dia anotado: Tanque 07', 'Comprar ração']);
+        assert.equal(tarefas.encontrarProximoEvento(itens), 'Próxima biometria: Tanque 05, em 1 dia');
+    });
+    it('folha do dia: grava um registro por linha marcada; tudo ou nada; erro na linha certa', () => {
+        const a = comCicloNome('A');
+        const b = comCicloNome('B');
+        recusa(() => registros.salvarFolhaDoDia({ data: hoje, linhas: [] }), null, /Marque os tanques/);
+        recusa(() => registros.salvarFolhaDoDia({ data: hoje, linhas: [
+            { tanqueId: a, racaoKg: 2, mortalidade: 0 },
+            { tanqueId: b, racaoKg: 1, racaoSobraKg: 3, mortalidade: 0 },
+        ] }), 'linhas.1.racaoSobraKg', /sobra/);
+        assert.equal(lerTodos().length, 0, 'a linha boa não ficou gravada');
+        const salvos = registros.salvarFolhaDoDia({ data: hoje, linhas: [{ tanqueId: a, racaoKg: 2, mortalidade: 0 }, { tanqueId: b, racaoKg: 1, mortalidade: 3 }] });
+        assert.equal(salvos.length, 2);
+        assert.ok(registros.temRotinaNaData(lerTodos(), a, hoje));
+    });
+    it('biometria sozinha não conta como "já anotado"', () => {
+        const a = comCicloNome('A');
+        biometrias.salvarBiometria({ tanqueId: a, data: hoje, pesoMedioG: 5 });
+        assert.equal(registros.temRotinaNaData(lerTodos(), a, hoje), false);
+        registros.salvarRegistro({ tanqueId: a, data: hoje, mortalidade: 0 });
+        assert.equal(registros.temRotinaNaData(lerTodos(), a, hoje), true);
     });
 });

@@ -98,14 +98,14 @@ function definirArquivo(nome, conteudo) {
 async function roteiro() {
     localStorage.removeItem(CHAVE);
 
-    etapa = 'Dashboard vazio';
+    etapa = 'App vazio: primeiros passos';
     await abrir('index.html');
-    verificar('resumo sem tanques', texto('resumo-producao') === '0 tanques em cultivo, de 0 cadastrados · nenhum alerta', texto('resumo-producao'));
-    verificar('cinco indicadores', doc().querySelectorAll('#grade-destaques .destaque').length === 5);
-    verificar('FCA sem dados', doc().querySelector('[data-indicador-grafico="fca"] .destaque__valor')?.textContent === '—');
-    verificar('aviso de nenhum tanque', texto('grade-tanques').startsWith('Nenhum tanque cadastrado ainda'), texto('grade-tanques'));
-    verificar('gráfico sem dados', !porId('aviso-grafico-principal').hidden);
-    verificar('sem alertas', texto('lista-alertas') === 'Nenhum alerta no momento.', texto('lista-alertas'));
+    verificar('só os primeiros passos', !porId('primeiros-passos').hidden && porId('conteudo-hoje').hidden
+        && texto('primeiros-passos').startsWith('Vamos começar?'), texto('primeiros-passos'));
+    verificar('nenhum "0 kg" nem gráfico vazio à vista', !doc().querySelector('main').innerText.includes('0 kg'));
+    verificar('o primeiro passo em destaque', doc().querySelector('.primeiros-passos__passo--proximo')?.textContent.includes('Cadastre um tanque')
+        && doc().querySelector('.primeiros-passos__passo--proximo a')?.getAttribute('href') === 'tanque-form.html');
+    verificar('dados de exemplo a um clique', [...porId('primeiros-passos').querySelectorAll('a')].some((link) => link.textContent === 'Carregar dados de exemplo'));
 
     etapa = 'Cadastro de tanque';
     await abrir('tanque-form.html');
@@ -120,9 +120,13 @@ async function roteiro() {
     const tanqueId = new URLSearchParams(doc().location.search).get('id');
     verificar('abre a página do tanque', pagina() === 'tanque.html' && tanqueId, doc().location.href);
     verificar('carga máxima no cabeçalho', texto('especie-tanque') === 'Tilápia · 120 m³ de água · carga máxima de 600 kg', texto('especie-tanque'));
-    verificar('título e selo', texto('titulo-tanque') === 'Tanque Teste' && porId('selo-status-tanque').classList.contains('selo--vazio'), texto('selo-status-tanque'));
-    verificar('ações de tanque vazio sem ciclos', !porId('link-iniciar-ciclo').hidden && !porId('botao-excluir-tanque').hidden
-        && porId('botao-arquivar-tanque').hidden && porId('link-novo-registro').hidden);
+    verificar('título e estado', texto('titulo-tanque') === 'Tanque Teste' && texto('estado-tanque') === 'VazioPronto para povoar', texto('estado-tanque'));
+    verificar('ações de tanque vazio: "Povoar tanque" é a principal', !porId('link-iniciar-ciclo').hidden && texto('link-iniciar-ciclo') === 'Povoar tanque'
+        && !porId('botao-excluir-tanque').hidden && porId('botao-arquivar-tanque').hidden && porId('link-anotar-dia').hidden);
+    await abrir('index.html');
+    verificar('primeiros passos: o tanque já conta', doc().querySelector('.primeiros-passos__passo--feito')?.textContent.includes('Cadastre um tanque')
+        && doc().querySelector('.primeiros-passos__passo--proximo')?.textContent.includes('Povoe o tanque'));
+    await abrir(`tanque.html?id=${tanqueId}`);
     verificar('aviso sem ciclo', !porId('aviso-sem-ciclo').hidden && porId('conteudo-resumo').hidden);
 
     etapa = 'RN01 nome único';
@@ -157,20 +161,22 @@ async function roteiro() {
     preencher({ 'campo-peso-alvo': '500', 'campo-data-prevista-despesca': somarDias(HOJE, 120) });
     await enviarENavegar('formulario-iniciar-ciclo');
     verificar('ponto de milhar: 1.000 peixes', dados().ciclos[0].quantidadeInicial === 1000, dados().ciclos[0].quantidadeInicial);
-    verificar('tanque ativo', texto('selo-status-tanque') === 'Ativo');
+    verificar('estado com o motivo', texto('estado-tanque').startsWith('Atenção'), texto('estado-tanque'));
     const barra = porId('destaques-tanque').querySelector('[role="progressbar"]');
     verificar('barra de capacidade acessível, com unidade', barra?.getAttribute('aria-valuetext') === '1,1%, 10 kg de 900 kg', barra?.getAttribute('aria-valuetext'));
     verificar('densidade de povoamento em "Ver todos"', porId('corpo-todos-indicadores').textContent.includes('6,6 peixes/m³'), texto('corpo-todos-indicadores'));
-    verificar('indicadores iniciais', indicador('quantidade') === '1.000' && indicador('diasCultivo') === '30' && indicador('fca') === '—',
+    verificar('indicadores iniciais, FCA com o motivo', indicador('quantidade') === '≈ 1.000' && indicador('diasCultivo') === '30' && indicador('fca') === 'Aparece depois da primeira biometria',
         `${indicador('quantidade')} ${indicador('diasCultivo')} ${indicador('fca')}`);
-    verificar('ações com ciclo ativo', !porId('link-novo-registro').hidden && !porId('link-registrar-despesca').hidden
+    verificar('uma ação principal; despesca em "Mais ações", por último', !porId('link-anotar-dia').hidden && porId('link-anotar-dia').getAttribute('href') === `folha.html?tanque=${tanqueId}`
+        && porId('mais-acoes').contains(porId('link-registrar-despesca'))
+        && doc().querySelector('.mais-acoes__menu').lastElementChild === porId('link-registrar-despesca')
         && porId('link-iniciar-ciclo').hidden && porId('botao-excluir-tanque').hidden && porId('botao-arquivar-tanque').hidden);
     verificar('alertas de 30 dias sem registro e sem biometria', doc().querySelectorAll('#lista-alertas-tanque .lista-alertas__item--baixa').length === 2
         && texto('lista-alertas-tanque').includes('Biometria atrasada'), texto('lista-alertas-tanque'));
 
     etapa = 'Registros';
-    await navegarCom(() => porId('link-novo-registro').click());
-    verificar('tanque já escolhido', porId('campo-tanque').value === tanqueId);
+    await abrir(`registro.html?tanqueId=${tanqueId}`);
+    verificar('tanque fixo no topo, sem a lista', porId('campo-tanque').value === tanqueId && texto('tanque-fixo') === 'Tanque Teste' && porId('grupo-tanque').hidden);
     verificar('data padrão é hoje', porId('campo-data').value === HOJE);
     verificar('"Mortos encontrados" com ajuda e estimativa', doc().querySelector('label[for="campo-mortalidade"]').textContent === 'Mortos encontrados'
         && texto('ajuda-mortalidade').endsWith('Estimativa atual: ≈ 1.000 peixes.') && !porId('campo-quantidade-contada'), texto('ajuda-mortalidade'));
@@ -194,16 +200,16 @@ async function roteiro() {
     preencher({ 'campo-data': somarDias(HOJE, -20), 'campo-racao': '2,5', 'campo-mortalidade': '5' });
     verificar('conversão visível da ração', texto('conversao-campo-racao') === '= 2.500 g', texto('conversao-campo-racao'));
     await enviarENavegar('formulario-registro');
-    verificar('quantidade 995', indicador('quantidade') === '995', indicador('quantidade'));
+    verificar('quantidade ≈ 995', indicador('quantidade') === '≈ 995', indicador('quantidade'));
     verificar('vírgula decimal: 2,5 kg', indicador('racaoAcumulada') === '2,5 kg', indicador('racaoAcumulada'));
-    await navegarCom(() => porId('link-novo-registro').click());
+    await abrir(`registro.html?tanqueId=${tanqueId}`);
     // Sobra maior que a ração é recusada (RN23).
     preencher({ 'campo-data': somarDias(HOJE, -1), 'campo-racao': '7', 'campo-sobra': '8', 'campo-mortalidade': '15', 'campo-observacoes': 'Peixes agitados' });
     await enviarSemSair('formulario-registro');
     verificar('RN23 sobra maior que a ração', texto('erro-sobra') === 'A sobra não pode ser maior que a ração fornecida.', texto('erro-sobra'));
     preencher({ 'campo-sobra': '', 'campo-causa': 'doenca' });
     await enviarENavegar('formulario-registro');
-    verificar('quantidade 980', indicador('quantidade') === '980', indicador('quantidade'));
+    verificar('quantidade ≈ 980', indicador('quantidade') === '≈ 980', indicador('quantidade'));
 
     etapa = 'Biometria pelo painel do tanque';
     const painel = () => porId('painel-biometria');
@@ -244,9 +250,12 @@ async function roteiro() {
     await esperar(80);
     verificar('fechar com dados pede confirmação e não grava', !painel().open && dados().registros.filter((registro) => registro.biometria?.pesosIndividuaisG).length === 0);
     verificar('ração de hoje é o primeiro cartão', porId('cartao-racao').querySelector('.cartao-racao__titulo')?.textContent === 'Ração de hoje'
-        && porId('cartao-racao').querySelector('a[href*="data="]')?.textContent.trim() === 'Registrar alimentação');
-    verificar('3 destaques e 3 de acompanhamento', [...doc().querySelectorAll('#destaques-tanque .cartao-indicador__rotulo')].map((r) => r.textContent).join('|') === 'Peso médio|Biomassa (estimada)|Capacidade (estimada)'
-        && [...doc().querySelectorAll('#acompanhamento-tanque .cartao-indicador__rotulo')].map((r) => r.textContent).join('|') === 'Mortalidade observada|FCA (estimada)|Crescimento');
+        && porId('cartao-racao').querySelector('a[href*="data="]')?.textContent.trim() === 'Anotar');
+    // O rótulo pode ter um termo com balão de ajuda: o nome é o texto do termo.
+    const rotulos = (seletor) => [...doc().querySelectorAll(`${seletor} .cartao-indicador__rotulo`)].map((r) => r.querySelector('.termo')?.textContent ?? r.textContent).join('|');
+    verificar('3 destaques e 3 de acompanhamento, termos com ajuda', rotulos('#destaques-tanque') === 'Peso médio|Biomassa|Capacidade'
+        && rotulos('#acompanhamento-tanque') === 'Mortalidade observada|FCA|Crescimento'
+        && doc().querySelectorAll('#destaques-tanque .termo, #acompanhamento-tanque .termo').length === 4, `${rotulos('#destaques-tanque')} / ${rotulos('#acompanhamento-tanque')}`);
     verificar('"Ver todos" recolhido, sem natalidade sem nascimentos', !porId('todos-indicadores').open && !porId('corpo-todos-indicadores').textContent.includes('Natalidade'));
     verificar('progresso do ciclo no cabeçalho', texto('progresso-ciclo') === `Dia 30 de 150 · despesca prevista em 120 dias`, texto('progresso-ciclo'));
     porId('botao-info-estimativa').click();
@@ -338,7 +347,7 @@ async function roteiro() {
     await abrir(`ciclo-form.html?tanqueId=${tanqueId}&acao=iniciar`);
     verificar('referência do último ciclo ao iniciar', texto('referencia-ciclo-anterior')?.startsWith('Último ciclo: sobrevivência de 75%'), texto('referencia-ciclo-anterior'));
     await abrir(`tanque.html?id=${tanqueId}`);
-    verificar('RN08 tanque vazio', texto('selo-status-tanque') === 'Vazio' && !porId('aviso-sem-ciclo').hidden);
+    verificar('RN08 tanque vazio', texto('estado-tanque').startsWith('Vazio') && !porId('aviso-sem-ciclo').hidden);
     verificar('arquivar disponível com histórico', !porId('botao-arquivar-tanque').hidden && porId('botao-excluir-tanque').hidden);
     await abrir('registro.html');
     verificar('registro sem tanques com ciclo ativo', !porId('aviso-sem-ciclo-ativo').hidden);
@@ -348,7 +357,7 @@ async function roteiro() {
     porId('botao-arquivar-tanque').click();
     await responderConfirmacao(true);
     await esperar(80);
-    verificar('arquivado', texto('selo-status-tanque') === 'Arquivado' && !porId('botao-desarquivar-tanque').hidden);
+    verificar('arquivado', texto('estado-tanque').startsWith('Arquivado') && !porId('botao-desarquivar-tanque').hidden);
     await abrir('tanques.html');
     porId('filtro-status').value = 'arquivado';
     porId('filtro-status').dispatchEvent(new Event('change'));
@@ -357,13 +366,13 @@ async function roteiro() {
     await abrir(`tanque.html?id=${tanqueId}`);
     porId('botao-desarquivar-tanque').click();
     await esperar(80);
-    verificar('desarquivado', texto('selo-status-tanque') === 'Vazio', texto('selo-status-tanque'));
+    verificar('desarquivado', texto('estado-tanque').startsWith('Vazio'), texto('estado-tanque'));
 
     etapa = 'Manutenção e exclusão';
     await abrir('tanque-form.html');
     preencher({ 'campo-nome': 'Descartável', 'campo-especie': 'Pacu', 'campo-volume': '10', 'campo-manutencao': true });
     await enviarENavegar('formulario-tanque');
-    verificar('em manutenção, sem iniciar ciclo', texto('selo-status-tanque') === 'Em manutenção' && porId('link-iniciar-ciclo').hidden);
+    verificar('em manutenção, sem iniciar ciclo', texto('estado-tanque').startsWith('Em manutenção') && porId('link-iniciar-ciclo').hidden);
     verificar('sem capacidade definida', texto('especie-tanque').endsWith('capacidade não definida'), texto('especie-tanque'));
     const carga = aguardarCarga();
     porId('botao-excluir-tanque').click();
@@ -451,7 +460,7 @@ async function roteiro() {
     doc().querySelector('#formulario-unidades [name="racao"][value="g"]').click();
     await enviarSemSair('formulario-unidades');
     await abrir(`tanque.html?id=${t01}`);
-    verificar('preferência de exibição: biomassa em t, ração em g', /^\d+,\d\d t$/.test(indicador('biomassa') ?? '') && /^[\d.]+ g por dia$/.test(indicador('racaoSugerida') ?? ''),
+    verificar('preferência de exibição: biomassa em t, ração em g', /^≈ \d+,\d\d t$/.test(indicador('biomassa') ?? '') && /^[\d.]+ g por dia$/.test(indicador('racaoSugerida') ?? ''),
         `${indicador('biomassa')} ${indicador('racaoSugerida')}`);
     await abrir('configuracoes.html');
     doc().querySelector('#formulario-unidades [name="biomassa"][value="kg"]').click();
@@ -479,7 +488,7 @@ async function roteiro() {
     await abrir(`ciclo-form.html?tanqueId=${viveiroPesagem}&acao=iniciar`);
     doc().querySelector('[name="modoPovoamento"][value="pesagem"]').click();
     preencher({ 'campo-biomassa-inicial': '21', 'campo-peso-inicial': '8,5' });
-    verificar('lote pesado: quantidade ao vivo (RN21)', texto('resultado-povoamento') === '≈ 2.471 peixes (estimado)', texto('resultado-povoamento'));
+    verificar('lote pesado: quantidade ao vivo (RN21)', texto('resultado-povoamento') === '≈ 2.471 peixes (valor estimado pela biomassa)', texto('resultado-povoamento'));
 
     etapa = 'Página do tanque com dados';
     const viveiroNorte = dados().tanques.find((tanque) => tanque.nome === 'Viveiro Norte').id;
@@ -495,45 +504,76 @@ async function roteiro() {
     porId('todos-indicadores').open = false;
     await esperar(60);
     await abrir('index.html');
-    etapa = 'Dashboard com dados';
-    verificar('resumo da produção', texto('resumo-producao') === '3 tanques em cultivo, de 6 cadastrados · 4 alertas pedem atenção', texto('resumo-producao'));
+    etapa = 'Hoje com dados';
+    verificar('resumo do dia', texto('resumo-producao') === '3 tanques em cultivo · 2 precisam de atenção', texto('resumo-producao'));
     verificar('data por extenso', /^[A-ZÀ-Ú][a-zà-úç-]+, \d/.test(texto('data-hoje')), texto('data-hoje'));
-    verificar('contadores do menu', doc().querySelector('[data-contador="alertas"]').textContent === '4' && doc().querySelector('[data-contador="tanques"]').textContent === '5');
-    verificar('biomassa com variação e sparkline', /kg$/.test(doc().querySelector('[data-indicador-grafico="biomassa"] .destaque__valor').textContent)
-        && doc().querySelector('[data-indicador-grafico="biomassa"] .sparkline polyline'));
-    verificar('FCA com régua e meta', doc().querySelector('[data-indicador-grafico="fca"] .regua__meta')?.textContent === 'Meta 1,60');
-    verificar('alerta alto primeiro, com ação', doc().querySelector('#lista-alertas li')?.classList.contains('lista-alertas__item--alta')
-        && doc().querySelector('#lista-alertas li .lista-alertas__acao')?.textContent === 'Ver registro');
-    verificar('3 cartões em cultivo e 1 sem ciclo', doc().querySelectorAll('#grade-tanques .cartao-cultivo:not(.cartao-cultivo--sem-ciclo)').length === 3
-        && doc().querySelector('.cartao-cultivo--sem-ciclo')?.textContent.includes('1 vazio e 1 em manutenção'));
-    verificar('barra compacta nos cartões', doc().querySelectorAll('#grade-tanques .barra-agua--compacta').length === 3);
-    const cartao05 = [...doc().querySelectorAll('#grade-tanques .cartao-cultivo')].find((c) => c.textContent.includes('Tanque 05'));
-    verificar('Tanque 05 perto do limite', cartao05?.querySelector('.barra-agua--perto .barra-agua__faixa')?.textContent === 'Perto do limite');
-    verificar('Tanque 05 sem registro há 12 dias', cartao05?.querySelector('.cartao-cultivo__registro--atrasado')?.textContent === 'Sem registro há 12 dias');
-    verificar('anel do peso até o alvo', [...doc().querySelectorAll('.cartao-cultivo')].find((c) => c.textContent.includes('Tanque 01'))?.querySelector('.anel__apoio')?.textContent === 'de 800 g');
+    verificar('contadores do menu, inclusive lembretes na Agenda', doc().querySelector('[data-contador="alertas"]').textContent === '4'
+        && doc().querySelector('[data-contador="tanques"]').textContent === '5' && Number(doc().querySelector('[data-contador="lembretes"]').textContent) > 0);
+    const tarefas = () => [...porId('lista-tarefas').querySelectorAll('.tarefa')];
+    verificar('"O que fazer hoje" vem antes de tudo', doc().querySelector('main .secao__titulo')?.textContent === 'O que fazer hoje');
+    verificar('todo alerta vira tarefa, o alto primeiro', tarefas().filter((tarefa) => /tarefa--(alta|media|baixa)/.test(tarefa.className)).length === 4
+        && tarefas()[0].classList.contains('tarefa--alta') && tarefas()[0].textContent.includes('Tanque 02 · 45 peixes mortos ontem'), tarefas().map((t) => t.textContent).join(' | '));
+    verificar('alimentar os tanques com plano, com uma ação', tarefas().some((tarefa) => tarefa.textContent.startsWith('Alimentar 2 tanques')
+        && tarefa.querySelector('a')?.getAttribute('href') === 'folha.html'), tarefas().map((t) => t.textContent).join(' | '));
+    verificar('"sem registro" não vira duas tarefas', tarefas().filter((tarefa) => tarefa.textContent.includes('Sem registro')).length === 1
+        && !tarefas().some((tarefa) => tarefa.textContent.startsWith('Alimentar') && tarefa.textContent.includes('3 tanques')));
+    verificar('lembrete atrasado com selo e "Feito"', tarefas().some((tarefa) => tarefa.textContent.includes('Revisar o aerador') && tarefa.querySelector('.selo')?.textContent === 'Atrasado'));
+    const cartaoHoje = (nome) => [...doc().querySelectorAll('#grade-tanques .cartao-cultivo')].find((cartao) => cartao.textContent.includes(nome));
+    verificar('estado coerente com os alertas', cartaoHoje('Tanque 02').querySelector('.estado-tanque__etiqueta').textContent === 'Agir agora'
+        && cartaoHoje('Tanque 05').querySelector('.estado-tanque__etiqueta').textContent === 'Atenção'
+        && cartaoHoje('Tanque 01').querySelector('.estado-tanque__etiqueta').textContent === 'Tudo certo');
+    verificar('cartão compacto: motivo, ração de hoje e uma ação', cartaoHoje('Tanque 02').querySelector('.estado-tanque__motivo').textContent.startsWith('45 peixes mortos ontem')
+        && /em 3 refeições$/.test(cartaoHoje('Tanque 02').querySelector('.cartao-cultivo__racao').textContent)
+        && cartaoHoje('Tanque 02').querySelectorAll('.cartao-cultivo__acoes a').length === 1);
+    verificar('sem plano: o motivo e a ação no lugar do traço', cartaoHoje('Tanque 05').querySelector('.valor-ausente')?.textContent === 'Sem plano de alimentação · Configurar');
+    verificar('"Produção" depois das tarefas, aberta no computador', porId('producao').open
+        && porId('lista-tarefas').compareDocumentPosition(porId('producao')) & Node.DOCUMENT_POSITION_FOLLOWING);
+    verificar('estimados com ≈ e legenda', doc().querySelector('[data-indicador-grafico="biomassa"] .destaque__valor').textContent.startsWith('≈')
+        && texto('legenda-tanques').startsWith('≈ valor estimado'));
+    const termoFca = [...porId('termos-producao').querySelectorAll('.termo')].find((termo) => termo.textContent === 'FCA');
+    termoFca.click();
+    verificar('termo técnico com ajuda e exemplo', termoFca.getAttribute('aria-expanded') === 'true'
+        && doc().getElementById(termoFca.getAttribute('aria-describedby')).textContent.includes('Exemplo: 1,5 = 1,5 kg de ração por kg de peixe'));
     verificar('gráfico com uma linha por tanque', porId('grafico-principal').querySelectorAll('.grafico__linha-serie').length === 3);
     doc().querySelector('[data-indicador-grafico="fca"]').click();
     await esperar(60);
     verificar('linhas da FCA desenhadas', [...porId('grafico-principal').querySelectorAll('.grafico__linha-serie')].every((linha) => linha.getAttribute('d').length > 20));
-    verificar('indicador troca o gráfico', texto('titulo-grafico') === 'FCA (estimada)' && porId('grafico-principal').querySelector('.grafico__meta')
+    verificar('indicador troca o gráfico', texto('titulo-grafico') === 'FCA' && porId('grafico-principal').querySelector('.grafico__meta')
         && doc().querySelector('[data-indicador-grafico="fca"]').getAttribute('aria-pressed') === 'true');
-    cartao05.querySelector('[data-ver-grafico]').click();
+    [...porId('filtro-grafico').querySelectorAll('[data-tanque]')].find((botao) => botao.textContent === 'Tanque 05').click();
     await esperar(60);
-    verificar('Ver no gráfico filtra o tanque', texto('leitura-grafico').endsWith('hoje · Tanque 05')
-        && porId('grafico-principal').querySelectorAll('.grafico__linha-serie').length === 1
-        && cartao05.querySelector('[data-ver-grafico]').textContent === 'Mostrando no gráfico', texto('leitura-grafico'));
-    cartao05.querySelector('[data-ver-grafico]').click();
+    verificar('filtro mostra um tanque', texto('leitura-grafico').endsWith('hoje · Tanque 05') && porId('grafico-principal').querySelectorAll('.grafico__linha-serie').length === 1, texto('leitura-grafico'));
+    porId('filtro-grafico').querySelector('[data-tanque=""]').click();
     await esperar(60);
-    verificar('clicar de novo volta para Todos', texto('leitura-grafico').endsWith('todos os tanques'), texto('leitura-grafico'));
     const svgGrafico = porId('grafico-principal').querySelector('svg');
     svgGrafico.focus();
     await esperar(40);
     verificar('tooltip pelo teclado', porId('grafico-principal').querySelector('.grafico-dica--visivel')?.textContent.includes('Geral'),
         porId('grafico-principal').querySelector('.grafico-dica')?.textContent);
-    doc().querySelector('[data-gravidade="baixa"]').click();
-    await esperar(40);
-    verificar('chips filtram os alertas', doc().querySelectorAll('#lista-alertas .lista-alertas__item').length === 2
-        && doc().querySelectorAll('#lista-alertas .lista-alertas__item--baixa').length === 2);
+
+    etapa = 'Folha do dia';
+    const registrosAntes = dados().registros.length;
+    await abrir('folha.html');
+    verificar('uma linha por tanque em cultivo, ração sugerida pré-preenchida, mortos 0', doc().querySelectorAll('.folha__linha').length === 3
+        && porId('folha-0-racaoKg').value !== '' && porId('folha-0-mortalidade').value === '0');
+    verificar('sem marcar, "Salvar o dia" fica desabilitado com a dica', porId('botao-salvar-dia').disabled && texto('dica-salvar-dia') === 'Marque os tanques que você anotou.');
+    await abrir('index.html');
+    verificar('abrir e sair sem marcar não grava nada', dados().registros.length === registrosAntes);
+    await abrir('folha.html');
+    porId('botao-conforme-plano').click();
+    verificar('"Alimentei conforme o plano" marca só os tanques com plano', doc().querySelectorAll('[data-anotado]:checked').length === 2 && !porId('botao-salvar-dia').disabled);
+    preencher({ 'folha-1-racaoSobraKg': '999' });
+    await enviarSemSair('formulario-folha');
+    verificar('erro na linha certa; nada gravado', texto('erro-folha-1-racaoSobraKg') === 'A sobra não pode ser maior que a ração fornecida.'
+        && dados().registros.length === registrosAntes, texto('erro-folha-1-racaoSobraKg'));
+    preencher({ 'folha-1-racaoSobraKg': '' });
+    await enviarSemSair('formulario-folha');
+    await esperar(80);
+    verificar('salvar o dia grava um registro por tanque marcado', texto('mensagem-folha') === '2 tanques anotados.' && dados().registros.length === registrosAntes + 2, texto('mensagem-folha'));
+    verificar('anotados viram "Já anotado"', doc().querySelectorAll('.folha__linha--anotada').length === 2);
+    await abrir('index.html');
+    verificar('a tarefa de alimentar some da tela "Hoje"', !tarefas().some((tarefa) => tarefa.textContent.startsWith('Alimentar'))
+        && texto('lista-tarefas-feitas').includes('Dia anotado'), tarefas().map((t) => t.textContent).join(' | '));
     doc().querySelector('[data-periodo="7"]').click();
     await esperar(60);
     verificar('período de 7 dias', doc().querySelector('[data-indicador-grafico="peixes"] .destaque__apoio').textContent.endsWith('em 7 dias'));
@@ -587,19 +627,19 @@ async function roteiro() {
 // Seção 7: grade com etiquetas, filtros, quadro do dia, lembretes e menu lateral.
 // Roda com os dados de exemplo carregados.
 async function testarAgenda() {
-    etapa = 'Lembretes de hoje no menu';
+    etapa = 'Lembretes de hoje na tela Hoje';
     await abrir('index.html');
-    verificar('contador "1 de 3"', texto('contador-lembretes-hoje') === '1 de 3', texto('contador-lembretes-hoje'));
-    const itensMenu = [...porId('lista-lembretes-hoje').querySelectorAll('.lembretes-hoje__item')];
-    verificar('atrasado com selo no menu', itensMenu[0]?.textContent.includes('Revisar o aerador') && itensMenu[0].querySelector('.selo')?.textContent === 'Atrasado',
-        itensMenu.map((item) => item.textContent).join(' | '));
-    const caixaMenu = itensMenu.find((item) => item.textContent.includes('Biometria'))?.querySelector('input');
-    caixaMenu.click();
+    const contadorAgenda = () => doc().querySelector('[data-contador="lembretes"]');
+    verificar('Agenda conta os pendentes', contadorAgenda()?.textContent === '3' && !contadorAgenda().hidden, contadorAgenda()?.textContent);
+    const tarefaLembrete = (trecho) => [...doc().querySelectorAll('.tarefa')].find((item) => item.textContent.includes(trecho));
+    verificar('atrasado vira tarefa com selo', tarefaLembrete('Revisar o aerador')?.querySelector('.selo')?.textContent === 'Atrasado');
+    tarefaLembrete('Biometria')?.querySelector('[data-concluir]')?.click();
     await esperar(60);
-    verificar('conclui direto no menu', texto('contador-lembretes-hoje') === '2 de 3', texto('contador-lembretes-hoje'));
-    [...porId('lista-lembretes-hoje').querySelectorAll('.lembretes-hoje__item')].find((item) => item.textContent.includes('Biometria')).querySelector('input').click();
+    verificar('"Feito" conclui o lembrete', contadorAgenda()?.textContent === '2'
+        && tarefaLembrete('Biometria')?.querySelector('[data-concluir]')?.checked === true, contadorAgenda()?.textContent);
+    tarefaLembrete('Biometria')?.querySelector('[data-concluir]')?.click();
     await esperar(60);
-    verificar('desmarca no menu', texto('contador-lembretes-hoje') === '1 de 3', texto('contador-lembretes-hoje'));
+    verificar('desmarca na tela Hoje', contadorAgenda()?.textContent === '3', contadorAgenda()?.textContent);
 
     etapa = 'Agenda: grade e etiquetas';
     await abrir('calendario.html');
@@ -620,7 +660,8 @@ async function testarAgenda() {
     verificar('alerta do dia com o tanque abreviado', alertaT02?.textContent === 'Mortalidade alta · T02' && alertaT02.title === 'Mortalidade alta: Tanque 02',
         alertaT02?.textContent);
     const ordemHoje = [...celula(HOJE).querySelectorAll('.etiqueta')].map((item) => item.className.match(/etiqueta--([a-z-]+)/)[1]);
-    verificar('no máximo 3 etiquetas e "+N mais", alertas primeiro', ordemHoje.length === 3 && ordemHoje[0] === 'alerta'
+    // A folha do dia já anotou hoje sem mortos: o alerta de mortalidade fica no dia anterior.
+    verificar('no máximo 3 etiquetas e "+N mais"', ordemHoje.length === 3
         && /^\+\d+ mais$/.test(celula(HOJE).querySelector('.calendario__mais')?.textContent ?? ''), ordemHoje.join(','));
     verificar('lembrete concluído riscado', celula(HOJE).querySelector('.etiqueta--lembrete.etiqueta--concluida')?.textContent === 'Comprar ração');
 
@@ -639,7 +680,7 @@ async function testarAgenda() {
 
     etapa = 'Agenda: quadro do dia';
     const secoes = () => [...quadroDia().querySelectorAll('.quadro__secao-titulo')].map((titulo) => titulo.textContent);
-    verificar('seções de hoje', secoes().join(',') === 'Atrasados,Lembretes,Registros,Alertas', secoes().join(','));
+    verificar('seções de hoje', secoes().join(',') === 'Atrasados,Lembretes,Registros', secoes().join(','));
     verificar('atrasado no quadro de hoje', quadroDia().querySelector('.quadro__secao')?.textContent.includes('Revisar o aerador')
         && quadroDia().querySelector('.quadro__secao .selo')?.textContent === 'Atrasado');
     verificar('aviso de repetição', quadroDia().textContent.includes('repete a cada 15 dias'));
@@ -698,10 +739,6 @@ async function testarAgenda() {
     verificar('Esc fecha o quadro', quadroDia().hidden && grade().querySelector('[aria-pressed="true"]') === null);
 
     etapa = 'Agenda: menu, registro e tanque';
-    [...porId('lista-lembretes-hoje').querySelectorAll('.lembretes-hoje__item')].find((item) => item.textContent.includes('Biometria')).querySelector('input').click();
-    await esperar(60);
-    verificar('conclusão no menu atualiza a agenda aberta', texto('contador-lembretes-hoje') === '2 de 3'
-        && [...celula(HOJE).querySelectorAll('.etiqueta--concluida')].some((item) => item.textContent.startsWith('Biometria')));
     await abrir('calendario.html?lembrete=novo');
     verificar('"Adicionar lembrete" do menu abre o formulário', porId('lembrete-titulo') && doc().activeElement === porId('lembrete-titulo'));
     await abrir(`registro.html?data=${ontem}`);
@@ -773,7 +810,8 @@ async function testarRelatorios() {
     verificar('item Relatórios no menu', doc().querySelector('.menu__link--lateral[href="relatorio.html"]')?.getAttribute('aria-current') === 'page');
     verificar('título e emissão', texto('titulo-relatorio') === 'Relatório da produção' && texto('emissao-relatorio').startsWith('Emitido em '));
     verificar('um bloco por tanque em cultivo', doc().querySelectorAll('.relatorio__secao--inteira').length === 3);
-    verificar('alertas com o tanque', doc().querySelectorAll('#conteudo-relatorio .lista-alertas__item').length === 4);
+    verificar('alertas com o tanque', doc().querySelectorAll('#conteudo-relatorio .lista-alertas__item').length === 3,
+        [...doc().querySelectorAll('#conteudo-relatorio .lista-alertas__item')].map((item) => item.textContent).join(' | '));
     verificar('tanques sem ciclo citados', porId('conteudo-relatorio').textContent.includes('Tanque-rede 04 (em manutenção)'));
     verificar('nome do PDF pelo título', doc().title === `Fish Track - Relatório da produção - ${HOJE}`, doc().title);
     await navegarCom(() => {
@@ -786,7 +824,8 @@ async function testarRelatorios() {
     verificar('três gráficos', porId('conteudo-relatorio').querySelectorAll('.cartao-grafico svg').length === 3);
     const registrosT02 = dados().registros.filter((registro) => registro.tanqueId === tanque02).length;
     verificar('tabela com todos os registros do ciclo', porId('conteudo-relatorio').querySelectorAll('tbody tr').length === registrosT02, registrosT02);
-    verificar('alertas do tanque', porId('conteudo-relatorio').querySelectorAll('.lista-alertas__item').length === 2);
+    verificar('alertas do tanque', porId('conteudo-relatorio').querySelectorAll('.lista-alertas__item').length === 1,
+        [...porId('conteudo-relatorio').querySelectorAll('.lista-alertas__item')].map((item) => item.textContent).join(' | '));
     verificar('FCA com meta e contexto', porId('conteudo-relatorio').textContent.includes('meta de 1,60'));
     const viveiro = dados().tanques.find((tanque) => tanque.nome === 'Viveiro Norte').id;
     await abrir(`relatorio.html?tanqueId=${viveiro}`);

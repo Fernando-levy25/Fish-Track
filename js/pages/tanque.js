@@ -18,7 +18,7 @@ import {
     obterUnidadesExibicao,
     pluralizar,
 } from '../core/format.js';
-import { arquivarTanque, desarquivarTanque, excluirTanque, listarTanques, obterSituacao, ROTULOS_STATUS } from '../domain/tanques.js';
+import { arquivarTanque, desarquivarTanque, excluirTanque, listarTanques, obterSituacao } from '../domain/tanques.js';
 import { listarResultadosCiclos } from '../domain/ciclos.js';
 import { excluirRegistro, listarRegistrosDoCiclo, resumirRegistro } from '../domain/registros.js';
 import { calcularAcompanhamento, calcularCargaMaximaKg, calcularEstatisticasPesos, calcularProximaBiometria, calcularSeries } from '../domain/indicadores.js';
@@ -41,6 +41,10 @@ import {
     criarBarraCapacidade,
     criarBarraLimite,
     criarElemento,
+    criarEtiquetaEstado,
+    criarTermo,
+    criarValorAusente,
+    criarValorEstimado,
     criarResumoCiclo,
     criarSelo,
     criarItemRegistro,
@@ -54,9 +58,11 @@ import {
     renderizarAlertas,
 } from '../ui/componentes.js';
 import { desenharGraficoLinha, obterCorTanque } from '../ui/graficos.js';
+import { GLOSSARIO } from '../ui/glossario.js';
 import { criarIcone } from '../ui/icones.js';
 import { criarPainelBiometria } from '../ui/painel-biometria.js';
 import { montarAgenda } from './agenda.js';
+import { calcularEstadoTanque } from '../domain/estado.js';
 import { atualizarMenu, descreverRacaoSugerida, iniciarPagina, obterAcaoDoAlerta } from './comum.js';
 
 const MAXIMO_REGISTROS_RECENTES = 5;
@@ -96,6 +102,7 @@ function iniciar() {
     configurarAcoes();
     configurarGraficos();
     configurarInfoEstimativa();
+    configurarMaisAcoes();
     configurarTodosIndicadores();
     mostrarDespescaRecente();
     configurarHistorico();
@@ -125,9 +132,9 @@ function renderizarCabecalho() {
     const { tanque, ciclos, cicloAtivo } = situacao;
     document.title = `Fish Track - ${tanque.nome}`;
     porId('titulo-tanque').textContent = tanque.nome;
-    const selo = porId('selo-status-tanque');
-    selo.textContent = ROTULOS_STATUS[tanque.status];
-    selo.className = `selo selo--${tanque.status}`;
+    // Estado em uma palavra, com o motivo (seção 9.12), no lugar do status.
+    const { alertas } = analisarTanque(situacao, { limitesPadrao: obterLimitesPadrao(), hoje: hojeISO() });
+    porId('estado-tanque').replaceChildren(criarEtiquetaEstado(calcularEstadoTanque({ situacao, alertas })));
     const cargaMaxima = calcularCargaMaximaKg(tanque.densidadeMaximaKgM3, tanque.volumeM3);
     porId('especie-tanque').textContent = `${tanque.especie} · ${formatarVolume(tanque.volumeM3)} de água · `
         + (cargaMaxima ? `carga máxima de ${formatarBiomassa(cargaMaxima)}` : 'capacidade não definida');
@@ -136,7 +143,7 @@ function renderizarCabecalho() {
     porId('observacoes-tanque').textContent = tanque.observacoes;
 
     const arquivado = tanque.status === 'arquivado';
-    mostrarLink('link-novo-registro', Boolean(cicloAtivo), montarUrl('registro.html', { tanqueId: tanque.id }));
+    mostrarLink('link-anotar-dia', Boolean(cicloAtivo), montarUrl('folha.html', { tanque: tanque.id }));
     mostrarLink('link-iniciar-ciclo', tanque.status === 'vazio', montarUrl('ciclo-form.html', { tanqueId: tanque.id, acao: 'iniciar' }));
     mostrarLink('link-registrar-despesca', Boolean(cicloAtivo), montarUrl('ciclo-form.html', { tanqueId: tanque.id, acao: 'despesca' }));
     mostrarLink('link-editar-tanque', true, montarUrl('tanque-form.html', { id: tanque.id }));
@@ -283,10 +290,18 @@ function renderizarUltimoCiclo() {
 
 // ---------- Cartões da aba Resumo (seção 7.3) ----------
 
-function criarCartao({ rotulo, valor, indicador, apoio = [], extra = null, classe = '' }) {
+// termo: chave do glossário (ajuda curta, seção 11.6); estimado: "≈" antes do
+// valor; ausente: { motivo, acao, href } no lugar de um traço.
+function criarCartao({ rotulo, valor, indicador, apoio = [], extra = null, classe = '', termo = null, estimado = false, ausente = null }) {
+    let conteudoValor = valor;
+    if (ausente) {
+        conteudoValor = criarValorAusente(ausente);
+    } else if (estimado) {
+        conteudoValor = criarValorEstimado(valor);
+    }
     return criarElemento('article', { classe: `cartao-indicador ${classe}`.trim() }, [
-        criarElemento('h4', { classe: 'cartao-indicador__rotulo', texto: rotulo }),
-        criarElemento('p', { classe: 'cartao-indicador__valor', texto: valor, atributos: { 'data-indicador': indicador } }),
+        criarElemento('h4', { classe: 'cartao-indicador__rotulo' }, [termo ? criarTermo(GLOSSARIO[termo], rotulo) : rotulo]),
+        criarElemento('p', { classe: `cartao-indicador__valor${ausente ? ' cartao-indicador__valor--ausente' : ''}`, atributos: { 'data-indicador': indicador } }, [conteudoValor]),
         extra,
         ...apoio.filter(Boolean).map((linha) => (typeof linha === 'string'
             ? criarElemento('p', { classe: 'cartao-indicador__apoio', texto: linha })
@@ -319,7 +334,7 @@ function textoBiometria({ indicadores, acompanhamento, proxima }) {
     return linhas;
 }
 
-// Ração de hoje (seção 7.3): a sugerida pela tabela de alimentação do tanque
+// Ração de hoje (seção 7.3): a sugerida pelo plano de alimentação do tanque
 // (seção 9.10) e quanto já foi registrado hoje. Sem sugestão, o motivo e a ação.
 function criarConteudoRacao({ tanque, acompanhamento }) {
     const descricao = descreverRacaoSugerida(situacao);
@@ -359,7 +374,7 @@ function criarConteudoRacao({ tanque, acompanhamento }) {
     conteudo.push(criarElemento('a', {
         classe: 'botao botao--primario cartao-racao__acao',
         atributos: { href: montarUrl('registro.html', { tanqueId: tanque.id, data: hojeISO() }) },
-    }, [criarIcone('mais', { classe: 'icone icone--girar' }), 'Registrar alimentação']));
+    }, [criarIcone('lapis'), 'Anotar']));
     return conteudo;
 }
 
@@ -374,12 +389,16 @@ function criarDestaques({ tanque, ciclo, indicadores, acompanhamento, limites })
             indicador: 'pesoMedio',
             extra: pesoAlvo,
             apoio: [
-                ciclo.pesoAlvoG && `${formatarGramas(indicadores.pesoMedioG)} de ${formatarGramas(ciclo.pesoAlvoG)} · ${formatarPercentual(acompanhamento.percentualPesoAlvo)}`,
+                ciclo.pesoAlvoG
+                    ? `${formatarGramas(indicadores.pesoMedioG)} de ${formatarGramas(ciclo.pesoAlvoG)} · ${formatarPercentual(acompanhamento.percentualPesoAlvo)}`
+                    : 'Sem peso alvo neste ciclo',
                 ...textoBiometria({ indicadores, acompanhamento, proxima: calcularProximaBiometria({ tanque, ciclo, registros: situacao.registros, hoje: hojeISO() }) }),
             ],
         }),
         criarCartao({
-            rotulo: 'Biomassa (estimada)',
+            rotulo: 'Biomassa',
+            termo: 'biomassa',
+            estimado: true,
             valor: formatarBiomassa(indicadores.biomassaKg),
             indicador: 'biomassa',
             apoio: [
@@ -388,8 +407,13 @@ function criarDestaques({ tanque, ciclo, indicadores, acompanhamento, limites })
             ],
         }),
         criarCartao({
-            rotulo: 'Capacidade (estimada)',
+            rotulo: 'Capacidade',
+            termo: 'capacidade',
+            estimado: true,
             valor: formatarPercentual(indicadores.capacidadeUtilizada),
+            ausente: indicadores.capacidadeUtilizada === null
+                ? { motivo: 'Capacidade não definida', acao: 'Definir', href: montarUrl('tanque-form.html', { id: tanque.id }) }
+                : null,
             indicador: 'capacidadeUtilizada',
             extra: criarBarraCapacidade({
                 percentual: indicadores.capacidadeUtilizada,
@@ -402,7 +426,7 @@ function criarDestaques({ tanque, ciclo, indicadores, acompanhamento, limites })
                 compacta: true,
                 hrefDefinir: montarUrl('tanque-form.html', { id: tanque.id }),
             }),
-            apoio: [`Densidade de ${formatarDensidade(indicadores.densidadeKgM3)}`],
+            apoio: [`Densidade ≈ ${formatarDensidade(indicadores.densidadeKgM3)}`],
         }),
     ];
 }
@@ -412,14 +436,21 @@ function criarAcompanhamento({ tanque, ciclo, indicadores, acompanhamento }) {
     return [
         criarCartao({
             rotulo: 'Mortalidade observada',
+            termo: 'mortalidadeObservada',
             valor: formatarPercentual(indicadores.taxaMortalidade),
             indicador: 'taxaMortalidade',
             classe: 'cartao-indicador--compacto',
             apoio: [`Últimos 7 dias: ${formatarPercentual(acompanhamento.taxaMortalidadeSemana)}`, 'Real só na despesca'],
         }),
         criarCartao({
-            rotulo: 'FCA (estimada)',
+            rotulo: 'FCA',
+            termo: 'fca',
+            estimado: true,
             valor: formatarFca(indicadores.fca),
+            // FCA precisa de ganho de peso: antes da primeira biometria não há.
+            ausente: indicadores.fca === null
+                ? { motivo: acompanhamento.houvePesagem ? 'Ainda sem ganho de peso' : 'Aparece depois da primeira biometria' }
+                : null,
             indicador: 'fca',
             classe: 'cartao-indicador--compacto',
             apoio: [
@@ -430,6 +461,7 @@ function criarAcompanhamento({ tanque, ciclo, indicadores, acompanhamento }) {
         criarCartao({
             rotulo: 'Crescimento',
             valor: formatarGramasPorDia(indicadores.taxaCrescimentoGDia),
+            ausente: indicadores.taxaCrescimentoGDia === null ? { motivo: 'Aparece depois da primeira biometria' } : null,
             indicador: 'taxaCrescimento',
             classe: 'cartao-indicador--compacto',
             apoio: [
@@ -463,7 +495,11 @@ function criarLinhasTodos({ indicadores, acompanhamento }) {
         ['Densidade de povoamento', `${formatarNumero(indicadores.densidadePovoamento, 1)} peixes/m³`, null, 'Peixes do povoamento ÷ volume'],
         ['Dias de cultivo', formatarInteiro(indicadores.diasCultivo), 'diasCultivo', 'Dias desde o povoamento'],
     ];
-    return linhas.filter(Boolean).map(([nome, valor, indicador, calculo]) => criarElemento('tr', {}, [
+    // "(estimado)" sai do nome e vira "≈" antes do valor (seção 11.6).
+    return linhas.filter(Boolean).map(([nome, valor, indicador, calculo]) => {
+        const estimado = / \(estimad[oa]\)$/.test(nome);
+        return [nome.replace(/ \(estimad[oa]\)$/, ''), estimado && valor !== '—' ? `≈ ${valor}` : valor, indicador, calculo];
+    }).map(([nome, valor, indicador, calculo]) => criarElemento('tr', {}, [
         criarElemento('th', { texto: nome, atributos: { scope: 'row' } }),
         criarElemento('td', { texto: valor, atributos: { 'data-indicador': indicador } }),
         criarElemento('td', { classe: 'todos-indicadores__calculo', texto: calculo }),
@@ -499,6 +535,26 @@ function configurarTodosIndicadores() {
     const detalhes = porId('todos-indicadores');
     detalhes.open = lerPreferencia('todosIndicadoresAbertos', false);
     detalhes.addEventListener('toggle', () => salvarPreferencia('todosIndicadoresAbertos', detalhes.open));
+}
+
+// "Mais ações" fecha ao clicar fora ou com Esc, como o "Mais" do menu.
+function configurarMaisAcoes() {
+    const menu = porId('mais-acoes');
+    document.addEventListener('click', (evento) => {
+        if (menu.open && !menu.contains(evento.target)) {
+            menu.open = false;
+        }
+    });
+    menu.addEventListener('keydown', (evento) => {
+        if (evento.key === 'Escape' && menu.open) {
+            menu.open = false;
+            menu.querySelector('summary').focus();
+        }
+    });
+    // Escolhida uma ação, o menu se fecha.
+    menu.querySelector('.mais-acoes__menu').addEventListener('click', () => {
+        menu.open = false;
+    });
 }
 
 function configurarInfoEstimativa() {

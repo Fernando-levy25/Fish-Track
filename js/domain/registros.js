@@ -207,3 +207,43 @@ function validarEstoque(ciclo, registros, { idAlterado, acao }) {
     falharRegra(`Com essa ${acao}, os mortos encontrados em ${formatarData(registro.data)} passariam da quantidade `
         + `estimada de peixes naquela data (${formatarInteiro(quantidadeAntes)}). Revise os registros desse período.`);
 }
+
+// ---------- Folha do dia (seção 7.15) ----------
+
+// Rotina do dia anotada: ração, sobra ou mortos. Uma biometria sozinha não conta.
+export function temRotinaNaData(registros, tanqueId, data) {
+    return registros.some((registro) => registro.tanqueId === tanqueId && registro.data === data
+        && ['racaoKg', 'racaoSobraKg', 'mortalidade'].some((campo) => informado(registro[campo])));
+}
+
+// Grava a rotina de vários tanques numa operação só, com as mesmas regras do
+// registro individual (RN10 a RN15, RN23). Tudo ou nada: se uma linha falhar,
+// nenhuma fica gravada, e o erro vem com a linha ("linhas.2.racaoKg").
+export function salvarFolhaDoDia({ data, linhas }) {
+    if (linhas.length === 0) {
+        falharRegra('Marque os tanques que você anotou.');
+    }
+    const antes = lerDados();
+    const salvos = [];
+    for (const [indice, linha] of linhas.entries()) {
+        try {
+            salvos.push(salvarRegistro({
+                tanqueId: linha.tanqueId,
+                data,
+                racaoKg: linha.racaoKg ?? null,
+                racaoSobraKg: linha.racaoSobraKg ?? null,
+                mortalidade: linha.mortalidade ?? null,
+                causaMortalidade: linha.causaMortalidade ?? null,
+                observacoes: linha.observacoes ?? '',
+            }));
+        } catch (erro) {
+            salvarDados(antes);
+            const porCampo = Object.entries(erro.erros ?? {}).map(([campo, mensagem]) => [`linhas.${indice}.${campo}`, mensagem]);
+            throw new ErroValidacao(
+                porCampo.length > 0 ? Object.fromEntries(porCampo) : { [`linhas.${indice}`]: erro.message },
+                erro.message,
+            );
+        }
+    }
+    return salvos;
+}

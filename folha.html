@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fish Track - Anotar o dia</title>
+    <meta name="theme-color" content="#0e5a52">
+    <link rel="icon" href="assets/icons/icone.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="assets/icons/icone-192.png">
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+    <header class="cabecalho">
+        <a class="cabecalho__marca" href="index.html">
+            <svg class="cabecalho__simbolo logo" viewBox="0 0 64 64" aria-hidden="true"><path class="logo__gota" d="M32 5C27 12 11 27 11 40a21 21 0 0 0 42 0C53 27 37 12 32 5Z"/><g class="logo__barras"><rect x="20" y="40" width="6.5" height="11" rx="2"/><rect x="28.75" y="34" width="6.5" height="17" rx="2"/><rect x="37.5" y="27" width="6.5" height="24" rx="2"/></g></svg>
+            <span class="cabecalho__nome">
+                <span class="cabecalho__titulo">Fish Track</span>
+                <span class="cabecalho__subtitulo">Gestão de cultivos</span>
+            </span>
+        </a>
+        <nav class="menu" aria-label="Navegação principal">
+            <a class="menu__link" href="index.html"><svg class="menu__icone" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg><span class="menu__texto">Hoje</span></a>
+            <a class="menu__link" href="tanques.html"><svg class="menu__icone" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7c0-1.7 4-3 9-3s9 1.3 9 3v10c0 1.7-4 3-9 3s-9-1.3-9-3Z"/><path d="M3 12c3 1.8 6 1.8 9 0s6-1.8 9 0"/></svg><span class="menu__texto">Tanques</span><span class="menu__contador" data-contador="tanques" hidden></span></a>
+            <a class="menu__link menu__link--destaque" href="folha.html" aria-current="page"><svg class="menu__icone" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16Z"/><path d="m13.5 6.5 4 4"/></svg><span class="menu__texto menu__texto--curto">Anotar</span><span class="menu__texto menu__texto--longo">Anotar o dia</span></a>
+            <a class="menu__link" href="alertas.html"><svg class="menu__icone" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg><span class="menu__texto">Alertas</span><span class="menu__contador menu__contador--alerta" data-contador="alertas" hidden></span></a>
+            <a class="menu__link menu__link--lateral" href="calendario.html"><svg class="menu__icone" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span class="menu__texto">Agenda</span><span class="menu__contador" data-contador="lembretes" hidden></span></a>
+            <a class="menu__link menu__link--lateral" href="relatorio.html"><svg class="menu__icone" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6M16 13H8M16 17H8"/></svg><span class="menu__texto">Relatórios</span></a>
+            <a class="menu__link menu__link--lateral" href="configuracoes.html"><svg class="menu__icone" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M2 14h4M10 8h4M18 16h4"/></svg><span class="menu__texto">Configurações</span></a>
+            <details class="menu__mais" id="menu-mais">
+                <summary class="menu__link"><svg class="menu__icone" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.3" fill="currentColor"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><circle cx="19" cy="12" r="1.3" fill="currentColor"/></svg><span class="menu__texto">Mais</span></summary>
+                <div class="menu__submenu">
+                    <a class="menu__link" href="calendario.html"><svg class="menu__icone" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span class="menu__texto">Agenda</span><span class="menu__contador" data-contador="lembretes" hidden></span></a>
+                    <a class="menu__link" href="relatorio.html"><svg class="menu__icone" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6M16 13H8M16 17H8"/></svg><span class="menu__texto">Relatórios</span></a>
+                    <a class="menu__link" href="configuracoes.html"><svg class="menu__icone" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M2 14h4M10 8h4M18 16h4"/></svg><span class="menu__texto">Configurações</span></a>
+                </div>
+            </details>
+        </nav>
+        <div class="cabecalho__rodape">
+            <p class="cabecalho__status" id="status-offline">Preparando o uso offline…</p>
+            <p class="cabecalho__backup" id="status-backup"></p>
+            <button class="cabecalho__acao" id="botao-backup-rapido" type="button">Fazer backup agora</button>
+        </div>
+    </header>
+
+    <main class="pagina folha">
+        <section class="secao" aria-labelledby="titulo-folha">
+            <div class="secao__cabecalho">
+                <h1 class="pagina__titulo" id="titulo-folha">Anotar o dia</h1>
+            </div>
+            <p class="secao__descricao">Uma linha por tanque, como a ficha de papel. Só os tanques marcados como <strong>Anotado</strong> são gravados: valor sugerido sem marcação não vira registro.</p>
+
+            <p class="aviso-vazio" id="aviso-folha-vazia" hidden>
+                Nenhum tanque com peixes agora.
+                <a class="link" href="tanques.html">Povoar tanque</a>
+            </p>
+
+            <form class="folha__formulario" id="formulario-folha" novalidate>
+                <div class="folha__topo">
+                    <fieldset class="campo campo--grupo">
+                        <legend class="campo__rotulo">Dia</legend>
+                        <div class="segmentado" id="seletor-dia-folha">
+                            <label class="segmentado__opcao"><input type="radio" name="dia" value="hoje" checked><span data-campo="rotuloHoje">Hoje</span></label>
+                            <label class="segmentado__opcao"><input type="radio" name="dia" value="ontem"><span data-campo="rotuloOntem">Ontem</span></label>
+                        </div>
+                    </fieldset>
+                    <button class="botao botao--secundario" id="botao-conforme-plano" type="button">Alimentei conforme o plano</button>
+                </div>
+
+                <ul class="folha__linhas" id="linhas-folha"></ul>
+
+                <p class="formulario__erro-geral" id="erro-geral-folha" role="alert" hidden></p>
+
+                <div class="folha__rodape">
+                    <p class="folha__dica" id="dica-salvar-dia">Marque os tanques que você anotou.</p>
+                    <button class="botao botao--primario" id="botao-salvar-dia" type="submit" disabled>Salvar o dia</button>
+                </div>
+                <p class="mensagem" id="mensagem-folha" role="status"></p>
+            </form>
+        </section>
+    </main>
+
+    <script type="module" src="js/pages/folha.js"></script>
+</body>
+</html>

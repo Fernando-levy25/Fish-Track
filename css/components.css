@@ -2440,44 +2440,6 @@
     font-size: var(--texto-2);
 }
 
-.cartao-cultivo__corpo {
-    display: flex;
-    align-items: center;
-    gap: var(--espaco-4);
-}
-
-.cartao-cultivo__dados {
-    display: grid;
-    flex: 1;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--espaco-2) var(--espaco-4);
-}
-
-.cartao-cultivo__dado dt {
-    color: var(--cor-texto-suave);
-    font-size: var(--texto-1);
-}
-
-.cartao-cultivo__dado dd {
-    font-weight: 650;
-    font-variant-numeric: tabular-nums;
-}
-
-.cartao-cultivo__registro {
-    color: var(--cor-texto-suave);
-    font-size: var(--texto-2);
-}
-
-.cartao-cultivo__registro--em-dia {
-    color: var(--cor-sucesso);
-    font-weight: 600;
-}
-
-.cartao-cultivo__registro--atrasado {
-    color: var(--cor-atencao);
-    font-weight: 600;
-}
-
 .cartao-cultivo__acoes {
     display: flex;
     flex-wrap: wrap;
@@ -2625,11 +2587,6 @@
 .lista-tabelas__acoes .link {
     min-height: var(--altura-toque);
 }
-
-
-
-
-
 
 /* ---------- Campo com unidade e diálogo largo (seções 7.13 e 7.14) ---------- */
 
@@ -3007,4 +2964,606 @@
     .plano__corpo {
         grid-template-columns: minmax(0, 3fr) minmax(14rem, 2fr);
     }
+}
+
+/* ---------- Estado do tanque (seção 9.12) ---------- */
+
+/* Texto + ícone + cor, nunca só cor; a frase do motivo vem embaixo. */
+.estado-tanque {
+    display: grid;
+    justify-items: start;
+    gap: 2px;
+}
+
+.estado-tanque__etiqueta {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--espaco-1);
+    padding: 2px var(--espaco-2);
+    border-radius: var(--raio);
+    font-size: var(--texto-2);
+    font-weight: 700;
+}
+
+.estado-tanque__etiqueta .icone {
+    width: 1rem;
+    height: 1rem;
+}
+
+.estado-tanque__motivo {
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-2);
+}
+
+.estado-tanque--agir .estado-tanque__etiqueta {
+    background: var(--cor-perigo-suave);
+    color: var(--cor-perigo);
+}
+
+.estado-tanque--atencao .estado-tanque__etiqueta {
+    background: var(--cor-atencao-suave);
+    color: var(--cor-atencao);
+}
+
+.estado-tanque--certo .estado-tanque__etiqueta {
+    background: var(--cor-sucesso-suave);
+    color: var(--cor-sucesso);
+}
+
+.estado-tanque--vazio .estado-tanque__etiqueta,
+.estado-tanque--manutencao .estado-tanque__etiqueta,
+.estado-tanque--arquivado .estado-tanque__etiqueta {
+    background: var(--cor-neutra-suave);
+    color: var(--cor-texto-suave);
+}
+
+/* ---------- Valor ausente, estimado e termos (seção 11.6) ---------- */
+
+.valor-ausente {
+    color: var(--cor-texto-suave);
+    font-family: var(--fonte);
+    font-size: var(--texto-2);
+    font-weight: 500;
+    letter-spacing: 0;
+}
+
+.cartao-indicador__valor--ausente {
+    line-height: 1.4;
+}
+
+.valor-estimado__sinal {
+    margin-right: 0.1em;
+    color: var(--cor-texto-suave);
+    font-weight: 500;
+}
+
+.legenda-estimado {
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-1);
+}
+
+.termo__caixa {
+    position: relative;
+    display: inline-block;
+}
+
+.termo {
+    padding: 0;
+    border: 0;
+    border-bottom: 1px dotted currentColor;
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: help;
+}
+
+.termo__balao {
+    position: absolute;
+    left: 0;
+    top: calc(100% + 6px);
+    z-index: 15;
+    display: none;
+    width: max-content;
+    max-width: min(18rem, 80vw);
+    padding: var(--espaco-2) var(--espaco-3);
+    border-radius: var(--raio);
+    background: var(--cor-texto);
+    color: var(--cor-texto-invertido);
+    font-size: var(--texto-2);
+    font-weight: 400;
+    line-height: 1.45;
+    letter-spacing: 0;
+    text-transform: none;
+    white-space: normal;
+    box-shadow: var(--sombra-flutuante);
+}
+
+.termo__exemplo {
+    display: block;
+    margin-top: var(--espaco-1);
+    opacity: 0.8;
+}
+
+/* Abre ao passar o mouse, ao focar pelo teclado ou ao tocar (aria-expanded). */
+.termo:hover + .termo__balao,
+.termo:focus-visible + .termo__balao,
+.termo[aria-expanded="true"] + .termo__balao {
+    display: block;
+}
+
+.termos-ajuda {
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-2);
+}
+
+/* ---------- Tela "Hoje" (seção 7.1) ---------- */
+
+.hoje {
+    display: grid;
+    gap: var(--espaco-6);
+}
+
+.tarefas__lista {
+    display: grid;
+    gap: var(--espaco-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.tarefa {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: var(--espaco-2) var(--espaco-3);
+    padding: var(--espaco-3) var(--espaco-4);
+    border: 1px solid var(--cor-borda);
+    border-left: 4px solid var(--cor-borda-forte);
+    border-radius: var(--raio);
+    background: var(--cor-superficie);
+}
+
+.tarefa__icone {
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background: var(--cor-superficie-suave);
+}
+
+.tarefa__titulo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--espaco-2);
+    font-weight: 600;
+}
+
+.tarefa__acao,
+.tarefa__concluir {
+    grid-column: 2;
+    justify-self: start;
+}
+
+.tarefa__concluir {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--espaco-2);
+    min-height: var(--altura-toque);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.tarefa--alta {
+    border-left-color: var(--cor-perigo);
+}
+
+.tarefa--alta .tarefa__icone {
+    background: var(--cor-perigo-suave);
+    color: var(--cor-perigo);
+}
+
+.tarefa--media,
+.tarefa--baixa {
+    border-left-color: var(--cor-atencao);
+}
+
+.tarefa--media .tarefa__icone,
+.tarefa--baixa .tarefa__icone {
+    background: var(--cor-atencao-suave);
+    color: var(--cor-atencao);
+}
+
+.tarefa--alimentar,
+.tarefa--biometria {
+    border-left-color: var(--cor-primaria);
+}
+
+.tarefa--alimentar .tarefa__icone,
+.tarefa--biometria .tarefa__icone {
+    background: var(--cor-primaria-suave);
+    color: var(--cor-primaria-escura);
+}
+
+.tarefa--feita {
+    border-left-color: var(--cor-sucesso);
+    color: var(--cor-texto-suave);
+}
+
+.tarefa--feita .tarefa__titulo {
+    text-decoration: line-through;
+}
+
+.tarefas__feitas {
+    margin-top: var(--espaco-2);
+}
+
+.tarefas__feitas summary {
+    min-height: var(--altura-toque);
+    display: inline-flex;
+    align-items: center;
+}
+
+.tarefas__vazia {
+    display: flex;
+    align-items: center;
+    gap: var(--espaco-3);
+    padding: var(--espaco-4) var(--espaco-5);
+    border: 1px solid var(--cor-sucesso);
+    border-radius: var(--raio-grande);
+    background: var(--cor-sucesso-suave);
+    color: var(--cor-sucesso);
+}
+
+.tarefas__vazia .icone {
+    width: 1.75rem;
+    height: 1.75rem;
+}
+
+.tarefas__vazia-titulo {
+    font-weight: 700;
+}
+
+.tarefas__detalhe {
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-2);
+}
+
+@media (min-width: 48rem) {
+    .tarefa {
+        grid-template-columns: auto minmax(0, 1fr) auto;
+    }
+
+    .tarefa__acao,
+    .tarefa__concluir {
+        grid-column: auto;
+    }
+}
+
+.cartao-cultivo__link {
+    color: inherit;
+    text-decoration: none;
+}
+
+.cartao-cultivo__link:hover {
+    text-decoration: underline;
+}
+
+.cartao-cultivo__racao {
+    font-size: var(--texto-3);
+}
+
+.cartao-cultivo__rotulo {
+    color: var(--cor-texto-suave);
+}
+
+.producao {
+    border-top: 1px solid var(--cor-borda);
+    padding-top: var(--espaco-4);
+}
+
+.producao__resumo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--espaco-2) var(--espaco-3);
+    min-height: var(--altura-toque);
+    cursor: pointer;
+}
+
+.producao__titulo {
+    display: inline;
+}
+
+.producao__dica {
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-2);
+}
+
+.producao__conteudo {
+    display: grid;
+    gap: var(--espaco-5);
+    margin-top: var(--espaco-4);
+}
+
+/* ---------- Primeiros passos (seção 7.1) ---------- */
+
+.primeiros-passos {
+    display: grid;
+    gap: var(--espaco-3);
+    max-width: 44rem;
+    padding: var(--espaco-5);
+    border: 1px solid var(--cor-primaria);
+    border-radius: var(--raio-grande);
+    background: var(--cor-superficie);
+}
+
+.primeiros-passos__titulo {
+    font-size: var(--texto-6);
+}
+
+.primeiros-passos__lista {
+    display: grid;
+    gap: var(--espaco-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.primeiros-passos__passo {
+    display: grid;
+    grid-template-columns: 2rem minmax(0, 1fr);
+    align-items: center;
+    gap: var(--espaco-2) var(--espaco-3);
+    padding: var(--espaco-3);
+    border-radius: var(--raio);
+}
+
+.primeiros-passos__passo .botao {
+    grid-column: 2;
+    justify-self: start;
+}
+
+.primeiros-passos__passo--proximo {
+    background: var(--cor-primaria-suave);
+}
+
+.primeiros-passos__passo--feito {
+    color: var(--cor-texto-suave);
+}
+
+.primeiros-passos__passo--feito .icone {
+    color: var(--cor-sucesso);
+}
+
+.primeiros-passos__numero {
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background: var(--cor-primaria);
+    color: var(--cor-texto-invertido);
+    font-weight: 700;
+}
+
+.primeiros-passos--concluido {
+    padding: var(--espaco-2) var(--espaco-4);
+    border-color: var(--cor-borda);
+    color: var(--cor-sucesso);
+    font-size: var(--texto-2);
+}
+
+.primeiros-passos--concluido p {
+    display: flex;
+    align-items: center;
+    gap: var(--espaco-2);
+}
+
+/* ---------- Folha do dia (seção 7.15) ---------- */
+
+.folha__formulario {
+    display: grid;
+    gap: var(--espaco-4);
+}
+
+.folha__topo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--espaco-3);
+}
+
+.folha__linhas {
+    display: grid;
+    gap: var(--espaco-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.folha__linha {
+    display: grid;
+    gap: var(--espaco-3);
+    padding: var(--espaco-4);
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio-grande);
+    background: var(--cor-superficie);
+}
+
+.folha__linha:has([data-anotado]:checked) {
+    border-color: var(--cor-primaria);
+    box-shadow: inset 4px 0 0 var(--cor-primaria);
+}
+
+.folha__linha--anotada {
+    background: var(--cor-superficie-suave);
+}
+
+.folha__topo-linha {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--espaco-2);
+}
+
+.folha__cabecalho {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--espaco-2) var(--espaco-3);
+}
+
+.folha__faixa {
+    width: 6px;
+    height: 1.75rem;
+    border-radius: 3px;
+    background: var(--cor-serie);
+}
+
+.folha__tanque {
+    font-size: var(--texto-5);
+}
+
+.folha__anotado {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--espaco-2);
+    min-height: var(--altura-toque);
+    padding: 0 var(--espaco-3);
+    border: 1px solid var(--cor-borda-forte);
+    border-radius: var(--raio);
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.folha__anotado:has(:checked) {
+    border-color: var(--cor-primaria);
+    background: var(--cor-primaria-suave);
+    color: var(--cor-primaria-escura);
+}
+
+.folha__campos {
+    display: grid;
+    gap: var(--espaco-3);
+}
+
+.folha__mais summary {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--altura-toque);
+}
+
+.folha__mais[open] {
+    display: grid;
+    gap: var(--espaco-3);
+}
+
+.folha__resumo {
+    color: var(--cor-texto-suave);
+}
+
+.folha__rodape {
+    position: sticky;
+    bottom: calc(var(--altura-menu) + env(safe-area-inset-bottom));
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--espaco-3);
+    padding: var(--espaco-3) 0;
+    background: var(--cor-fundo);
+}
+
+.folha__dica {
+    color: var(--cor-texto-suave);
+    font-size: var(--texto-2);
+}
+
+@media (min-width: 48rem) {
+    .folha__campos {
+        grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr);
+        align-items: start;
+    }
+}
+
+@media (min-width: 60rem) {
+    .folha__rodape {
+        bottom: 0;
+    }
+}
+
+/* ---------- Página do tanque: ações e tanque fixo (seções 7.3 e 7.6) ---------- */
+
+.mais-acoes {
+    position: relative;
+}
+
+.mais-acoes__botao {
+    list-style: none;
+    cursor: pointer;
+}
+
+.mais-acoes__botao::-webkit-details-marker {
+    display: none;
+}
+
+.mais-acoes__menu {
+    position: absolute;
+    top: calc(100% + var(--espaco-1));
+    left: 0;
+    z-index: 12;
+    display: grid;
+    min-width: 14rem;
+    padding: var(--espaco-1);
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio-grande);
+    background: var(--cor-superficie);
+    box-shadow: var(--sombra-flutuante);
+}
+
+.mais-acoes__item {
+    display: flex;
+    align-items: center;
+    gap: var(--espaco-2);
+    min-height: var(--altura-toque);
+    padding: 0 var(--espaco-3);
+    border: 0;
+    border-radius: var(--raio);
+    background: none;
+    color: var(--cor-texto);
+    font: inherit;
+    font-size: var(--texto-3);
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.mais-acoes__item:hover,
+.mais-acoes__item:active {
+    background: var(--cor-superficie-suave);
+}
+
+.mais-acoes__item--perigo {
+    color: var(--cor-perigo);
+}
+
+/* "Registrar despesca" é rara e definitiva: por último e separada. */
+.mais-acoes__item--separado {
+    margin-top: var(--espaco-1);
+    border-top: 1px solid var(--cor-borda);
+    border-radius: 0 0 var(--raio) var(--raio);
+}
+
+.tanque-fixo {
+    padding: var(--espaco-2) var(--espaco-3);
+    border-left: 4px solid var(--cor-primaria);
+    border-radius: var(--raio);
+    background: var(--cor-primaria-suave);
+    font-family: var(--fonte-titulo);
+    font-size: var(--texto-5);
+    font-weight: 650;
 }

@@ -5,6 +5,7 @@ import { diasEntre } from '../core/utils.js';
 import {
     formatarBiomassa,
     formatarData,
+    formatarDataCurta,
     formatarGramas,
     formatarPercentual,
     formatarRacao,
@@ -49,13 +50,16 @@ export function analisarTanque({ tanque, cicloAtivo, registros }, { limitesPadra
 
 export function avaliarAlertas({ tanque, ciclo, registros, indicadores, limites, hoje }) {
     const alertas = [];
-    const adicionar = (tipo, gravidade, titulo, descricao, data) => {
+    // resumo: o motivo em uma linha, para o estado do tanque e as tarefas do dia;
+    // a descrição completa fica na página de alertas e na do tanque (seção 11.6).
+    const adicionar = (tipo, gravidade, titulo, descricao, data, resumo = titulo) => {
         alertas.push({
             id: `${tanque.id}:${tipo}`,
             tipo,
             gravidade,
             rotuloGravidade: ROTULOS_GRAVIDADE[gravidade],
             titulo,
+            resumo,
             descricao,
             data,
             tanqueId: tanque.id,
@@ -73,7 +77,8 @@ export function avaliarAlertas({ tanque, ciclo, registros, indicadores, limites,
             adicionar('mortalidade-registro', 'alta', 'Mortalidade elevada no registro',
                 `${pluralizar(ultimoDia.mortalidadeDia, 'peixe morto', 'peixes mortos')} em ${formatarData(ultimoDia.data)}: `
                 + `${formatarPercentual(percentual)} do estoque estimado (limite de ${formatarPercentual(limites.mortalidadeRegistroPct)}).`,
-                ultimoDia.data);
+                ultimoDia.data,
+                `${pluralizar(ultimoDia.mortalidadeDia, 'peixe morto', 'peixes mortos')} ${descreverDia(ultimoDia.data, hoje)}`);
         }
     }
 
@@ -83,7 +88,8 @@ export function avaliarAlertas({ tanque, ciclo, registros, indicadores, limites,
         adicionar('mortalidade-acumulada', 'media', 'Mortalidade acumulada elevada',
             `${formatarPercentual(indicadores.taxaMortalidade)} dos peixes do ciclo `
             + `(limite de ${formatarPercentual(limites.mortalidadeAcumuladaPct)}).`,
-            dataReferencia);
+            dataReferencia,
+            `Mortalidade de ${formatarPercentual(indicadores.taxaMortalidade)} no ciclo`);
     }
 
     if (ultimoDia && ultimoDia.racaoDiaKg > 0 && ultimoDia.biomassaKg > 0) {
@@ -92,7 +98,8 @@ export function avaliarAlertas({ tanque, ciclo, registros, indicadores, limites,
             adicionar('racao', 'media', 'Ração acima do limite',
                 `${formatarRacao(ultimoDia.racaoDiaKg)} em ${formatarData(ultimoDia.data)}: `
                 + `${formatarPercentual(percentual)} da biomassa (limite de ${formatarPercentual(limites.racaoDiariaPct)}).`,
-                ultimoDia.data);
+                ultimoDia.data,
+                `Ração de ${formatarPercentual(percentual)} do peso dos peixes`);
         }
     }
 
@@ -102,7 +109,8 @@ export function avaliarAlertas({ tanque, ciclo, registros, indicadores, limites,
             `${formatarPercentual(indicadores.capacidadeUtilizada)} da capacidade: `
             + `${formatarBiomassa(indicadores.biomassaKg)} de ${formatarBiomassa(indicadores.cargaMaximaKg)} `
             + `(limite de ${formatarPercentual(limites.capacidadePct)}).`,
-            dataReferencia);
+            dataReferencia,
+            `Capacidade em ${formatarPercentual(indicadores.capacidadeUtilizada)}`);
     }
 
     // Compara na data da última pesagem, e não hoje: dias sem pesar não podem
@@ -115,7 +123,8 @@ export function avaliarAlertas({ tanque, ciclo, registros, indicadores, limites,
                 `${formatarGramas(indicadores.pesoMedioG)} em ${formatarData(indicadores.dataPesoAtual)}, `
                 + `quando o esperado era ${formatarGramas(esperado)}: ${formatarPercentual(percentual)} do esperado `
                 + `(mínimo de ${formatarPercentual(limites.pesoEsperadoPct)}).`,
-                indicadores.dataPesoAtual);
+                indicadores.dataPesoAtual,
+                'Peso abaixo do esperado');
         }
     }
 
@@ -127,7 +136,8 @@ export function avaliarAlertas({ tanque, ciclo, registros, indicadores, limites,
             : `Nenhuma biometria desde o povoamento (${formatarData(biometria.dataUltima)})`;
         adicionar('biometria-atrasada', 'baixa', 'Biometria atrasada',
             `${desde}, há ${pluralizar(diasEntre(biometria.dataUltima, hoje), 'dia', 'dias')} (a cada ${pluralizar(biometria.intervaloDias, 'dia', 'dias')}).`,
-            biometria.dataProxima);
+            biometria.dataProxima,
+            `Biometria atrasada há ${pluralizar(biometria.diasAtraso, 'dia', 'dias')}`);
     }
 
     const diasSemRegistro = diasEntre(dataReferencia, hoje);
@@ -137,10 +147,17 @@ export function avaliarAlertas({ tanque, ciclo, registros, indicadores, limites,
             : `Nenhum registro desde o povoamento, há ${pluralizar(diasSemRegistro, 'dia', 'dias')}`;
         adicionar('sem-registro', 'baixa', 'Tanque sem registro',
             `${inicio} (limite de ${pluralizar(limites.diasSemRegistro, 'dia', 'dias')}).`,
-            dataReferencia);
+            dataReferencia,
+            `Sem registro há ${pluralizar(diasSemRegistro, 'dia', 'dias')}`);
     }
 
     return ordenarAlertas(alertas);
+}
+
+// "hoje", "ontem" ou "em 17/10": como o produtor fala do dia.
+function descreverDia(data, hoje) {
+    const dias = diasEntre(data, hoje);
+    return dias === 0 ? 'hoje' : dias === 1 ? 'ontem' : `em ${formatarDataCurta(data)}`;
 }
 
 // Alertas gerados pelos registros de cada dia, para a agenda (seção 7.1):

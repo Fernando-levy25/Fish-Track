@@ -87,6 +87,10 @@ function prepararNovo(hoje) {
     if (escolhido) {
         seletorTanque.value = escolhido.tanque.id;
     }
+    // Vindo de um tanque, ele fica fixo no topo, sem a lista para escolher.
+    if (doEndereco) {
+        mostrarTanqueFixo(doEndereco.tanque);
+    }
     // RN12: data futura no endereço é ignorada; fica hoje.
     campoData.value = ehDataISO(dataDoEndereco) && dataDoEndereco <= hoje ? dataDoEndereco : hoje;
     porId('link-cancelar-registro').href = doEndereco ? montarUrl('tanque.html', { id: doEndereco.tanque.id }) : 'index.html';
@@ -116,8 +120,9 @@ function prepararEdicao() {
     porId('titulo-pagina-registro').textContent = 'Editar registro';
     seletorTanque.append(criarOpcao(situacao));
     seletorTanque.value = situacao.tanque.id;
-    // Um registro não muda de tanque: na edição o seletor fica travado.
+    // Um registro não muda de tanque: na edição o tanque fica fixo.
     seletorTanque.disabled = true;
+    mostrarTanqueFixo(situacao.tanque);
     preencherFormulario(formulario, {
         id: registro.id,
         data: registro.data,
@@ -146,6 +151,12 @@ function mostrarIndisponivel(texto, href, rotuloLink) {
     porId('aviso-registro-indisponivel').hidden = false;
     porId('secao-formulario-registro').hidden = true;
     return false;
+}
+
+function mostrarTanqueFixo(tanque) {
+    porId('tanque-fixo').textContent = tanque.nome;
+    porId('tanque-fixo').hidden = false;
+    porId('grupo-tanque').hidden = true;
 }
 
 function criarOpcao({ tanque }) {

@@ -50,14 +50,14 @@ function criarExemplo(hoje) {
         observacoes: 'Viveiro escavado, com aerador de pás.',
     });
     simularCiclo(tanque01.id, {
-        inicio: dia(-84), dias: 84, quantidadeInicial: 2500, pesoInicialG: 5, pesoFinalG: 385,
+        inicio: dia(-84), dias: 83, quantidadeInicial: 2500, pesoInicialG: 5, pesoFinalG: 398,
         pesoAlvoG: 800, duracaoPrevista: 180, sortear,
     });
 
     // Crescimento abaixo do esperado e mortalidade alta no último registro.
     const tanque02 = salvarTanque({ nome: 'Tanque 02', especie: 'Tambaqui', volumeM3: 450, densidadeMaximaKgM3: 2, tabelaArracoamentoId: planoFixo.id });
     simularCiclo(tanque02.id, {
-        inicio: dia(-63), dias: 63, quantidadeInicial: 3200, pesoInicialG: 3, pesoFinalG: 230,
+        inicio: dia(-63), dias: 62, quantidadeInicial: 3200, pesoInicialG: 3, pesoFinalG: 230,
         pesoAlvoG: 1200, duracaoPrevista: 240, pesosIndividuaisNoDia: 56, sortear,
         ultimoRegistro: { mortalidade: 45, observacoes: 'Peixes na superfície pela manhã. Possível falta de oxigênio.' },
     });

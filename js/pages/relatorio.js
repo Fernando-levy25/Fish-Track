@@ -95,12 +95,12 @@ function montarRelatorioTanque(situacao) {
     const metaFca = obterMetaFca(tanque);
     secoes.push(
         criarSecao('Indicadores', [criarIndicadores([
-            { rotulo: 'Peixes (estimado)', valor: formatarInteiro(indicadores.quantidade), apoio: `${pluralizar(indicadores.mortalidadeAcumulada, 'morto encontrado', 'mortos encontrados')} · sobrevivência estimada de ${formatarPercentual(indicadores.taxaSobrevivencia)}` },
+            { rotulo: 'Peixes', valor: `≈ ${formatarInteiro(indicadores.quantidade)}`, apoio: `${pluralizar(indicadores.mortalidadeAcumulada, 'morto encontrado', 'mortos encontrados')} · sobrevivência estimada de ${formatarPercentual(indicadores.taxaSobrevivencia)}` },
             { rotulo: 'Peso médio', valor: formatarGramas(indicadores.pesoMedioG), apoio: [`pesado em ${formatarData(indicadores.dataPesoAtual)}`, cicloAtivo.pesoAlvoG && `alvo de ${formatarGramas(cicloAtivo.pesoAlvoG)}`] },
-            { rotulo: 'Biomassa (estimada)', valor: formatarBiomassa(indicadores.biomassaKg), apoio: `${formatarDensidade(indicadores.densidadeKgM3)} de água` },
-            { rotulo: 'FCA (estimada)', valor: formatarFca(indicadores.fca), apoio: [`meta de ${formatarFca(metaFca)}`, `${formatarRacao(indicadores.racaoAcumuladaKg)} de ração para ${formatarBiomassa(indicadores.ganhoBiomassaKg)} de ganho`] },
+            { rotulo: 'Biomassa', valor: `≈ ${formatarBiomassa(indicadores.biomassaKg)}`, apoio: `${formatarDensidade(indicadores.densidadeKgM3)} de água` },
+            { rotulo: 'FCA', valor: `≈ ${formatarFca(indicadores.fca)}`, apoio: [`meta de ${formatarFca(metaFca)}`, `${formatarRacao(indicadores.racaoAcumuladaKg)} de ração para ${formatarBiomassa(indicadores.ganhoBiomassaKg)} de ganho`] },
             { rotulo: 'Mortalidade observada', valor: formatarPercentual(indicadores.taxaMortalidade), apoio: `real só na despesca · limite de ${formatarPercentual(limites.mortalidadeAcumuladaPct)}` },
-            { rotulo: 'Capacidade (estimada)', valor: formatarPercentual(indicadores.capacidadeUtilizada), apoio: indicadores.cargaMaximaKg ? `de ${formatarBiomassa(indicadores.cargaMaximaKg)} de carga máxima` : 'capacidade não definida' },
+            { rotulo: 'Capacidade', valor: `≈ ${formatarPercentual(indicadores.capacidadeUtilizada)}`, apoio: indicadores.cargaMaximaKg ? `de ${formatarBiomassa(indicadores.cargaMaximaKg)} de carga máxima` : 'capacidade não definida' },
             { rotulo: 'Crescimento', valor: formatarGramasPorDia(indicadores.taxaCrescimentoGDia), apoio: `média do ciclo: ${formatarGramasPorDia(indicadores.crescimentoCicloGDia)}` },
             { rotulo: 'Dias de cultivo', valor: formatarInteiro(indicadores.diasCultivo), apoio: cicloAtivo.dataPrevistaDespesca ? `despesca prevista para ${formatarData(cicloAtivo.dataPrevistaDespesca)}` : '' },
         ])]),
@@ -108,7 +108,7 @@ function montarRelatorioTanque(situacao) {
         criarSecao('Alertas ativos', [criarListaAlertas(alertas, { textoVazio: 'Nenhum alerta para este tanque.' })]),
         criarSecao(`Registros do ciclo (${formatarInteiro(registros.length)})`, [criarTabelaRegistros(registros)]),
     );
-    conteudo.replaceChildren(...secoes);
+    conteudo.replaceChildren(...secoes, criarElemento('p', { classe: 'relatorio__nota', texto: '≈ valor estimado: os números reais saem na despesca.' }));
 }
 
 function criarDadosTanque({ tanque, cicloAtivo }) {
@@ -184,8 +184,8 @@ function montarRelatorioGeral(situacoes) {
         criarSecao('Resumo da produção', [
             criarIndicadores([
                 { rotulo: 'Tanques em cultivo', valor: formatarInteiro(resumo.tanquesAtivos), apoio: `de ${pluralizar(situacoes.length, 'tanque cadastrado', 'tanques cadastrados')}` },
-                { rotulo: 'Peixes (estimado)', valor: formatarInteiro(resumo.totalPeixes) },
-                { rotulo: 'Biomassa (estimada)', valor: formatarBiomassa(resumo.biomassaTotalKg) },
+                { rotulo: 'Peixes', valor: `≈ ${formatarInteiro(resumo.totalPeixes)}` },
+                { rotulo: 'Biomassa', valor: `≈ ${formatarBiomassa(resumo.biomassaTotalKg)}` },
                 { rotulo: 'Ração consumida', valor: formatarRacao(resumo.racaoAcumuladaKg), apoio: 'nos ciclos em andamento' },
                 { rotulo: 'Mortalidade média', valor: formatarPercentual(resumo.mortalidadeMedia), apoio: 'ponderada pelo povoamento' },
                 { rotulo: 'Alertas', valor: formatarInteiro(alertas.length), apoio: alertas.length > 0 ? 'detalhes no fim do relatório' : 'nenhum no momento' },
@@ -201,7 +201,7 @@ function montarRelatorioGeral(situacoes) {
     if (ativos.length === 0) {
         secoes.splice(1, 0, criarElemento('p', { classe: 'relatorio__nota', texto: 'Nenhum tanque com ciclo em andamento.' }));
     }
-    conteudo.replaceChildren(...secoes);
+    conteudo.replaceChildren(...secoes, criarElemento('p', { classe: 'relatorio__nota', texto: '≈ valor estimado: os números reais saem na despesca.' }));
 }
 
 function criarBlocoTanque({ tanque, ciclo, registros, indicadores, alertas }) {
@@ -212,12 +212,12 @@ function criarBlocoTanque({ tanque, ciclo, registros, indicadores, alertas }) {
             + `${pluralizar(alertas.length, 'alerta', 'alertas')}` }),
         criarElemento('div', { classe: 'relatorio__bloco' }, [
             criarIndicadores([
-                { rotulo: 'Peixes (estimado)', valor: formatarInteiro(indicadores.quantidade) },
+                { rotulo: 'Peixes', valor: `≈ ${formatarInteiro(indicadores.quantidade)}` },
                 { rotulo: 'Peso médio', valor: formatarGramas(indicadores.pesoMedioG) },
-                { rotulo: 'Biomassa (estimada)', valor: formatarBiomassa(indicadores.biomassaKg) },
-                { rotulo: 'FCA (estimada)', valor: formatarFca(indicadores.fca) },
+                { rotulo: 'Biomassa', valor: `≈ ${formatarBiomassa(indicadores.biomassaKg)}` },
+                { rotulo: 'FCA', valor: `≈ ${formatarFca(indicadores.fca)}` },
                 { rotulo: 'Mortalidade observada', valor: formatarPercentual(indicadores.taxaMortalidade) },
-                { rotulo: 'Capacidade (estimada)', valor: formatarPercentual(indicadores.capacidadeUtilizada) },
+                { rotulo: 'Capacidade', valor: `≈ ${formatarPercentual(indicadores.capacidadeUtilizada)}` },
                 { rotulo: 'Dias de cultivo', valor: formatarInteiro(indicadores.diasCultivo) },
                 { rotulo: 'Último registro', valor: indicadores.ultimoRegistro ? formatarData(indicadores.ultimoRegistro.data) : '—' },
             ], { compacto: true }),

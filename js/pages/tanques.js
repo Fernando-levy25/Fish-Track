@@ -2,12 +2,12 @@
 
 import { hojeISO } from '../core/utils.js';
 import { formatarBiomassa, formatarData, formatarInteiro } from '../core/format.js';
-import { listarSituacoes, listarTanques, ROTULOS_STATUS } from '../domain/tanques.js';
-import { calcularIndicadores } from '../domain/indicadores.js';
-import { resolverLimites } from '../domain/alertas.js';
+import { listarSituacoes, listarTanques } from '../domain/tanques.js';
+import { analisarTanque, resolverLimites } from '../domain/alertas.js';
+import { calcularEstadoTanque } from '../domain/estado.js';
 import { obterLimitesPadrao } from '../domain/configuracoes.js';
 import { lerParametro, montarUrl } from '../ui/nav.js';
-import { criarBarraCapacidade, criarCartaoTanque, criarElemento, mostrarErroPagina } from '../ui/componentes.js';
+import { criarBarraCapacidade, criarCartaoTanque, criarElemento, criarValorAusente, criarValorEstimado, mostrarErroPagina } from '../ui/componentes.js';
 import { descreverRacaoSugerida, iniciarPagina } from './comum.js';
 
 const filtro = document.getElementById('filtro-status');
@@ -47,21 +47,27 @@ function renderizar() {
     grade.replaceChildren(...situacoes.map((situacao) => criarCartao(situacao, hoje, limitesPadrao)));
 }
 
-function criarCartao({ tanque, cicloAtivo, registros, ultimoRegistro }, hoje, limitesPadrao) {
-    const indicadores = cicloAtivo ? calcularIndicadores({ tanque, ciclo: cicloAtivo, registros, hoje }) : null;
+function criarCartao(situacao, hoje, limitesPadrao) {
+    const { tanque, cicloAtivo, registros, ultimoRegistro } = situacao;
+    const { indicadores, alertas } = analisarTanque(situacao, { limitesPadrao, hoje });
+    const racao = cicloAtivo ? descreverRacaoSugerida({ tanque, cicloAtivo, registros }, hoje) : null;
+    // Sem ciclo, peixes e biomassa não se aplicam: a métrica sai, em vez de um traço.
+    const metricas = cicloAtivo
+        ? [
+            { rotulo: 'Peixes', valor: criarValorEstimado(formatarInteiro(indicadores.quantidade)) },
+            { rotulo: 'Biomassa', valor: criarValorEstimado(formatarBiomassa(indicadores.biomassaKg)) },
+            { rotulo: 'Ração de hoje', valor: racao.textoDia ?? criarValorAusente({ motivo: racao.textoMotivo, acao: racao.acaoMotivo.texto, href: racao.acaoMotivo.href }) },
+        ]
+        : [];
+    metricas.push({ rotulo: 'Último registro', valor: ultimoRegistro ? formatarData(ultimoRegistro.data) : 'Nenhum ainda' });
     return criarCartaoTanque({
         nome: tanque.nome,
         especie: tanque.especie,
-        selo: { texto: ROTULOS_STATUS[tanque.status], variante: tanque.status },
-        metricas: [
-            { rotulo: 'Peixes (estimado)', valor: formatarInteiro(indicadores?.quantidade) },
-            { rotulo: 'Biomassa (estimada)', valor: formatarBiomassa(indicadores?.biomassaKg) },
-            { rotulo: 'Último registro', valor: formatarData(ultimoRegistro?.data) },
-            cicloAtivo && { rotulo: 'Ração sugerida', valor: descreverRacaoSugerida({ tanque, cicloAtivo, registros }, hoje).textoDia ?? '—' },
-        ].filter(Boolean),
+        estado: calcularEstadoTanque({ situacao, alertas }),
+        metricas,
         extra: criarBarra(tanque, indicadores, limitesPadrao),
         acoes: [
-            { texto: 'Ver detalhes', href: montarUrl('tanque.html', { id: tanque.id }) },
+            { texto: 'Ver tanque', href: montarUrl('tanque.html', { id: tanque.id }) },
             { texto: 'Editar', href: montarUrl('tanque-form.html', { id: tanque.id }) },
         ],
     });

@@ -4,7 +4,7 @@
 // Os dados do produtor ficam no localStorage e não passam por aqui.
 
 // Ao mudar a lista de arquivos, troque a versão para descartar o cache antigo.
-const VERSAO_CACHE = 'fish-track-v8';
+const VERSAO_CACHE = 'fish-track-v9';
 const ARQUIVOS = [
     './',
     'index.html',
@@ -17,6 +17,7 @@ const ARQUIVOS = [
     'alertas.html',
     'calendario.html',
     'configuracoes.html',
+    'folha.html',
     'manifest.json',
     'css/base.css',
     'css/layout.css',
@@ -28,11 +29,13 @@ const ARQUIVOS = [
     'js/domain/tanques.js',
     'js/domain/ciclos.js',
     'js/domain/registros.js',
+    'js/domain/tarefas.js',
     'js/domain/indicadores.js',
     'js/domain/lembretes.js',
     'js/domain/alertas.js',
     'js/domain/arracoamento.js',
     'js/domain/biometrias.js',
+    'js/domain/estado.js',
     'js/domain/configuracoes.js',
     'js/domain/validacao.js',
     'js/ui/nav.js',
@@ -41,12 +44,14 @@ const ARQUIVOS = [
     'js/ui/graficos.js',
     'js/ui/calendario.js',
     'js/ui/editor-plano.js',
+    'js/ui/glossario.js',
     'js/ui/icones.js',
     'js/services/exportacao.js',
     'js/services/seed.js',
     'js/pages/agenda.js',
     'js/pages/comum.js',
     'js/pages/dashboard.js',
+    'js/pages/folha.js',
     'js/pages/tanques.js',
     'js/pages/tanque.js',
     'js/pages/tanque-form.js',

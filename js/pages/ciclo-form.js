@@ -1,4 +1,4 @@
-// Iniciar ciclo e registrar despesca (seção 7.5). O endereço indica o tanque e
+// Povoar tanque (iniciar ciclo) e registrar despesca (seção 7.5). O endereço indica o tanque e
 // a ação: ciclo-form.html?tanqueId=...&acao=iniciar (ou acao=despesca).
 
 import { hojeISO, paraNumero } from '../core/utils.js';
@@ -68,7 +68,7 @@ function prepararInicio({ tanque }, urlTanque) {
         mostrarIndisponivel(motivo);
         return;
     }
-    document.title = `Fish Track - Iniciar ciclo · ${tanque.nome}`;
+    document.title = `Fish Track - Povoar tanque · ${tanque.nome}`;
     porId('secao-iniciar-ciclo').hidden = false;
     // O resultado real do último ciclo é a referência para planejar o próximo.
     const ultimo = listarResultadosCiclos(tanque.id)[0]?.resultado;
@@ -148,7 +148,7 @@ function configurarModoPovoamento(formulario) {
         const biomassa = campoBiomassaInicial.lerBase();
         let texto = '';
         if (pesagem && biomassa > 0 && peso > 0) {
-            texto = `≈ ${formatarInteiro(Math.round((biomassa * 1000) / peso))} peixes (estimado)`;
+            texto = `≈ ${formatarInteiro(Math.round((biomassa * 1000) / peso))} peixes (valor estimado pela biomassa)`;
         } else if (!pesagem && quantidade > 0 && peso > 0) {
             texto = `Biomassa inicial: ${formatarBiomassa((quantidade * peso) / 1000)}`;
         }

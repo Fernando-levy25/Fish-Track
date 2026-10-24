@@ -142,35 +142,28 @@ Pequeno e médio produtor que:
 
 ## 7. Páginas
 
-### 7.1 Dashboard (`index.html`)
+### 7.1 Hoje (`index.html`)
 
-Visão geral de toda a produção. A versão principal é a de computador; no celular os blocos se empilham.
+A primeira tela responde "o que eu faço agora?". No computador, as tarefas ficam numa coluna larga ao lado dos tanques; no celular, tudo se empilha nesta ordem.
 
-- **Cabeçalho:** data por extenso, título, resumo ("3 tanques em cultivo, de 6 cadastrados · 4 alertas pedem atenção") e seletor de período (7 dias, 30 dias, ciclo inteiro; padrão 30 dias) e botão **"Exportar relatório"**, que abre o relatório da produção (seção 7.12) já com a janela de impressão. A escolha do período é lembrada no aparelho, fora dos dados do produtor.
-- **Cinco indicadores clicáveis**, cada um com contexto:
+- **Tarefas do dia** (`domain/tarefas.js`, seção 9.12), por urgência: todo alerta ativo vira tarefa ("Tanque 02 · 45 peixes mortos ontem"), com a ação do alerta (Ver tanque, Planejar despesca, Fazer biometria, Anotar); "Alimentar N tanques · X kg no total" com os tanques que têm ração sugerida e ainda não foram anotados hoje (tanque com alerta "sem registro" não entra de novo); biometrias previstas para hoje; lembretes de hoje e atrasados (selo "Atrasado"), com a caixa "Feito". As feitas descem para "Feito hoje". Lista vazia: "Nada pendente" e o próximo acontecimento ("Próxima biometria: Tanque 02, em 3 dias").
+- **Tanques em cultivo:** cartão compacto por tanque, com o estado (seção 9.12) e uma linha de motivo, a ração de hoje (ou o motivo de não haver sugestão) e uma ação.
+- **Primeiros passos** (sem nenhum tanque com cultivo): Cadastrar tanque → Povoar tanque → Escolher plano de alimentação → Anotar o primeiro dia, cada passo marcado quando feito.
+- **Produção** (recolhida, lembra se ficou aberta): os indicadores gerais com rótulos simples (os estimados com ≈), o gráfico com seletor de período e filtro por tanque, "Baixar imagem" e "Exportar relatório" (seção 7.12). Termos técnicos com o balão de ajuda (seção 11.6).
 
-| Indicador | Valor | Apoio | Visual |
-|---|---|---|---|
-| Biomassa total | soma das biomassas | variação em kg e em % no período | minigráfico |
-| Peixes no estoque | soma das quantidades | perdas no período | minigráfico |
-| Conversão alimentar | FCA geral dos ciclos | FCA do período e selo "Na meta" ou "Acima da meta" | régua de 1,00 a 2,20 com a faixa da meta |
-| Mortalidade acumulada | taxa geral | variação em pontos percentuais e selo do limite | barra até o limite |
-| Ração fornecida | total no período | média por dia | minigráfico da ração diária |
+### 7.15 Folha do dia (`folha.html`)
 
-- **Gráfico principal:** mostra o indicador selecionado, com uma linha por tanque na cor fixa do tanque, eixo com 4 marcas e 5 datas, tooltip com o valor de cada tanque e o total (ou "Geral", para FCA e mortalidade) e, na FCA, a linha da meta. Pode ser filtrado por tanque. Também responde ao teclado: com o gráfico em foco, as setas percorrem os dias. O botão "Baixar imagem" salva o gráfico em PNG (seção 9.9).
-- **Alertas:** filtráveis por gravidade, cada um com ícone, gravidade escrita, tanque e link de ação ("Ver registro", "Planejar despesca", "Registrar agora"...).
-- **Tanques em cultivo:** um cartão por tanque, com faixa na cor do tanque, anel do peso médio até o peso alvo, peixes, biomassa, FCA, dias até a despesca, barra de capacidade compacta, último registro e ações ("+ Registro", "Ver no gráfico", "Abrir"). Um cartão tracejado resume os tanques sem ciclo.
-- O botão de novo registro fica só no menu lateral.
+"Anotar o dia", o destaque do menu: uma linha por tanque com ciclo ativo, com ração (já preenchida com a sugestão, apagável), sobra e mortos, e a caixa "Anotado". "Conforme o plano" preenche a ração sugerida em todas as linhas vazias. "Salvar o dia" grava todas as linhas marcadas de uma vez, tudo ou nada (`salvarFolhaDoDia`): um erro aponta a linha e o campo e nada é salvo. Datas: hoje ou ontem. Um tanque que já tem rotina na data aparece como "Já anotado", com link para editar. `folha.html?tanque=...` destaca o tanque.
 
 ### 7.11 Menu lateral
 
 **Logo:** gota d'água com três barras subindo (a água do viveiro e a produção que cresce). No menu escuro a gota fica verde-água com as barras escuras; no fundo claro, gota verde-petróleo com barras verde-água. Arquivos em `assets/icons/`: `icone.svg`, `icone-192.png`, `icone-512.png` e `icone-maskable-512.png` (gota na zona segura central, sobre fundo claro); as propostas originais ficam em `docs/logo/`.
 
-Em telas largas, coluna escura com a marca, o botão "Novo registro", a navegação com ícones (Visão geral, Tanques e Alertas com contadores, Agenda, Relatórios, Configurações), os **Lembretes de hoje** (seção 7.8: checkbox para concluir, contador "1 de 3", atrasados com o selo "Atrasado", até cinco itens e o link "Adicionar lembrete") e um rodapé com o estado do uso offline e o tempo desde o último backup (em âmbar depois de 7 dias, com o link "Fazer backup agora"). No celular, vira a barra inferior com "Mais".
+Em telas largas, coluna escura com a marca, o destaque "Anotar o dia" (seção 7.15), a navegação com ícones (Hoje, Tanques e Alertas com contadores, Agenda com o número de lembretes pendentes, Relatórios, Configurações) e um rodapé com o estado do uso offline e o tempo desde o último backup (em âmbar depois de 7 dias, com o link "Fazer backup agora"). No celular, vira a barra inferior com "Mais".
 
 ### 7.2 Tanques (`tanques.html`)
 
-- Lista de todos os tanques com resumo (status, espécie, peixes, biomassa, último registro).
+- Lista de todos os tanques com o estado (seção 9.12) e a linha de motivo, espécie, peixes (≈), biomassa (≈), último registro e "Ver tanque".
 - Filtro por status (ativo, vazio, manutenção, arquivado). Sem filtro, a lista mostra todos menos os arquivados.
 - Botão **Novo tanque**.
 
@@ -191,7 +184,7 @@ Página própria de cada tanque, organizada em abas:
 
 Cada gráfico da aba Resumo tem o botão "Baixar imagem" (seção 9.9).
 
-Ações: editar tanque, iniciar ciclo, registrar despesca, novo registro, exportar relatório (seção 7.12, já com a janela de impressão), ajustar limites de alerta (num diálogo; campo vazio usa o limite padrão), arquivar e desarquivar (ou excluir, se o tanque nunca teve ciclo). Cada ação aparece só quando o status do tanque permite.
+Estado do tanque no cabeçalho (seção 9.12). Ações principais visíveis: "Anotar" (folha do dia com o tanque), "Fazer biometria" e, sem ciclo, "Povoar tanque"; as demais ficam em "Mais ações", com a despesca por último. Valor que não pode ser calculado mostra o motivo e a ação que resolve, nunca um traço solto. Ações: editar tanque, povoar tanque (iniciar ciclo), registrar despesca, novo registro, exportar relatório (seção 7.12, já com a janela de impressão), ajustar limites de alerta (num diálogo; campo vazio usa o limite padrão), arquivar e desarquivar (ou excluir, se o tanque nunca teve ciclo). Cada ação aparece só quando o status do tanque permite.
 
 ### 7.4 Formulário de tanque (`tanque-form.html`)
 
@@ -211,7 +204,7 @@ Cria ou edita um tanque (nome, espécie, volume, capacidade máxima, status, obs
 
 Só a rotina do dia; a biometria tem painel próprio (seção 7.13).
 
-- Tanque (pré-selecionado quando vier da página do tanque);
+- Tanque (vindo da página do tanque, fica fixo no topo, sem a lista);
 - Data (padrão: hoje; vindo da agenda, `registro.html?data=AAAA-MM-DD` preenche o dia escolhido, e uma data futura é ignorada);
 - Duas seções recolhíveis, abertas por padrão e opcionais (RN11 continua valendo):
   - **Alimentação:** ração fornecida e sobra (RN23), cada uma com seletor kg · g e a conversão visível ("= 0,5 kg"); a ração sugerida para hoje e o botão "Usar sugestão" (seção 9.10). Sem sugestão, o motivo e o link que resolve ("Sem plano de alimentação · Configurar").
@@ -678,7 +671,7 @@ O limite real de um tanque é o peso de peixe por volume de água, e não o núm
 | Faixa | Cor da água | Rótulo |
 |---|---|---|
 | até 75% | verde-petróleo | — |
-| acima de 75% e abaixo do limite de alerta | âmbar | "Atenção" |
+| acima de 75% e abaixo do limite de alerta | âmbar | "Acima de 75%" (não "Atenção", que é o estado do tanque) |
 | a partir do limite de alerta do tanque (padrão 90%) | laranja-escuro | "Perto do limite" |
 | acima de 100% | vermelho, barra cheia | "Acima do limite" |
 
@@ -716,13 +709,20 @@ Onde aparece: no registro (seção Alimentação, com "Usar sugestão", que pree
 - **Coeficiente de variação (CV)** dos pesos individuais = desvio padrão amostral (n − 1) ÷ média × 100. Até 20% (`LIMITE_CV_UNIFORME_PCT`, a validar), "Lote uniforme"; acima, "Lote desuniforme: considere classificar". Um peso só não tem CV.
 - `calcularEstatisticasPesos` e `calcularProximaBiometria` (puras, em `indicadores.js`); `ehRegistroDeBiometria`, `listarBiometriasDoCiclo`, `salvarBiometria`, `calcularPreviaBiometria` e `obterProximoTanqueBiometria` em `domain/biometrias.js`. Registro só de biometria: tem peso e nada de ração, sobra, mortos ou natalidade.
 
+### 9.12 Estado do tanque e tarefas do dia
+
+- **Estado** (`domain/estado.js`, `calcularEstadoTanque`): vem só dos alertas da seção 9.5, sem critério novo, para que estado, tarefas e página de alertas nunca se contradigam. Algum alerta de gravidade alta: **Agir agora**; qualquer outro alerta: **Atenção**; nenhum: **Tudo certo**. Sem ciclo: **Vazio**, **Em manutenção** ou **Arquivado**. O motivo é o `resumo` do alerta principal (o alto, ou o primeiro), com "(+N)" quando há outros. Estado sempre com ícone e texto, nunca só cor.
+- **Tarefas** (`domain/tarefas.js`, `gerarTarefasDoDia`, pura): ordem de urgência alerta alto → alerta médio → alimentar → lembrete atrasado → alerta baixo → biometria de hoje → lembrete. Quando duas origens dizem a mesma coisa, fica uma tarefa só (biometria atrasada é só o alerta; tanque sem registro não entra em "Alimentar").
+- Cada alerta tem um `resumo` de uma linha ("45 peixes mortos ontem", "Capacidade em 82%", "Biometria atrasada há 3 dias"), usado no estado e nas tarefas.
+
 ---
 
 ## 10. Estrutura de arquivos
 
 ```
 fish-track/
-├── index.html                # Dashboard
+├── index.html                # Hoje
+├── folha.html                # Folha do dia (Anotar o dia)
 ├── tanques.html              # Lista de tanques
 ├── tanque.html               # Detalhes do tanque (abas)
 ├── tanque-form.html          # Novo / editar tanque
@@ -756,6 +756,8 @@ fish-track/
 │   │   ├── lembretes.js      # Lembretes da agenda e suas ocorrências (RN16 a RN18)
 │   │   ├── arracoamento.js   # Planos de alimentação (RN24) e o modelo Embrapa
 │   │   ├── biometrias.js     # Biometria: salvar, listar, prévia e rodada (RN26)
+│   │   ├── estado.js         # Estado do tanque a partir dos alertas (seção 9.12)
+│   │   ├── tarefas.js        # Tarefas do dia da tela Hoje (seção 9.12)
 │   │   ├── configuracoes.js  # Limites de alerta: padrão e por tanque
 │   │   └── validacao.js      # Validações compartilhadas
 │   ├── ui/
@@ -765,14 +767,16 @@ fish-track/
 │   │   ├── icones.js         # Ícones em traço
 │   │   ├── painel-biometria.js # Painel de biometria do tanque (seção 7.13)
 │   │   ├── editor-plano.js   # Editor do plano de alimentação (seção 7.14)
+│   │   ├── glossario.js      # Termos técnicos com explicação e exemplo (seção 11.6)
 │   │   └── calendario.js     # Agenda: grade com etiquetas, quadro do dia e formulário de lembrete
 │   ├── services/
 │   │   ├── exportacao.js     # CSV, backup JSON e PNG dos gráficos
 │   │   └── seed.js           # Dados de exemplo
 │   └── pages/
 │       ├── agenda.js         # Liga a agenda ao domínio (página Agenda e aba do tanque)
-│       ├── comum.js          # Menu lateral, contadores, lembretes de hoje, backup e ações dos alertas
-│       ├── dashboard.js
+│       ├── comum.js          # Menu lateral, contadores, backup e ações dos alertas
+│       ├── dashboard.js      # Tela Hoje
+│       ├── folha.js          # Folha do dia
 │       ├── tanques.js
 │       ├── tanque.js
 │       ├── tanque-form.js
@@ -861,6 +865,20 @@ fish-track/
 - Uma funcionalidade por branch (`feat/novo-registro`).
 
 ---
+
+### 11.6 Clareza da interface
+
+Sete princípios para toda tela nova:
+
+1. A primeira tela diz o que fazer agora, não só números.
+2. Cada tanque tem um estado em uma palavra, com ícone, e uma linha de motivo.
+3. Valor estimado leva ≈, e a página tem a legenda "≈ estimado: os peixes não são contados durante o ciclo".
+4. Nenhum traço solto: valor ausente diz o motivo e a ação que resolve.
+5. Uma ação principal por tela; o resto em "Mais ações".
+6. Termo técnico vem com balão de ajuda (frase + exemplo, `ui/glossario.js`, `criarTermo`).
+7. Os nomes seguem a fala do produtor: Hoje, Anotar o dia, Fazer biometria, Povoar tanque, Plano de alimentação.
+
+Textos: frases curtas, voz ativa, verbo no início dos botões, todo número com unidade, alerta com uma linha de motivo, sem siglas sem explicação.
 
 ## 12. Próximos passos
 

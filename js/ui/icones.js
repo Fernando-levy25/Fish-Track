@@ -21,6 +21,11 @@ const ICONES = {
     download: [['path', { d: 'M12 3v12M7 10l5 5 5-5M5 21h14' }]],
     sino: [['path', { d: 'M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9' }], ['path', { d: 'M10.3 21a1.9 1.9 0 0 0 3.4 0' }]],
     check: [['path', { d: 'M20 6 9 17l-5-5' }]],
+    // Ações padronizadas (seção 11.6): Anotar (lápis), Ver tanque (seta), Registrar despesca (rede).
+    lapis: [['path', { d: 'M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16Z' }], ['path', { d: 'm13.5 6.5 4 4' }]],
+    seta: [['path', { d: 'M5 12h14M13 6l6 6-6 6' }]],
+    rede: [['path', { d: 'M4 4c3 6 13 6 16 0' }], ['path', { d: 'M5 6l3 14M19 6l-3 14M8 20h8M6.5 12h11' }]],
+    vazio: [['circle', { cx: 12, cy: 12, r: 8 }], ['path', { d: 'M8 12h8' }]],
 };
 
 export function criarIcone(nome, { classe = 'icone' } = {}) {
