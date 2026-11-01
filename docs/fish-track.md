@@ -103,7 +103,7 @@ Pequeno e médio produtor que:
 - Ciclos de cultivo (povoamento e despesca).
 - Registros periódicos com campos opcionais.
 - Cálculo de indicadores e gráficos simples.
-- Dashboard geral, alertas e calendário.
+- Tela Hoje (visão geral e tarefas do dia), alertas e calendário.
 - Persistência local no navegador (`localStorage`).
 - Funcionamento offline (PWA com service worker).
 - Exportação CSV e backup/restauração em JSON.
@@ -178,7 +178,7 @@ Página própria de cada tanque, organizada em abas:
   3. **Acompanhamento:** Mortalidade observada ("Últimos 7 dias: X%", "Real só na despesca"); FCA (estimada) ("X kg de ração consumida para Y kg de ganho", meta); Crescimento (g/dia entre as duas últimas biometrias, "Peso alvo em ~N dias (dd/mm)" com peso alvo e ganho positivo).
   4. **"Ver todos os indicadores"** (recolhido; lembra se ficou aberto, como preferência de tela): tabela com nome, valor e como é calculado, estimados marcados. Natalidade só aparece com nascimento registrado no ciclo.
   5. Gráficos, alertas e registros recentes, como antes.
-- **Tanque sem ciclo ativo:** no lugar dos cartões, o resumo do último ciclo encerrado (seção 9.4.1) e "Iniciar ciclo".
+- **Tanque sem ciclo ativo:** no lugar dos cartões, o resumo do último ciclo encerrado (seção 9.4.1) e "Povoar tanque".
 - **Histórico:** todos os registros do ciclo atual, com edição e exclusão. Permite consultar ciclos anteriores, que ficam só para leitura (RN10).
 - **Calendário:** a mesma agenda da seção 7.8, filtrada pelo tanque (sem os chips de tanque e sem a abreviação do tanque nas etiquetas), com o quadro do dia. Lembretes gerais também aparecem.
 
@@ -251,7 +251,7 @@ Visão mensal com os eventos de todos os tanques e os lembretes. O mesmo compone
 - Cabeçalho: data por extenso, selo "Hoje" quando for o caso e contagem de itens.
 - Seções, só as que tiverem conteúdo: **Atrasados** (só no quadro de hoje: ocorrências dos últimos 30 dias não concluídas), **Lembretes** (checkbox para concluir, tanque, "repete a cada 15 dias", editar e remover; remover um lembrete repetido pergunta "Só esta vez" ou "Todas as repetições"), **Registros** (tanque com a cor, resumo e link para editar, quando o ciclo está ativo), **Ciclo** e **Alertas**.
 - Dia vazio: "Nada marcado para este dia."
-- Rodapé: **"+ Adicionar lembrete"** e **"+ Registro neste dia"** (só para hoje ou datas passadas, RN12; leva a `registro.html?data=...`).
+- Rodapé: **"Adicionar lembrete"** e **"Anotar este dia"** (só para hoje ou datas passadas, RN12; leva a `registro.html?data=...`).
 
 **Formulário de lembrete** (dentro do quadro): título (obrigatório, até 80 caracteres), data (padrão: dia selecionado; qualquer data, passada ou futura), tanque ("Geral" ou um tanque não arquivado), repetir (não repete, a cada 7, 15 ou 30 dias) e observação (opcional, até 300). Erros por campo com `ErroValidacao`. Ao salvar, o lembrete aparece na hora na grade, com uma pequena animação de entrada. O texto de ajuda avisa que, sem servidor, o celular não notifica com o app fechado: o lembrete aparece só dentro do app.
 
@@ -269,7 +269,7 @@ O link "Adicionar lembrete" do menu lateral abre `calendario.html?lembrete=novo`
 
 ### 7.10 Navegação
 
-Barra inferior fixa no celular (Dashboard, Tanques, **+ Registro**, Alertas, Mais) e menu lateral em telas largas. O item **Mais** abre Agenda, Relatórios e Configurações.
+Barra inferior fixa no celular (Hoje, Tanques, **Anotar**, Alertas, Mais) e menu lateral em telas largas, com "Anotar o dia" em destaque (seção 7.15). O item **Mais** abre Agenda (com o número de lembretes pendentes), Relatórios e Configurações.
 
 ### 7.13 Painel de biometria (na página do tanque)
 
@@ -628,7 +628,7 @@ Na despesca a biomassa é pesada, e daí saem os números reais do ciclo, que se
 
 As leituras de curto prazo (ganho de biomassa e mortalidade dos últimos 7 dias, ração de hoje, dias desde a biometria, data prevista do peso alvo) vêm de `calcularAcompanhamento`, em `indicadores.js`. O peso alvo é projetado no ritmo das duas últimas biometrias, a partir da última. TCE e fator de condição entram em "Ver todos" quando a biometria tiver os dados do Prompt 02.
 
-**Dashboard:** os totais somam os tanques com ciclo ativo. As taxas gerais são médias ponderadas pela quantidade inicial de cada ciclo.
+**Tela Hoje (Produção):** os totais somam os tanques com ciclo ativo. As taxas gerais são médias ponderadas pela quantidade inicial de cada ciclo.
 
 **Período do dashboard:** a série diária de cada ciclo repete o último valor conhecido entre registros. O período vai do fim do dia inicial até hoje; um tanque povoado no meio dele parte da biomassa do povoamento. A **variação** compara hoje com o início do período; a **FCA do período** é a ração do período dividida pelo ganho de biomassa do período; as **perdas** são a mortalidade registrada no período. A meta de FCA fica em `config.metaFca` (padrão 1,60) e pode ser sobrescrita por tanque.
 
@@ -677,7 +677,7 @@ Na agenda geral, tanques arquivados ficam de fora. A despesca prevista só apare
 
 ### 9.8 Barra de capacidade
 
-O limite real de um tanque é o peso de peixe por volume de água, e não o número de peixes: a carga cresce com o peixe, mesmo quando a quantidade cai. A barra mostra a biomassa atual contra a carga máxima, em três lugares: cartões do Dashboard, lista de tanques e página do tanque.
+O limite real de um tanque é o peso de peixe por volume de água, e não o número de peixes: a carga cresce com o peixe, mesmo quando a quantidade cai. A barra mostra a biomassa atual contra a carga máxima, em três lugares: cartões da tela Hoje, lista de tanques e página do tanque.
 
 | Faixa | Cor da água | Rótulo |
 |---|---|---|
@@ -694,7 +694,7 @@ O limite real de um tanque é o peso de peixe por volume de água, e não o núm
 
 ### 9.9 Imagem dos gráficos
 
-O botão "Baixar imagem" (gráfico principal do Dashboard e gráficos do tanque) gera um PNG com `exportarGraficoPng(svg, nomeArquivo, { titulo, subtitulo, legenda })`, em `services/exportacao.js`: SVG → `Image` → `canvas` → `toBlob`. A imagem sai em 2× de resolução, com fundo branco, título, subtítulo (o que está no gráfico) e, no gráfico com vários tanques, a legenda com a cor de cada um. Como o SVG vira imagem fora da página, os estilos calculados de cada elemento vão junto, no próprio SVG.
+O botão "Baixar imagem" (gráfico da Produção na tela Hoje e gráficos do tanque) gera um PNG com `exportarGraficoPng(svg, nomeArquivo, { titulo, subtitulo, legenda })`, em `services/exportacao.js`: SVG → `Image` → `canvas` → `toBlob`. A imagem sai em 2× de resolução, com fundo branco, título, subtítulo (o que está no gráfico) e, no gráfico com vários tanques, a legenda com a cor de cada um. Como o SVG vira imagem fora da página, os estilos calculados de cada elemento vão junto, no próprio SVG.
 
 ---
 
@@ -922,12 +922,13 @@ Textos: frases curtas, voz ativa, verbo no início dos botões, todo número com
 
 ### Fase 4 — Visão geral
 
-- [x] Dashboard.
+- [x] Dashboard (depois substituído pela tela Hoje, seção 7.1).
 - [x] Agenda (por tanque e geral), com etiquetas, quadro do dia e lembretes.
 
 ### Fase 5 — Dados e offline
 
 - [x] Exportação CSV e backup/restauração JSON.
+- [x] Proteção dos dados em falhas de leitura, restauração e falta de espaço (seção 8.5).
 - [x] Página de configurações.
 - [x] PWA: `manifest.json` e service worker.
 

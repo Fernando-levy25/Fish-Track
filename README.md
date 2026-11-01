@@ -2,7 +2,7 @@
 
 > Registrar os dados do cultivo de forma simples e transformar esses dados em informações claras sobre a produção.
 
-**Versão atual:** v1.0 (MVP) · **Status:** implementado, em validação com produtores · **Atualizado em:** 17/10/2026
+**Versão atual:** v1.0 (MVP) · **Status:** implementado, em validação com produtores · **Atualizado em:** 01/11/2026
 
 ## O que é
 
@@ -41,9 +41,9 @@ O uso segue um fluxo simples:
 * **Tanques:** lista com filtro por status (ativo, vazio, em manutenção, arquivado).
 * **Página do tanque:** indicadores, gráficos de evolução, histórico de registros e calendário do tanque.
 * **Alertas:** todos os alertas, agrupados por tanque e ordenados por gravidade.
-* **Agenda:** povoamentos, registros, despescas, alertas do dia e lembretes (com repetição) de todos os tanques, com quadro do dia e "Lembretes de hoje" no menu lateral.
+* **Agenda:** povoamentos, registros, despescas, alertas do dia e lembretes (com repetição) de todos os tanques, com quadro do dia; os lembretes de hoje aparecem como tarefas na tela Hoje, e a Agenda no menu mostra quantos estão pendentes.
 * **Relatórios:** relatório da produção ou de um tanque, pronto para imprimir ou salvar em PDF, e gráficos baixados como imagem PNG.
-* **Configurações:** limites dos alertas, exportação em CSV (abre no Excel), backup e restauração dos dados, e dados de exemplo.
+* **Configurações:** limites dos alertas, planos de alimentação, unidades, exportação em CSV (abre no Excel), backup e restauração dos dados (com a lista do que estiver errado no arquivo), dados recuperados e dados de exemplo.
 
 ## ▶️ Como usar
 
@@ -51,6 +51,8 @@ O uso segue um fluxo simples:
 2. Para conhecer o sistema sem cadastrar nada, vá em **Mais → Configurações → Carregar dados de exemplo**.
 
 Os dados ficam guardados no navegador do próprio aparelho. Use o **backup** em Configurações para guardar uma cópia ou levar os dados para outro aparelho.
+
+Se os dados salvos não puderem ser lidos, o app não os apaga: mostra uma tela para baixá-los, restaurar um backup ou, com confirmação, começar de novo (guardando uma cópia antes). Com o armazenamento cheio, o app abre só para leitura até liberar espaço.
 
 ## 📦 Versão v1.0 (MVP)
 
