@@ -53,11 +53,11 @@ describe('services/exportacao (seção 9.7)', () => {
         tanques.salvarTanque({ nome: 'X', especie: 'Y', volumeM3: 1, densidadeMaximaKgM3: 5 });
         const texto = JSON.stringify(storage.lerDados());
         localStorage.clear();
-        exportacao.restaurarBackup(await exportacao.lerBackup(new Blob([texto])));
+        exportacao.restaurarBackup((await exportacao.lerBackup(new Blob([texto]))).dados);
         assert.equal(tanques.listarTanques()[0].nome, 'X');
         await assert.rejects(exportacao.lerBackup(new Blob(['não é json'])), /JSON válido/);
-        const v1 = { versao: 1, tanques: [{ id: 'a', nome: 'Antigo', capacidade: 10 }], ciclos: [], registros: [], config: { limitesAlerta: {} } };
-        const migrados = await exportacao.lerBackup(new Blob([JSON.stringify(v1)]));
+        const v1 = { versao: 1, tanques: [{ id: 'a', nome: 'Antigo', especie: 'Tilápia', volumeM3: 2, capacidade: 10 }], ciclos: [], registros: [], config: { limitesAlerta: {} } };
+        const { dados: migrados } = await exportacao.lerBackup(new Blob([JSON.stringify(v1)]));
         assert.equal(migrados.versao, storage.VERSAO_DADOS, 'backup da versão 1 continua restaurável');
         assert.equal(migrados.tanques[0].capacidadePeixesLegado, 10);
         await assert.rejects(exportacao.lerBackup(new Blob([JSON.stringify({ versao: 99, tanques: [], ciclos: [], registros: [] })])), /versão 99/);

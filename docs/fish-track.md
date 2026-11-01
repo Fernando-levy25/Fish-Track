@@ -263,7 +263,8 @@ O link "Adicionar lembrete" do menu lateral abre `calendario.html?lembrete=novo`
 - **Planos de alimentação:** os planos salvos para reutilizar (editar, excluir) e "Novo plano", com o editor da seção 7.14. Excluir um plano deixa os tanques que o usavam sem plano.
 - **Unidades:** biomassa em kg ou t; ração em kg ou g (padrão: kg e kg), em `config.unidades` (seção 8.1).
 - Exportar CSV de registros ou de lembretes (por tanque ou geral).
-- Fazer backup e restaurar dados (JSON).
+- Fazer backup e restaurar dados (JSON), com a lista dos problemas do arquivo e os avisos antes de confirmar (seção 8.5).
+- **Dados recuperados** (só aparece com algo a recuperar): cópias de dados ilegíveis (baixar, descartar) e "Voltar aos dados de antes da restauração".
 - Carregar dados de exemplo e apagar todos os dados.
 
 ### 7.10 Navegação
@@ -492,7 +493,17 @@ O `limitesAlerta` de cada tanque usa as mesmas chaves e pode conter só as que f
 4. Config: `unidades = { biomassa: "kg", racao: "kg" }`.
 
 Backups das versões 1 a 4 continuam podendo ser restaurados: passam pelas migrações em sequência.
-4. Define `versao = 2`.
+
+### 8.5 Falhas de leitura, restauração e espaço
+
+Regra: o app **nunca** troca dados que não conseguiu ler por uma base vazia gravada, e nenhuma operação mostra sucesso se a gravação falhou.
+
+- **Estado do armazenamento** (`verificarEstadoArmazenamento()` em `storage.js`): `ok`, `ilegivel` (JSON inválido ou estrutura corrompida), `versaoMaisNova` (`versao` maior que `VERSAO_DADOS`) ou `somenteMemoria` (migração lida mas não gravada por falta de espaço).
+- **Ilegível ou versão mais nova:** `fishtrack:v1` fica exatamente como está, `salvarDados` recusa com `ErroArmazenamentoBloqueado`, e toda página mostra a **tela de bloqueio** no lugar do conteúdo (`pages/protecao.js`). Versão mais nova: "Tentar de novo" e "Baixar os dados". Ilegível: "Baixar os dados" (conteúdo bruto), "Restaurar um backup" (mesmas validações de Configurações) e "Começar uma base nova", que exige a caixa "Entendo que os dados atuais serão substituídos" e a confirmação. A base nova só é gravada depois de guardar o conteúdo em `fishtrack:v1:ilegivel:<data ISO>` e conferir a cópia caractere por caractere; se a cópia falhar, nada muda. Depois, ficam só as 3 cópias datadas mais novas. Um download não libera a operação: o app não sabe se o arquivo foi salvo.
+- **Armazenamento cheio na migração (`somenteMemoria`):** os dados antigos ficam intactos e os migrados são usados só em memória; a migração é tentada de novo a cada abertura. O app fica **só para leitura** (cada tela é uma página, e o que ficasse só em memória se perderia): os formulários ficam desativados e uma faixa oferece "Baixar os dados", "Tentar salvar de novo" e "Dados recuperados".
+- **Gravação no estado `ok`:** cada leitura devolve uma cópia nova; o que está salvo só muda quando `setItem` funciona. Se falhar: "Não foi possível salvar: o armazenamento está cheio. Nada foi alterado." (`ErroArmazenamentoCheio`).
+- **Restaurar backup:** a análise trabalha numa cópia independente do arquivo (`analisarBackup` em `services/exportacao.js`): `validarEstrutura` completa todo o `config` com os padrões (`criarConfigPadrao`) e recusa formato inválido (`tabelasArracoamento` que não é lista, plano sem faixas válidas, unidade fora de kg/t e kg/g, coleção que não é lista); `verificarIntegridade` (`domain/integridade.js`, pura) aponta erros (IDs repetidos, ciclo ou registro apontando para o que não existe ou para outro tanque, mais de um ciclo ativo no tanque, campos essenciais inválidos), que impedem a restauração, e avisos (lembrete de tanque inexistente, que vale como Geral; tanque arquivado com lembrete futuro), mostrados antes de confirmar. No máximo 10 de cada, com "e mais N". Antes de gravar, os dados atuais vão para `fishtrack:v1:antes-da-restauracao` (só a última), conferida; sem ela, a restauração é cancelada. Dados ilegíveis vão para uma cópia datada, como na base nova.
+- **Dados recuperados** (Configurações, tela de bloqueio e faixa de espaço): cada cópia datada com "Baixar cópia" e "Descartar"; e "Voltar aos dados de antes da restauração", que valida a cópia como um backup e só a apaga depois de gravar.
 
 ---
 
@@ -534,7 +545,7 @@ Backups das versões 1 a 4 continuam podendo ser restaurados: passam pelas migra
 ### 9.3.1 Lembretes
 
 - **RN16.** O título do lembrete é obrigatório e tem até 80 caracteres.
-- **RN17.** O tanque do lembrete, quando informado, precisa existir e não estar arquivado.
+- **RN17.** O tanque do lembrete, quando informado, precisa existir e não estar arquivado. Excluir um tanque (só possível sem ciclos, RN04) exclui junto os lembretes dele, e a confirmação diz quantos; os lembretes de um tanque arquivado ficam como estão. Um lembrete que já aponte para um tanque inexistente (dados antigos) é tratado como Geral.
 - **RN18.** A repetição só aceita 7, 15 ou 30 dias.
 
 ### 9.4 Indicadores
@@ -756,6 +767,7 @@ fish-track/
 │   │   ├── lembretes.js      # Lembretes da agenda e suas ocorrências (RN16 a RN18)
 │   │   ├── arracoamento.js   # Planos de alimentação (RN24) e o modelo Embrapa
 │   │   ├── biometrias.js     # Biometria: salvar, listar, prévia e rodada (RN26)
+│   │   ├── integridade.js    # Relacionamentos de um backup antes de restaurar (seção 8.5)
 │   │   ├── estado.js         # Estado do tanque a partir dos alertas (seção 9.12)
 │   │   ├── tarefas.js        # Tarefas do dia da tela Hoje (seção 9.12)
 │   │   ├── configuracoes.js  # Limites de alerta: padrão e por tanque
@@ -777,6 +789,7 @@ fish-track/
 │       ├── comum.js          # Menu lateral, contadores, backup e ações dos alertas
 │       ├── dashboard.js      # Tela Hoje
 │       ├── folha.js          # Folha do dia
+│       ├── protecao.js       # Tela de bloqueio, faixa de espaço e dados recuperados (seção 8.5)
 │       ├── tanques.js
 │       ├── tanque.js
 │       ├── tanque-form.js

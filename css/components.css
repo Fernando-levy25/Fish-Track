@@ -1075,6 +1075,8 @@
 .dialogo__mensagem {
     font-size: var(--texto-4);
     font-weight: 600;
+    /* Avisos da restauração vêm em linhas separadas. */
+    white-space: pre-line;
 }
 
 .dialogo__texto {
@@ -3566,4 +3568,112 @@
     font-family: var(--fonte-titulo);
     font-size: var(--texto-5);
     font-weight: 650;
+}
+
+/* ---------- Proteção dos dados (seção 8.5) ---------- */
+
+/* Tela de bloqueio: dados ilegíveis ou de versão mais nova, no lugar da página. */
+.bloqueio {
+    display: grid;
+    gap: var(--espaco-4);
+    max-width: 44rem;
+    padding: var(--espaco-5);
+    background: var(--cor-superficie);
+    border: 1px solid var(--cor-perigo-borda);
+    border-radius: var(--raio-grande);
+}
+
+.bloqueio__titulo {
+    font-size: var(--texto-6);
+}
+
+.bloqueio__subtitulo {
+    font-size: var(--texto-4);
+    margin-block-end: var(--espaco-2);
+}
+
+.bloqueio__passos {
+    display: grid;
+    gap: var(--espaco-5);
+    padding-inline-start: var(--espaco-5);
+}
+
+.bloqueio__grupo,
+.bloqueio__acoes {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--espaco-3);
+}
+
+.bloqueio__grupo > .campo__rotulo,
+.bloqueio__grupo > .mensagem {
+    flex-basis: 100%;
+}
+
+.bloqueio__confirmacao {
+    display: flex;
+    flex-basis: 100%;
+    align-items: center;
+    gap: var(--espaco-2);
+    min-height: 44px;
+}
+
+.bloqueio .copias[data-vazio="sim"] {
+    display: none;
+}
+
+/* Armazenamento cheio: a página fica só para leitura. */
+.faixa-cheio {
+    display: grid;
+    gap: var(--espaco-3);
+    margin-block-end: var(--espaco-5);
+    padding: var(--espaco-4);
+    background: var(--cor-atencao-suave);
+    color: var(--cor-atencao);
+    border-radius: var(--raio);
+}
+
+.faixa-cheio__acoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--espaco-2);
+}
+
+.copias {
+    display: grid;
+    gap: var(--espaco-2);
+}
+
+.copias__ajuda,
+.copias__vazio {
+    color: var(--cor-texto-suave);
+}
+
+.copias__lista {
+    display: grid;
+    gap: var(--espaco-2);
+    padding: 0;
+    list-style: none;
+}
+
+.copias__item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--espaco-2);
+    padding-block: var(--espaco-2);
+    border-block-end: 1px solid var(--cor-borda);
+}
+
+.copias__acoes {
+    display: flex;
+    gap: var(--espaco-2);
+}
+
+.lista-problemas {
+    margin-block-start: var(--espaco-2);
+    padding-inline-start: var(--espaco-5);
+    font-weight: 400;
 }

@@ -9,7 +9,16 @@ import { apagarDados, lerDados } from '../core/storage.js';
 import { definirUnidadesExibicao, formatarGramas, formatarPercentual, pluralizar } from '../core/format.js';
 import { listarTanques, ROTULOS_STATUS } from '../domain/tanques.js';
 import { obterLimitesPadrao, obterMetaFca, obterUnidades, restaurarLimitesPadrao, salvarLimitesPadrao, salvarUnidades } from '../domain/configuracoes.js';
-import { exportarBackup, exportarCsv, exportarCsvLembretes, lerBackup, restaurarBackup } from '../services/exportacao.js';
+import {
+    existeCopiaAntesDaRestauracao,
+    exportarBackup,
+    exportarCsv,
+    exportarCsvLembretes,
+    lerBackup,
+    restaurarBackup,
+    voltarAntesDaRestauracao,
+} from '../services/exportacao.js';
+import { listarCopiasIlegiveis } from '../core/storage.js';
 import { carregarDadosExemplo } from '../services/seed.js';
 
 import {
@@ -25,6 +34,7 @@ import {
     preencherFormulario,
 } from '../ui/componentes.js';
 import { atualizarMenu, iniciarPagina } from './comum.js';
+import { criarSecaoCopias, montarPergunta, mostrarProblemas } from './protecao.js';
 
 const porId = (id) => document.getElementById(id);
 const formularioLimites = porId('formulario-limites');
@@ -44,6 +54,7 @@ try {
     configurarExportacao();
     configurarBackup();
     configurarDados();
+    configurarDadosRecuperados();
     atualizarTela();
 } catch (erro) {
     mostrarErroPagina(erro);
@@ -52,6 +63,7 @@ try {
 // Depois de restaurar, carregar exemplo ou apagar, os dados da tela mudam.
 function atualizarTela() {
     atualizarMenu();
+    renderizarDadosRecuperados();
     preencherFormulario(formularioLimites, { ...obterLimitesPadrao(), metaFca: obterMetaFca() });
     limparErrosFormulario(formularioLimites, porId('erro-geral-limites'));
     const todos = criarElemento('option', { texto: 'Todos os tanques', atributos: { value: '' } });
@@ -132,11 +144,8 @@ function configurarBackup() {
         }
         try {
             // 9.7: a leitura valida a versão antes de qualquer confirmação.
-            const dados = await lerBackup(arquivo);
-            const confirmado = await confirmar(
-                `Restaurar o backup com ${resumirDados(dados)}? Os dados atuais deste aparelho serão substituídos.`,
-                { textoConfirmar: 'Restaurar' },
-            );
+            const { dados, avisos } = await lerBackup(arquivo);
+            const confirmado = await confirmar(montarPergunta(dados, avisos), { textoConfirmar: 'Restaurar' });
             if (!confirmado) {
                 return;
             }
@@ -145,7 +154,7 @@ function configurarBackup() {
             atualizarTela();
             mostrarMensagem(saida, `Backup restaurado: ${resumirDados(dados)}.`);
         } catch (erro) {
-            mostrarErro(saida, erro);
+            mostrarProblemas(saida, erro);
         }
     });
 }
@@ -200,6 +209,35 @@ function configurarDados() {
             mostrarErro(saida, erro);
         }
     });
+}
+
+// ---------- Dados recuperados (seção 8.5) ----------
+
+function configurarDadosRecuperados() {
+    const saida = porId('mensagem-voltar-restauracao');
+    porId('botao-voltar-restauracao').addEventListener('click', async () => {
+        mostrarMensagem(saida, '');
+        const confirmado = await confirmar('Voltar aos dados de antes da restauração? Os dados atuais deste aparelho serão substituídos.', { textoConfirmar: 'Voltar' });
+        if (!confirmado) {
+            return;
+        }
+        try {
+            const dados = voltarAntesDaRestauracao();
+            atualizarTela();
+            mostrarMensagem(saida, `Dados de antes da restauração de volta: ${resumirDados(dados)}.`);
+        } catch (erro) {
+            mostrarProblemas(saida, erro);
+        }
+    });
+}
+
+// A seção só aparece quando há o que recuperar.
+function renderizarDadosRecuperados() {
+    const anterior = existeCopiaAntesDaRestauracao();
+    const copias = listarCopiasIlegiveis().length > 0;
+    porId('restauracao-anterior').hidden = !anterior;
+    porId('lista-dados-recuperados').replaceChildren(...(copias ? [criarSecaoCopias({ semTitulo: true })] : []));
+    porId('secao-dados-recuperados').hidden = !anterior && !copias;
 }
 
 // ---------- Planos de alimentação (seção 7.14) ----------

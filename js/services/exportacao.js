@@ -2,13 +2,23 @@
 // gráficos (seção 9.9). O DOM só é usado para disparar o download e, no PNG,
 // para desenhar o gráfico num canvas (seção 10).
 
-import { lerDados, salvarDados, validarEstrutura } from '../core/storage.js';
+import {
+    baixarConteudoBruto,
+    lerCopiaAntesDaRestauracao,
+    lerCopiaIlegivel,
+    lerDados,
+    salvarDados,
+    substituirDados,
+    validarEstrutura,
+    voltarParaCopiaAntesDaRestauracao,
+} from '../core/storage.js';
 import { agoraISO, compararTexto, criarSlug, hojeISO } from '../core/utils.js';
 import { formatarData } from '../core/format.js';
 import { calcularEstatisticasPesos, ordenarRegistros } from '../domain/indicadores.js';
 import { ehRegistroDeBiometria } from '../domain/biometrias.js';
 import { CAUSAS_MORTALIDADE } from '../domain/registros.js';
-import { falharRegra } from '../domain/validacao.js';
+import { ErroValidacao, falharRegra } from '../domain/validacao.js';
+import { resumirProblemas, verificarIntegridade } from '../domain/integridade.js';
 
 // Separador ";" e vírgula decimal: é o que o Excel em português espera.
 const SEPARADOR = ';';
@@ -108,7 +118,11 @@ function baixarCsv({ conteudo, quantidade }, tanqueId, assunto) {
 export function prepararBackup() {
     const dados = lerDados();
     dados.config.ultimoBackupEm = agoraISO();
-    salvarDados(dados);
+    try {
+        salvarDados(dados);
+    } catch {
+        // Sem espaço para marcar a data, o backup sai do mesmo jeito: é quando ele mais importa.
+    }
     return { conteudo: JSON.stringify(dados, null, 2), dados };
 }
 
@@ -119,24 +133,68 @@ export function exportarBackup() {
     return { arquivo, dados };
 }
 
+// Dados como estão no aparelho, sem gravar nada: na tela de bloqueio e no modo
+// só leitura, quando prepararBackup não pode marcar a data do backup.
+export function baixarDadosGuardados() {
+    const { conteudo, arquivo } = baixarConteudoBruto();
+    baixarArquivo(arquivo, conteudo, 'application/json');
+    return { arquivo };
+}
+
+export function baixarCopia(chave) {
+    const arquivo = `fish-track-copia-${chave.split(':').slice(3).join('-').replace(/[^0-9A-Za-z-]/g, '') || 'antiga'}.json`;
+    baixarArquivo(arquivo, lerCopiaIlegivel(chave), 'application/json');
+    return { arquivo };
+}
+
 // Lê e valida um arquivo de backup sem aplicar nada: a página confirma antes.
 // Arquivo errado é engano do produtor, não falha do sistema: vira ErroValidacao.
 export async function lerBackup(arquivo) {
-    let dados;
+    return analisarBackup(await arquivo.text());
+}
+
+// Toda a análise trabalha numa cópia independente do que foi lido (seção 8.5):
+// nada aqui grava nem toca nos dados em uso. Devolve { dados, avisos }.
+export function analisarBackup(texto, hoje = hojeISO()) {
+    let lidos;
     try {
-        dados = JSON.parse(await arquivo.text());
+        lidos = structuredClone(JSON.parse(texto));
     } catch {
         falharRegra('Este arquivo não é um backup do Fish Track: o conteúdo não é um JSON válido.');
     }
+    let dados;
     try {
-        return validarEstrutura(dados);
+        dados = validarEstrutura(lidos);
     } catch (erro) {
-        return falharRegra(erro.message);
+        falharRegra(erro.message);
     }
+    const { erros, avisos } = verificarIntegridade(dados, hoje);
+    if (erros.length > 0) {
+        const erro = new ErroValidacao({}, `Este backup tem ${erros.length === 1 ? 'um problema' : `${erros.length} problemas`} e não foi restaurado. Os dados atuais não mudaram.`);
+        erro.problemas = resumirProblemas(erros);
+        throw erro;
+    }
+    return { dados, avisos: resumirProblemas(avisos) };
 }
 
+// Só grava depois de analisar; antes, guarda e confere a cópia dos dados atuais.
 export function restaurarBackup(dados) {
-    salvarDados(dados);
+    substituirDados(dados);
+}
+
+export function existeCopiaAntesDaRestauracao() {
+    return lerCopiaAntesDaRestauracao() !== null;
+}
+
+// A cópia passa pelas mesmas validações de um backup; inválida, continua guardada.
+export function voltarAntesDaRestauracao() {
+    const texto = lerCopiaAntesDaRestauracao();
+    if (texto === null) {
+        falharRegra('Não há cópia de antes da restauração.');
+    }
+    const { dados } = analisarBackup(texto);
+    voltarParaCopiaAntesDaRestauracao(dados);
+    return dados;
 }
 
 // ---------- Imagem dos gráficos ----------

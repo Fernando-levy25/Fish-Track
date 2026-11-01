@@ -142,10 +142,10 @@ describe('core/storage', () => {
         assert.equal(storage.lerDados().tanques[0].nome, 'A');
         assert.ok(localStorage.getItem('fishtrack:v1'));
     });
-    it('guarda uma cópia de conteúdo ilegível antes de recomeçar', () => {
+    it('conteúdo ilegível não vira base vazia: lança e nada é gravado (seção 8.5)', () => {
         localStorage.setItem('fishtrack:v1', '{quebrado');
-        assert.deepEqual(storage.lerDados().tanques, []);
-        assert.equal(localStorage.getItem('fishtrack:v1:ilegivel'), '{quebrado');
+        assert.throws(() => storage.lerDados(), storage.ErroDadosIlegiveis);
+        assert.equal(localStorage.getItem('fishtrack:v1'), '{quebrado');
     });
     it('migra dados da versão 1 para a 2 ao ler, e grava o resultado (seção 8.4)', () => {
         const v1 = {

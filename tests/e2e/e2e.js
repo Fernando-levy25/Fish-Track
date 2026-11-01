@@ -584,6 +584,7 @@ async function roteiro() {
     verificar('2 grupos de alertas', doc().querySelectorAll('#grupos-alertas .grupo-alertas').length === 2);
     await testarAgenda();
     await testarRelatorios();
+    await testarProtecao();
     await abrir('tanques.html');
     verificar('5 tanques na lista padrão', doc().querySelectorAll('.cartao-tanque').length === 5);
 
@@ -654,11 +655,21 @@ async function testarAgenda() {
     verificar('quadro já aberto em hoje', !quadroDia().hidden && celula(HOJE).getAttribute('aria-pressed') === 'true'
         && quadroDia().querySelector('.quadro__contagem .selo')?.textContent === 'Hoje');
     const ontem = somarDias(HOJE, -1);
+    // No primeiro dia da grade, ontem fica no mês anterior.
+    const ontemForaDaGrade = !celula(ontem);
+    if (ontemForaDaGrade) {
+        doc().querySelector('[aria-label="Mês anterior"]').click();
+        await esperar(60);
+    }
     verificar('vários registros viram uma etiqueta com as bolinhas', etiquetas(ontem).includes('2 registros')
         && celula(ontem).querySelectorAll('.etiqueta--registro .etiqueta__ponto').length === 2, etiquetas(ontem).join(' | '));
     const alertaT02 = [...grade().querySelectorAll('.etiqueta--alerta')].find((etiqueta) => etiqueta.textContent.startsWith('Mortalidade'));
     verificar('alerta do dia com o tanque abreviado', alertaT02?.textContent === 'Mortalidade alta · T02' && alertaT02.title === 'Mortalidade alta: Tanque 02',
         alertaT02?.textContent);
+    if (ontemForaDaGrade) {
+        doc().querySelector('[aria-label="Ir para hoje"]').click();
+        await esperar(60);
+    }
     const ordemHoje = [...celula(HOJE).querySelectorAll('.etiqueta')].map((item) => item.className.match(/etiqueta--([a-z-]+)/)[1]);
     // A folha do dia já anotou hoje sem mortos: o alerta de mortalidade fica no dia anterior.
     verificar('no máximo 3 etiquetas e "+N mais"', ordemHoje.length === 3
@@ -839,11 +850,156 @@ async function testarRelatorios() {
     quadro.style.width = '';
 }
 
+// ---------- Proteção dos dados (seção 8.5) ----------
+
+const PAGINAS = ['index.html', 'tanques.html', 'tanque.html', 'tanque-form.html', 'ciclo-form.html', 'registro.html', 'folha.html',
+    'alertas.html', 'calendario.html', 'relatorio.html', 'configuracoes.html'];
+const bloqueio = () => doc().querySelector('[data-campo="telaBloqueio"]');
+const botaoComTexto = (raiz, rotulo) => [...(raiz ?? doc()).querySelectorAll('button')].find((botao) => botao.textContent.trim() === rotulo);
+const chavesDeCopia = () => Object.keys(localStorage).filter((chave) => chave.startsWith(`${CHAVE}:`));
+
+// Abre sem exigir página "sem erro": a tela de bloqueio é um alerta de propósito.
+async function abrirBloqueada(caminho) {
+    const carga = aguardarCarga();
+    quadro.src = BASE + caminho;
+    await carga;
+}
+
+// Captura o que a página baixaria (link com blob), sem baixar de verdade.
+async function capturarDownload(acao) {
+    const janela = quadro.contentWindow;
+    let blob = null;
+    const original = janela.URL.createObjectURL;
+    janela.URL.createObjectURL = (objeto) => {
+        blob = objeto;
+        return original.call(janela.URL, objeto);
+    };
+    acao();
+    janela.URL.createObjectURL = original;
+    return blob ? blob.text() : null;
+}
+
+// Enche o armazenamento até não caber mais nada, para a migração não ter onde gravar.
+function encherArmazenamento() {
+    let indice = 0;
+    for (const tamanho of [1_000_000, 100_000, 10_000, 1_000, 100, 10, 1]) {
+        const bloco = 'x'.repeat(tamanho);
+        for (;;) {
+            try {
+                localStorage.setItem(`enchimento:${indice}`, bloco);
+                indice += 1;
+            } catch {
+                break;
+            }
+        }
+    }
+}
+const esvaziarArmazenamento = () => Object.keys(localStorage).filter((chave) => chave.startsWith('enchimento:')).forEach((chave) => localStorage.removeItem(chave));
+
+async function testarProtecao() {
+    const dadosAntes = localStorage.getItem(CHAVE);
+
+    etapa = 'Dados ilegíveis: tela de bloqueio';
+    localStorage.setItem(CHAVE, '{quebrado');
+    for (const caminho of PAGINAS) {
+        await abrirBloqueada(caminho);
+        verificar(`bloqueio em ${caminho}`, bloqueio()?.textContent.includes('Eles foram preservados')
+            && doc().querySelector('main').children.length === 1);
+    }
+    verificar('três saídas', ['Baixar os dados', 'Restaurar', 'Começar uma base nova'].every((rotulo) => botaoComTexto(bloqueio(), rotulo)));
+    verificar('nenhum formulário do app à vista', doc().querySelectorAll('main form').length === 0);
+    const baixado = await capturarDownload(() => botaoComTexto(bloqueio(), 'Baixar os dados').click());
+    verificar('"Baixar os dados" baixa o conteúdo bruto', baixado === '{quebrado', baixado);
+    verificar('base nova só depois de marcar a caixa', botaoComTexto(bloqueio(), 'Começar uma base nova').disabled);
+    verificar('nada foi gravado', localStorage.getItem(CHAVE) === '{quebrado');
+
+    etapa = 'Dados ilegíveis: restaurar backup';
+    const campoBackup = porId('bloqueio-arquivo-backup');
+    const transferencia = new quadro.contentWindow.DataTransfer();
+    transferencia.items.add(new quadro.contentWindow.File([JSON.stringify({ versao: 5, tanques: [], ciclos: [], registros: [], lembretes: [], config: {} })], 'b.json'));
+    campoBackup.files = transferencia.files;
+    const recarga = aguardarCarga();
+    botaoComTexto(bloqueio(), 'Restaurar').click();
+    await responderConfirmacao(true);
+    await recarga;
+    verificar('backup incompleto restaurado, app de volta', !bloqueio() && dados()?.config.unidades?.biomassa === 'kg');
+    verificar('dados ilegíveis guardados numa cópia datada', chavesDeCopia().some((chave) => chave.startsWith(`${CHAVE}:ilegivel:`)
+        && localStorage.getItem(chave) === '{quebrado'));
+    for (const caminho of ['index.html', 'tanques.html', 'configuracoes.html', 'calendario.html', 'folha.html', 'relatorio.html']) {
+        await abrir(caminho);
+    }
+
+    etapa = 'Dados ilegíveis: começar uma base nova';
+    localStorage.setItem(CHAVE, '{outro');
+    await abrirBloqueada('index.html');
+    preencher({ 'bloqueio-entendo': true });
+    const recargaBase = aguardarCarga();
+    botaoComTexto(bloqueio(), 'Começar uma base nova').click();
+    await responderConfirmacao(true);
+    await recargaBase;
+    verificar('base nova gravada depois da cópia', !bloqueio() && dados()?.tanques.length === 0
+        && chavesDeCopia().some((chave) => localStorage.getItem(chave) === '{outro'));
+
+    etapa = 'Dados recuperados';
+    await abrir('configuracoes.html');
+    const secao = porId('secao-dados-recuperados');
+    verificar('seção aparece com cópias', !secao.hidden && secao.querySelectorAll('.copias__item').length === 2, secao.querySelectorAll('.copias__item').length);
+    const copiaBaixada = await capturarDownload(() => botaoComTexto(secao, 'Baixar cópia').click());
+    verificar('"Baixar cópia" baixa a cópia', copiaBaixada === '{outro', copiaBaixada);
+    botaoComTexto(secao, 'Descartar').click();
+    await responderConfirmacao(true);
+    await esperar(60);
+    verificar('"Descartar" remove a cópia', secao.querySelectorAll('.copias__item').length === 1
+        && !chavesDeCopia().some((chave) => localStorage.getItem(chave) === '{outro'));
+
+    etapa = 'Versão mais nova';
+    localStorage.setItem(CHAVE, JSON.stringify({ versao: 99, tanques: [], ciclos: [], registros: [] }));
+    await abrirBloqueada('tanques.html');
+    verificar('bloqueio com "Tentar de novo" e "Baixar os dados"', bloqueio()?.textContent.includes('versão mais nova do Fish Track')
+        && botaoComTexto(bloqueio(), 'Tentar de novo') && botaoComTexto(bloqueio(), 'Baixar os dados')
+        && !botaoComTexto(bloqueio(), 'Começar uma base nova'));
+    verificar('dados da versão mais nova intactos', dados().versao === 99);
+
+    etapa = 'Armazenamento cheio: só leitura';
+    const v4 = { versao: 4, tanques: [{ id: 't', nome: 'Antigo', especie: 'Pacu', volumeM3: 2, status: 'vazio', limitesAlerta: {} }], ciclos: [], registros: [], lembretes: [], config: { tabelasArracoamento: [] } };
+    localStorage.setItem(CHAVE, JSON.stringify(v4));
+    encherArmazenamento();
+    try {
+        // A faixa é um alerta de propósito: abre sem exigir página "sem erro".
+        for (const caminho of ['index.html', 'tanques.html', 'tanque-form.html', 'calendario.html', 'configuracoes.html']) {
+            await abrirBloqueada(caminho);
+            const faixa = doc().querySelector('[data-campo="faixaCheio"]');
+            verificar(`faixa em ${caminho}`, faixa?.textContent.includes('o armazenamento deste aparelho está cheio'));
+            const ativos = [...doc().querySelectorAll('main form :is(input, select, textarea, button)')].filter((controle) => !controle.disabled);
+            verificar(`formulários desativados em ${caminho}`, ativos.length === 0, ativos.map((controle) => controle.id || controle.name).join(','));
+        }
+        verificar('dados antigos intactos', dados().versao === 4);
+        await abrirBloqueada('tanques.html');
+        verificar('lista lida dos dados migrados', doc().querySelector('.cartao-tanque')?.textContent.includes('Antigo'));
+        const faixa = doc().querySelector('[data-campo="faixaCheio"]');
+        const exportado = await capturarDownload(() => botaoComTexto(faixa, 'Baixar os dados').click());
+        verificar('"Baixar os dados" exporta os migrados', JSON.parse(exportado ?? '{}').versao === 5);
+    } finally {
+        esvaziarArmazenamento();
+    }
+    const faixa = doc().querySelector('[data-campo="faixaCheio"]');
+    const recargaEspaco = aguardarCarga();
+    botaoComTexto(faixa, 'Tentar salvar de novo').click();
+    await recargaEspaco;
+    verificar('"Tentar salvar de novo" com espaço volta ao normal', !doc().querySelector('[data-campo="faixaCheio"]') && dados().versao === 5);
+
+    for (const chave of chavesDeCopia()) {
+        localStorage.removeItem(chave);
+    }
+    localStorage.setItem(CHAVE, dadosAntes);
+}
+
 async function executar() {
     document.getElementById('iniciar').disabled = true;
     const resumo = document.getElementById('resumo');
     resumo.textContent = 'Executando…';
     const dadosDoNavegador = localStorage.getItem(CHAVE);
+    const copiasDoNavegador = Object.keys(localStorage).filter((chave) => chave.startsWith(`${CHAVE}:`)).map((chave) => [chave, localStorage.getItem(chave)]);
     try {
         await roteiro();
     } catch (erro) {
@@ -851,6 +1007,8 @@ async function executar() {
     } finally {
         // Devolve os dados que o navegador tinha antes do teste.
         if (dadosDoNavegador === null) localStorage.removeItem(CHAVE); else localStorage.setItem(CHAVE, dadosDoNavegador);
+        Object.keys(localStorage).filter((chave) => chave.startsWith(`${CHAVE}:`)).forEach((chave) => localStorage.removeItem(chave));
+        copiasDoNavegador.forEach(([chave, valor]) => localStorage.setItem(chave, valor));
     }
     const falhas = resultados.filter((item) => !item.ok);
     resumo.textContent = `${resultados.length} verificações, ${falhas.length} falhas.`;

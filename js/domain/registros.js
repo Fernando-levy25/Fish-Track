@@ -62,6 +62,14 @@ export function resumirRegistro(registro) {
 
 export function salvarRegistro(entrada) {
     const dados = lerDados();
+    const registro = aplicarRegistro(dados, entrada);
+    salvarDados(dados);
+    return registro;
+}
+
+// Valida e coloca o registro em dados, sem gravar: a Folha do dia junta
+// várias linhas e grava uma vez só.
+function aplicarRegistro(dados, entrada) {
     const existente = entrada.id ? dados.registros.find((registro) => registro.id === entrada.id) : null;
     if (entrada.id && !existente) {
         falharRegra('Registro não encontrado.');
@@ -171,7 +179,6 @@ export function salvarRegistro(entrada) {
     } else {
         dados.registros.push(registro);
     }
-    salvarDados(dados);
     return registro;
 }
 
@@ -223,11 +230,12 @@ export function salvarFolhaDoDia({ data, linhas }) {
     if (linhas.length === 0) {
         falharRegra('Marque os tanques que você anotou.');
     }
-    const antes = lerDados();
+    // Tudo ou nada: as linhas são montadas numa cópia e gravadas numa única vez.
+    const dados = lerDados();
     const salvos = [];
     for (const [indice, linha] of linhas.entries()) {
         try {
-            salvos.push(salvarRegistro({
+            salvos.push(aplicarRegistro(dados, {
                 tanqueId: linha.tanqueId,
                 data,
                 racaoKg: linha.racaoKg ?? null,
@@ -237,7 +245,6 @@ export function salvarFolhaDoDia({ data, linhas }) {
                 observacoes: linha.observacoes ?? '',
             }));
         } catch (erro) {
-            salvarDados(antes);
             const porCampo = Object.entries(erro.erros ?? {}).map(([campo, mensagem]) => [`linhas.${indice}.${campo}`, mensagem]);
             throw new ErroValidacao(
                 porCampo.length > 0 ? Object.fromEntries(porCampo) : { [`linhas.${indice}`]: erro.message },
@@ -245,5 +252,6 @@ export function salvarFolhaDoDia({ data, linhas }) {
             );
         }
     }
+    salvarDados(dados);
     return salvos;
 }

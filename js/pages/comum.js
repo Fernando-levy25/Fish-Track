@@ -19,6 +19,7 @@ import { obterTabela } from '../domain/arracoamento.js';
 import { calcularIndicadores, calcularProximaBiometria, calcularRacaoSugerida } from '../domain/indicadores.js';
 import { exportarBackup } from '../services/exportacao.js';
 import { iniciarNavegacao, montarUrl } from '../ui/nav.js';
+import { protegerDados } from './protecao.js';
 
 // Passado esse prazo sem backup, o aviso do menu fica âmbar.
 const DIAS_PARA_LEMBRAR_BACKUP = 7;
@@ -26,15 +27,18 @@ const DIAS_PARA_LEMBRAR_BACKUP = 7;
 export const EVENTO_LEMBRETES = 'fishtrack:lembretes';
 
 export function iniciarPagina() {
+    iniciarNavegacao();
+    mostrarEstadoOffline();
+    // Dados ilegíveis ou de versão mais nova: a tela de bloqueio toma o lugar da
+    // página e o script dela para aqui (seção 8.5).
+    protegerDados();
     // Unidades de exibição (config.unidades) valem para toda a página.
     try {
         definirUnidadesExibicao(obterUnidades());
     } catch (erro) {
         console.error(erro);
     }
-    iniciarNavegacao();
     document.getElementById('botao-backup-rapido')?.addEventListener('click', fazerBackupRapido);
-    mostrarEstadoOffline();
     atualizarMenu();
 }
 

@@ -187,7 +187,14 @@ export function excluirTanque(id) {
         falharRegra('Este tanque tem histórico de ciclos e não pode ser excluído. Use a opção Arquivar.');
     }
     dados.tanques = dados.tanques.filter((tanque) => tanque.id !== id);
+    // RN17: os lembretes do tanque saem junto, para não ficarem órfãos.
+    dados.lembretes = dados.lembretes.filter((lembrete) => lembrete.tanqueId !== id);
     salvarDados(dados);
+}
+
+// Para a confirmação: "2 lembretes deste tanque também serão apagados".
+export function contarLembretesDoTanque(id) {
+    return lerDados().lembretes.filter((lembrete) => lembrete.tanqueId === id).length;
 }
 
 function buscarTanque(dados, id) {

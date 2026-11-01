@@ -132,7 +132,7 @@ function criarLinhaEditavel(situacao, estado, cor, posicao) {
     ]);
     const entrada = (chave, modo, valor = '') => criarElemento('input', {
         classe: 'campo__input',
-        atributos: { id: id(chave), name: nome(chave), type: 'text', inputmode: modo, autocomplete: 'off', value: valor, 'aria-describedby': `erro-${id(chave)}` },
+        atributos: { id: id(chave), name: nome(chave), type: 'text', inputmode: modo, pattern: modo === 'numeric' ? '[0-9]*' : '[0-9]*[.,]?[0-9]*', autocomplete: 'off', value: valor, 'aria-describedby': `erro-${id(chave)}` },
     });
 
     const entradaRacao = entrada('racaoKg', 'decimal');

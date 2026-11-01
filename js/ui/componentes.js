@@ -302,8 +302,11 @@ export function mostrarMensagem(elemento, texto, { erro = false } = {}) {
 
 // Erro de uma ação. Erros de validação do domínio trazem a mensagem para o
 // produtor; os inesperados também vão para o console, para diagnóstico.
+const ERROS_ESPERADOS = new Set(['ErroArmazenamentoBloqueado', 'ErroArmazenamentoCheio']);
+
 export function mostrarErro(elemento, erro) {
-    if (!erro?.erros) {
+    // Regra violada e armazenamento cheio ou bloqueado são esperados: a mensagem basta.
+    if (!erro?.erros && !ERROS_ESPERADOS.has(erro?.name)) {
         console.error(erro);
     }
     mostrarMensagem(elemento, erro?.message || 'Algo deu errado. Tente de novo.', { erro: true });

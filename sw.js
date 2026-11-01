@@ -4,7 +4,7 @@
 // Os dados do produtor ficam no localStorage e não passam por aqui.
 
 // Ao mudar a lista de arquivos, troque a versão para descartar o cache antigo.
-const VERSAO_CACHE = 'fish-track-v9';
+const VERSAO_CACHE = 'fish-track-v10';
 const ARQUIVOS = [
     './',
     'index.html',
@@ -36,6 +36,7 @@ const ARQUIVOS = [
     'js/domain/arracoamento.js',
     'js/domain/biometrias.js',
     'js/domain/estado.js',
+    'js/domain/integridade.js',
     'js/domain/configuracoes.js',
     'js/domain/validacao.js',
     'js/ui/nav.js',
@@ -61,6 +62,7 @@ const ARQUIVOS = [
     'js/pages/alertas.js',
     'js/pages/calendario.js',
     'js/pages/configuracoes.js',
+    'js/pages/protecao.js',
     'assets/icons/icone.svg',
     'assets/icons/icone-192.png',
     'assets/icons/icone-512.png',
@@ -93,18 +95,29 @@ self.addEventListener('fetch', (evento) => {
     evento.respondWith(buscarComCopia(request));
 });
 
+// Só os arquivos do app vão para o cache, não qualquer GET da mesma origem.
+const CAMINHOS_DO_APP = new Set(ARQUIVOS.map((arquivo) => new URL(arquivo, self.registration.scope).pathname));
+const ehArquivoDoApp = (url) => CAMINHOS_DO_APP.has(url.pathname) || url.pathname.endsWith('.html');
+
 async function buscarComCopia(request) {
-    const cache = await caches.open(VERSAO_CACHE);
+    const url = new URL(request.url);
     // Páginas como tanque.html?id=... são o mesmo arquivo: guarda uma cópia só, sem os parâmetros.
-    const chave = request.mode === 'navigate' ? new URL(request.url).pathname : request;
+    const chave = request.mode === 'navigate' ? url.pathname : request;
+    let resposta;
     try {
-        const resposta = await fetch(request);
-        if (resposta.ok) {
-            await cache.put(chave, resposta.clone());
-        }
-        return resposta;
+        resposta = await fetch(request);
     } catch {
-        const copia = await cache.match(chave, { ignoreSearch: true });
+        const copia = await caches.match(chave, { ignoreSearch: true });
         return copia ?? Response.error();
     }
+    // A resposta da rede é sempre devolvida: falhar ao guardar a cópia (cota cheia) não a descarta.
+    if (resposta.ok && ehArquivoDoApp(url)) {
+        try {
+            const cache = await caches.open(VERSAO_CACHE);
+            await cache.put(chave, resposta.clone());
+        } catch {
+            // Sem espaço para a cópia: segue com a resposta da rede.
+        }
+    }
+    return resposta;
 }

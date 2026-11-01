@@ -111,10 +111,12 @@ export function listarOcorrencias({ inicio, fim, tanqueId = null, dados = lerDad
     const tanques = new Map(dados.tanques.map((tanque) => [tanque.id, tanque]));
     const ocorrencias = [];
     for (const lembrete of dados.lembretes) {
-        if (tanqueId && lembrete.tanqueId && lembrete.tanqueId !== tanqueId) {
+        // Lembrete de um tanque que não existe mais (dados de antes da RN17): vale como Geral.
+        const tanque = lembrete.tanqueId ? tanques.get(lembrete.tanqueId) ?? null : null;
+        const tanqueDoLembrete = tanque ? lembrete.tanqueId : null;
+        if (tanqueId && tanqueDoLembrete && tanqueDoLembrete !== tanqueId) {
             continue;
         }
-        const tanque = lembrete.tanqueId ? tanques.get(lembrete.tanqueId) : null;
         // Tanque arquivado: os lembretes ficam no histórico, sem ocorrências futuras.
         const ultimaData = tanque?.status === 'arquivado' && hoje < fim ? somarDias(hoje, -1) : fim;
         for (const data of datasDoLembrete(lembrete, inicio, ultimaData)) {
@@ -122,7 +124,7 @@ export function listarOcorrencias({ inicio, fim, tanqueId = null, dados = lerDad
                 lembreteId: lembrete.id,
                 data,
                 titulo: lembrete.titulo,
-                tanqueId: lembrete.tanqueId,
+                tanqueId: tanqueDoLembrete,
                 tanqueNome: tanque?.nome ?? null,
                 repetirDias: lembrete.repetirDias,
                 observacao: lembrete.observacao,

@@ -18,7 +18,7 @@ import {
     obterUnidadesExibicao,
     pluralizar,
 } from '../core/format.js';
-import { arquivarTanque, desarquivarTanque, excluirTanque, listarTanques, obterSituacao } from '../domain/tanques.js';
+import { arquivarTanque, contarLembretesDoTanque, desarquivarTanque, excluirTanque, listarTanques, obterSituacao } from '../domain/tanques.js';
 import { listarResultadosCiclos } from '../domain/ciclos.js';
 import { excluirRegistro, listarRegistrosDoCiclo, resumirRegistro } from '../domain/registros.js';
 import { calcularAcompanhamento, calcularCargaMaximaKg, calcularEstatisticasPesos, calcularProximaBiometria, calcularSeries } from '../domain/indicadores.js';
@@ -211,11 +211,19 @@ function configurarAcoes() {
         mensagem: 'Tanque desarquivado. Ele voltou às listas como vazio.',
     }));
     porId('botao-excluir-tanque').addEventListener('click', () => executarAcao({
-        pergunta: `Excluir "${nome()}"? Esta ação não pode ser desfeita.`,
+        pergunta: descreverExclusao(nome(), contarLembretesDoTanque(tanqueId)),
         textoConfirmar: 'Excluir',
         acao: () => excluirTanque(tanqueId),
         depois: () => irPara('tanques.html'),
     }));
+}
+
+// RN17: os lembretes do tanque saem junto, e a confirmação diz quantos.
+function descreverExclusao(nomeTanque, lembretes) {
+    const frase = lembretes === 0 ? ''
+        : lembretes === 1 ? ' 1 lembrete deste tanque também será apagado.'
+            : ` ${lembretes} lembretes deste tanque também serão apagados.`;
+    return `Excluir "${nomeTanque}"?${frase} Esta ação não pode ser desfeita.`;
 }
 
 async function executarAcao({ pergunta, textoConfirmar, acao, mensagem, depois }) {
