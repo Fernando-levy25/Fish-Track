@@ -312,6 +312,18 @@ export function mostrarErro(elemento, erro) {
     mostrarMensagem(elemento, erro?.message || 'Algo deu errado. Tente de novo.', { erro: true });
 }
 
+// Erro de uma ação sem formulário (como marcar um lembrete como feito): a
+// mensagem aparece logo depois do item, que já voltou ao que era antes.
+export function mostrarErroJunto(item, erro) {
+    let aviso = item.nextElementSibling?.matches?.('[data-erro-acao]') ? item.nextElementSibling : null;
+    if (!aviso) {
+        aviso = criarElemento('p', { classe: 'mensagem mensagem--erro', atributos: { role: 'alert', 'data-erro-acao': '' } });
+        item.after(aviso);
+    }
+    mostrarErro(aviso, erro);
+    aviso.classList.add('mensagem--erro');
+}
+
 // Erro ao montar a página, como o navegador bloquear o armazenamento local.
 export function mostrarErroPagina(erro) {
     console.error(erro);
@@ -537,7 +549,7 @@ export function mostrarErrosFormulario(formulario, erro, erroGeral) {
             semCampo.push(texto);
         }
     }
-    if (!erro?.erros) {
+    if (!erro?.erros && !ERROS_ESPERADOS.has(erro?.name)) {
         console.error(erro);
     }
     const textoGeral = semCampo.length > 0 ? semCampo.join(' ') : (primeiroCampo ? '' : erro?.message);

@@ -32,7 +32,7 @@ import {
     salvarBiometria,
 } from '../domain/biometrias.js';
 import { analisarTanque, resolverLimites } from '../domain/alertas.js';
-import { obterLimitesPadrao, obterMetaFca, salvarLimitesTanque } from '../domain/configuracoes.js';
+import { obterLimitesPadrao, obterMetaFca, obterUnidades, salvarLimitesTanque } from '../domain/configuracoes.js';
 import { lerPreferencia, salvarPreferencia } from '../core/storage.js';
 import { exportarGraficoPng } from '../services/exportacao.js';
 import { irPara, lerParametro, montarUrl } from '../ui/nav.js';
@@ -133,7 +133,7 @@ function renderizarCabecalho() {
     document.title = `Fish Track - ${tanque.nome}`;
     porId('titulo-tanque').textContent = tanque.nome;
     // Estado em uma palavra, com o motivo (seção 9.12), no lugar do status.
-    const { alertas } = analisarTanque(situacao, { limitesPadrao: obterLimitesPadrao(), hoje: hojeISO() });
+    const { alertas } = analisarTanque(situacao, { limitesPadrao: obterLimitesPadrao(), hoje: hojeISO(), unidades: obterUnidades() });
     porId('estado-tanque').replaceChildren(criarEtiquetaEstado(calcularEstadoTanque({ situacao, alertas })));
     const cargaMaxima = calcularCargaMaximaKg(tanque.densidadeMaximaKgM3, tanque.volumeM3);
     porId('especie-tanque').textContent = `${tanque.especie} · ${formatarVolume(tanque.volumeM3)} de água · `
@@ -263,7 +263,7 @@ function renderizarResumo() {
     const hoje = hojeISO();
     const limitesPadrao = obterLimitesPadrao();
     const limites = resolverLimites(limitesPadrao, tanque.limitesAlerta);
-    const { indicadores, alertas } = analisarTanque(situacao, { limitesPadrao, hoje });
+    const { indicadores, alertas } = analisarTanque(situacao, { limitesPadrao, hoje, unidades: obterUnidades() });
     const acompanhamento = calcularAcompanhamento({ ciclo: cicloAtivo, registros, indicadores, hoje });
     const contexto = { tanque, ciclo: cicloAtivo, indicadores, acompanhamento, limites, hoje };
 

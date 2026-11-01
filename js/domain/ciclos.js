@@ -261,7 +261,7 @@ export function listarEventosCalendario({ inicio, fim, tanqueId = null }) {
         }
         const limites = resolverLimites(dados.config.limitesAlerta, tanque.limitesAlerta);
         const registros = dados.registros.filter((registro) => registro.cicloId === ciclo.id);
-        for (const alerta of avaliarAlertasDosDias({ ciclo, registros, limites })) {
+        for (const alerta of avaliarAlertasDosDias({ ciclo, registros, limites, unidades: dados.config.unidades })) {
             if (noPeriodo(alerta.data)) {
                 adicionar(alerta.data, 'alerta', tanque, alerta.descricao, { titulo: alerta.titulo, gravidade: alerta.gravidade });
             }

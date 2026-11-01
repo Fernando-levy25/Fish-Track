@@ -16,7 +16,7 @@ import { lerPreferencia, salvarPreferencia } from '../core/storage.js';
 import { listarSituacoes, listarTanques } from '../domain/tanques.js';
 import { calcularProximaBiometria, calcularResumoPeriodo } from '../domain/indicadores.js';
 import { analisarTanque, ordenarAlertas, resolverLimites } from '../domain/alertas.js';
-import { obterLimitesPadrao, obterMetaFca } from '../domain/configuracoes.js';
+import { obterLimitesPadrao, obterMetaFca, obterUnidades } from '../domain/configuracoes.js';
 import { calcularEstadoTanque } from '../domain/estado.js';
 import { encontrarProximoEvento, gerarTarefasDoDia } from '../domain/tarefas.js';
 import { alternarConclusao, listarAtrasados, listarOcorrencias } from '../domain/lembretes.js';
@@ -33,6 +33,7 @@ import {
     criarTermo,
     criarValorAusente,
     criarValorEstimado,
+    mostrarErroJunto,
     mostrarErroPagina,
 } from '../ui/componentes.js';
 import { desenharGraficoSeries, desenharSparkline, obterCorTanque } from '../ui/graficos.js';
@@ -87,7 +88,7 @@ function carregar() {
     const ativos = situacoes
         .filter((situacao) => situacao.cicloAtivo)
         .map((situacao) => {
-            const analise = analisarTanque(situacao, { limitesPadrao, hoje });
+            const analise = analisarTanque(situacao, { limitesPadrao, hoje, unidades: obterUnidades() });
             return {
                 ...situacao,
                 ...analise,
@@ -588,7 +589,14 @@ function configurarInteracoes() {
         if (!caixa) {
             return;
         }
-        alternarConclusao(caixa.dataset.concluir, caixa.dataset.ocorrencia);
+        try {
+            alternarConclusao(caixa.dataset.concluir, caixa.dataset.ocorrencia);
+        } catch (erro) {
+            // Não salvou: a caixa volta ao que era, para não parecer feito.
+            caixa.checked = !caixa.checked;
+            mostrarErroJunto(caixa.closest('li') ?? caixa, erro);
+            return;
+        }
         renderizarTarefas();
         atualizarMenu();
         document.dispatchEvent(new CustomEvent(EVENTO_LEMBRETES));

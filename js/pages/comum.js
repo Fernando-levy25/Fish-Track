@@ -107,7 +107,7 @@ export function atualizarMenu() {
         const situacoes = listarSituacoes();
         const alertas = situacoes
             .filter((situacao) => situacao.cicloAtivo)
-            .flatMap((situacao) => analisarTanque(situacao, { limitesPadrao, hoje }).alertas);
+            .flatMap((situacao) => analisarTanque(situacao, { limitesPadrao, hoje, unidades: obterUnidades() }).alertas);
         definirContador('tanques', situacoes.length);
         definirContador('alertas', alertas.length);
         mostrarUltimoBackup(obterUltimoBackupEm(), hoje);

@@ -4,7 +4,7 @@ import { compararTexto, hojeISO } from '../core/utils.js';
 import { pluralizar } from '../core/format.js';
 import { listarSituacoes } from '../domain/tanques.js';
 import { analisarTanque, gravidadeMaisAlta, ROTULOS_GRAVIDADE } from '../domain/alertas.js';
-import { obterLimitesPadrao } from '../domain/configuracoes.js';
+import { obterLimitesPadrao, obterUnidades } from '../domain/configuracoes.js';
 import { montarUrl } from '../ui/nav.js';
 import { criarElemento, mostrarErroPagina, renderizarAlertas } from '../ui/componentes.js';
 import { iniciarPagina, obterAcaoDoAlerta } from './comum.js';
@@ -24,7 +24,7 @@ function renderizar() {
     // Os tanques com o alerta mais grave vêm primeiro.
     const grupos = listarSituacoes()
         .filter((situacao) => situacao.cicloAtivo)
-        .map((situacao) => ({ tanque: situacao.tanque, alertas: analisarTanque(situacao, { limitesPadrao, hoje }).alertas }))
+        .map((situacao) => ({ tanque: situacao.tanque, alertas: analisarTanque(situacao, { limitesPadrao, hoje, unidades: obterUnidades() }).alertas }))
         .filter((grupo) => grupo.alertas.length > 0)
         .sort((a, b) => ORDEM_GRAVIDADE.indexOf(gravidadeMaisAlta(a.alertas)) - ORDEM_GRAVIDADE.indexOf(gravidadeMaisAlta(b.alertas))
             || compararTexto(a.tanque.nome, b.tanque.nome));

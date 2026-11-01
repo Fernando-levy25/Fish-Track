@@ -9,7 +9,7 @@ import { lerDados, lerPreferencia, salvarPreferencia } from '../core/storage.js'
 import { analisarTanque } from '../domain/alertas.js';
 import { calcularEstadoTanque } from '../domain/estado.js';
 import { CAUSAS_MORTALIDADE, resumirRegistro, salvarFolhaDoDia, temRotinaNaData } from '../domain/registros.js';
-import { obterLimitesPadrao } from '../domain/configuracoes.js';
+import { obterLimitesPadrao, obterUnidades } from '../domain/configuracoes.js';
 import { listarSituacoes, listarTanques } from '../domain/tanques.js';
 import { ErroValidacao } from '../domain/validacao.js';
 import { obterCorTanque } from '../ui/graficos.js';
@@ -85,7 +85,7 @@ function renderizar() {
     const registros = lerDados().registros;
     linhas = [];
     lista.replaceChildren(...situacoes.map((situacao) => {
-        const { alertas } = analisarTanque(situacao, { limitesPadrao, hoje });
+        const { alertas } = analisarTanque(situacao, { limitesPadrao, hoje, unidades: obterUnidades() });
         const estado = calcularEstadoTanque({ situacao, alertas });
         const cor = obterCorTanque(situacao.tanque, todos);
         if (temRotinaNaData(registros, situacao.tanque.id, data)) {

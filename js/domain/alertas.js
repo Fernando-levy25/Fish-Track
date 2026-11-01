@@ -3,15 +3,19 @@
 
 import { diasEntre } from '../core/utils.js';
 import {
-    formatarBiomassa,
     formatarData,
     formatarDataCurta,
     formatarGramas,
+    formatarMassa,
     formatarPercentual,
-    formatarRacao,
     pluralizar,
 } from '../core/format.js';
 import { calcularIndicadores, calcularLinhaDoTempo, calcularProximaBiometria } from './indicadores.js';
+
+// Unidades dos textos quando quem chama não informa (seção 8.1). As unidades vêm
+// sempre por argumento, nunca da preferência guardada em core/format.js, para a
+// mesma entrada gerar sempre o mesmo texto.
+export const UNIDADES_PADRAO = Object.freeze({ biomassa: 'kg', racao: 'kg' });
 
 export const LIMITES_PADRAO = Object.freeze({
     mortalidadeRegistroPct: 1,
@@ -39,17 +43,19 @@ export function resolverLimites(...camadas) {
 }
 
 // Indicadores e alertas do ciclo ativo de uma situação (veja tanques.js).
-export function analisarTanque({ tanque, cicloAtivo, registros }, { limitesPadrao, hoje }) {
+export function analisarTanque({ tanque, cicloAtivo, registros }, { limitesPadrao, hoje, unidades = UNIDADES_PADRAO }) {
     if (!cicloAtivo) {
         return { indicadores: null, alertas: [] };
     }
     const indicadores = calcularIndicadores({ tanque, ciclo: cicloAtivo, registros, hoje });
     const limites = resolverLimites(limitesPadrao, tanque.limitesAlerta);
-    return { indicadores, alertas: avaliarAlertas({ tanque, ciclo: cicloAtivo, registros, indicadores, limites, hoje }) };
+    return { indicadores, alertas: avaliarAlertas({ tanque, ciclo: cicloAtivo, registros, indicadores, limites, hoje, unidades }) };
 }
 
-export function avaliarAlertas({ tanque, ciclo, registros, indicadores, limites, hoje }) {
+export function avaliarAlertas({ tanque, ciclo, registros, indicadores, limites, hoje, unidades = UNIDADES_PADRAO }) {
     const alertas = [];
+    const racao = (kg) => formatarMassa(kg, 'racao', unidades.racao);
+    const biomassa = (kg) => formatarMassa(kg, 'biomassa', unidades.biomassa);
     // resumo: o motivo em uma linha, para o estado do tanque e as tarefas do dia;
     // a descrição completa fica na página de alertas e na do tanque (seção 11.6).
     const adicionar = (tipo, gravidade, titulo, descricao, data, resumo = titulo) => {
@@ -96,7 +102,7 @@ export function avaliarAlertas({ tanque, ciclo, registros, indicadores, limites,
         const percentual = (ultimoDia.racaoDiaKg / ultimoDia.biomassaKg) * 100;
         if (percentual > limites.racaoDiariaPct) {
             adicionar('racao', 'media', 'Ração acima do limite',
-                `${formatarRacao(ultimoDia.racaoDiaKg)} em ${formatarData(ultimoDia.data)}: `
+                `${racao(ultimoDia.racaoDiaKg)} em ${formatarData(ultimoDia.data)}: `
                 + `${formatarPercentual(percentual)} da biomassa (limite de ${formatarPercentual(limites.racaoDiariaPct)}).`,
                 ultimoDia.data,
                 `Ração de ${formatarPercentual(percentual)} do peso dos peixes`);
@@ -107,7 +113,7 @@ export function avaliarAlertas({ tanque, ciclo, registros, indicadores, limites,
     if (indicadores.capacidadeUtilizada !== null && indicadores.capacidadeUtilizada >= limites.capacidadePct) {
         adicionar('capacidade', 'media', 'Tanque próximo da capacidade',
             `${formatarPercentual(indicadores.capacidadeUtilizada)} da capacidade: `
-            + `${formatarBiomassa(indicadores.biomassaKg)} de ${formatarBiomassa(indicadores.cargaMaximaKg)} `
+            + `${biomassa(indicadores.biomassaKg)} de ${biomassa(indicadores.cargaMaximaKg)} `
             + `(limite de ${formatarPercentual(limites.capacidadePct)}).`,
             dataReferencia,
             `Capacidade em ${formatarPercentual(indicadores.capacidadeUtilizada)}`);
@@ -163,8 +169,9 @@ function descreverDia(data, hoje) {
 // Alertas gerados pelos registros de cada dia, para a agenda (seção 7.1):
 // mortalidade elevada e ração acima do limite, avaliados dia a dia, e não só
 // no último dia como nos alertas ativos.
-export function avaliarAlertasDosDias({ ciclo, registros, limites }) {
+export function avaliarAlertasDosDias({ ciclo, registros, limites, unidades = UNIDADES_PADRAO }) {
     const alertas = [];
+    const racao = (kg) => formatarMassa(kg, 'racao', unidades.racao);
     for (const dia of calcularLinhaDoTempo(ciclo, registros).slice(1)) {
         if (dia.mortalidadeDia > 0 && dia.quantidadeInicioDia > 0) {
             const percentual = (dia.mortalidadeDia / dia.quantidadeInicioDia) * 100;
@@ -177,7 +184,7 @@ export function avaliarAlertasDosDias({ ciclo, registros, limites }) {
             const percentual = (dia.racaoDiaKg / dia.biomassaKg) * 100;
             if (percentual > limites.racaoDiariaPct) {
                 alertas.push({ data: dia.data, tipo: 'racao', gravidade: 'media', titulo: 'Ração acima do limite',
-                    descricao: `${formatarRacao(dia.racaoDiaKg)}: ${formatarPercentual(percentual)} da biomassa.` });
+                    descricao: `${racao(dia.racaoDiaKg)}: ${formatarPercentual(percentual)} da biomassa.` });
             }
         }
     }

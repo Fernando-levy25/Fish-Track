@@ -560,7 +560,7 @@ Todos os indicadores são calculados a partir do ciclo e dos registros, ordenado
 | **Peso médio atual** | Último `pesoMedioG` informado. Se nenhum, usa `pesoMedioInicialG`. |
 | **Biomassa (kg)** | `quantidade × pesoMedio / 1000` |
 | **Ração consumida (kg)** | Soma de `racaoKg − racaoSobraKg` no ciclo. É a consumida que entra na FCA e nos totais de ração. |
-| **Ganho de biomassa (kg)** | `biomassaAtual − biomassaInicial` |
+| **Ganho de biomassa (kg)** | biomassa estimada atual − biomassa estimada no povoamento (`quantidadeInicial × pesoMedioInicialG / 1000`, em `calcularBiomassaInicialEstimadaKg`). Não usa a biomassa pesada no povoamento: no povoamento por pesagem a quantidade é arredondada (RN21), e misturar valor pesado com valor estimado criaria um ganho que não existe. O ganho com a biomassa pesada é o do fechamento (9.4.1). A mesma base vale para a página do tanque, os gráficos, o resumo do período e a tela Hoje. |
 | **Conversão alimentar (FCA)** | `racaoAcumulada / ganhoDeBiomassa`. Exibe "—" se o ganho for ≤ 0. |
 | **Taxa de mortalidade (%)** | `mortalidadeAcumulada / quantidadeInicial × 100` |
 | **Taxa de sobrevivência (%)** | `100 − taxaDeMortalidade` |
@@ -606,7 +606,7 @@ Na despesca a biomassa é pesada, e daí saem os números reais do ciclo, que se
 | Mortalidade real (%) | `100 − sobrevivenciaReal` (mínimo 0) |
 | Mortos encontrados | soma de `mortalidade` dos registros do ciclo |
 | Mortalidade não observada | `max(0, quantidadeInicial − quantidadeFinal − mortosEncontrados)` |
-| Ganho de biomassa (kg) | `biomassaFinalKg − biomassaInicialKg` |
+| Ganho de biomassa (kg) | `biomassaFinalKg − biomassaInicialKg`: o fechamento compara pesado com pesado (biomassa final pesada na despesca e biomassa do povoamento gravada) |
 | Ração total (kg) | soma de `racaoKg` dos registros do ciclo |
 | FCA final | `racaoTotalKg / ganhoBiomassaKg` (vazia se o ganho for ≤ 0) |
 | Dias de cultivo | dias entre `dataInicio` e `dataDespesca` |

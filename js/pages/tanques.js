@@ -5,7 +5,7 @@ import { formatarBiomassa, formatarData, formatarInteiro } from '../core/format.
 import { listarSituacoes, listarTanques } from '../domain/tanques.js';
 import { analisarTanque, resolverLimites } from '../domain/alertas.js';
 import { calcularEstadoTanque } from '../domain/estado.js';
-import { obterLimitesPadrao } from '../domain/configuracoes.js';
+import { obterLimitesPadrao, obterUnidades } from '../domain/configuracoes.js';
 import { lerParametro, montarUrl } from '../ui/nav.js';
 import { criarBarraCapacidade, criarCartaoTanque, criarElemento, criarValorAusente, criarValorEstimado, mostrarErroPagina } from '../ui/componentes.js';
 import { descreverRacaoSugerida, iniciarPagina } from './comum.js';
@@ -49,7 +49,7 @@ function renderizar() {
 
 function criarCartao(situacao, hoje, limitesPadrao) {
     const { tanque, cicloAtivo, registros, ultimoRegistro } = situacao;
-    const { indicadores, alertas } = analisarTanque(situacao, { limitesPadrao, hoje });
+    const { indicadores, alertas } = analisarTanque(situacao, { limitesPadrao, hoje, unidades: obterUnidades() });
     const racao = cicloAtivo ? descreverRacaoSugerida({ tanque, cicloAtivo, registros }, hoje) : null;
     // Sem ciclo, peixes e biomassa não se aplicam: a métrica sai, em vez de um traço.
     const metricas = cicloAtivo

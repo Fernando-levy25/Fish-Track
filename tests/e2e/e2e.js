@@ -584,6 +584,7 @@ async function roteiro() {
     verificar('2 grupos de alertas', doc().querySelectorAll('#grupos-alertas .grupo-alertas').length === 2);
     await testarAgenda();
     await testarRelatorios();
+    await testarGanhoPesagem();
     await testarProtecao();
     await abrir('tanques.html');
     verificar('5 tanques na lista padrão', doc().querySelectorAll('.cartao-tanque').length === 5);
@@ -850,6 +851,42 @@ async function testarRelatorios() {
     quadro.style.width = '';
 }
 
+// ---------- Ganho estimado no povoamento por pesagem (seção 9.4) ----------
+
+// Lote pesado de 1 kg a 6 g (167 peixes estimados): sem biometria, não há ganho
+// nem FCA; antes da correção, a página mostrava FCA ≈ 50.
+async function testarGanhoPesagem() {
+    const dadosAntes = localStorage.getItem(CHAVE);
+    etapa = 'Ganho estimado: povoamento por pesagem';
+    await abrir('tanque-form.html');
+    preencher({ 'campo-nome': 'Tanque Pesagem', 'campo-especie': 'Tilápia', 'campo-volume': '10', 'campo-densidade-maxima': '20' });
+    await enviarENavegar('formulario-tanque');
+    const tanqueId = dados().tanques.find((tanque) => tanque.nome === 'Tanque Pesagem').id;
+    await abrir(`ciclo-form.html?tanqueId=${tanqueId}&acao=iniciar`);
+    doc().querySelector('[name="modoPovoamento"][value="pesagem"]').click();
+    preencher({ 'campo-data-inicio': somarDias(HOJE, -5), 'campo-biomassa-inicial': '1', 'campo-peso-inicial': '6' });
+    await enviarENavegar('formulario-iniciar-ciclo');
+    const ciclo = dados().ciclos.find((item) => item.tanqueId === tanqueId && item.status === 'ativo');
+    verificar('lote pesado: 167 peixes e 1 kg gravado', ciclo?.quantidadeInicial === 167 && ciclo.biomassaInicialKg === 1, JSON.stringify(ciclo));
+    for (let dia = 4; dia >= 1; dia -= 1) {
+        await abrir(`registro.html?tanqueId=${tanqueId}&data=${somarDias(HOJE, -dia)}`);
+        doc().querySelector('[name="racaoKgUnidade"][value="kg"]')?.click();
+        preencher({ 'campo-racao': '0,02' });
+        await enviarENavegar('formulario-registro');
+    }
+    verificar('ração anotada em 4 dias', dados().registros.filter((registro) => registro.tanqueId === tanqueId).length === 4);
+    await abrir(`tanque.html?id=${tanqueId}`);
+    verificar('FCA sem número até a primeira biometria', indicador('fca') === 'Aparece depois da primeira biometria', indicador('fca'));
+    porId('botao-fazer-biometria').click();
+    await esperar(60);
+    preencher({ 'biometria-data': HOJE, 'biometria-peixes': '10', 'biometria-peso': '0,1' });
+    porId('painel-biometria').querySelector('form').requestSubmit();
+    await esperar(150);
+    // Ganho = 167 × (10 − 6) g = 0,668 kg; FCA = 0,08 ÷ 0,668 ≈ 0,12.
+    verificar('depois da biometria a FCA aparece', /^≈ 0,1[0-9]$/.test(indicador('fca') ?? ''), indicador('fca'));
+    localStorage.setItem(CHAVE, dadosAntes);
+}
+
 // ---------- Proteção dos dados (seção 8.5) ----------
 
 const PAGINAS = ['index.html', 'tanques.html', 'tanque.html', 'tanque-form.html', 'ciclo-form.html', 'registro.html', 'folha.html',
@@ -898,6 +935,28 @@ const esvaziarArmazenamento = () => Object.keys(localStorage).filter((chave) => 
 
 async function testarProtecao() {
     const dadosAntes = localStorage.getItem(CHAVE);
+
+    etapa = 'Armazenamento cheio com dados normais';
+    await abrir('index.html');
+    encherArmazenamento();
+    try {
+        const caixa = doc().querySelector('.tarefa [data-concluir]');
+        const marcadaAntes = caixa.checked;
+        caixa.click();
+        await esperar(60);
+        const aviso = doc().querySelector('[data-erro-acao]');
+        verificar('"Feito" que não salvou volta ao que era, com o motivo', caixa.checked === marcadaAntes
+            && aviso?.textContent.includes('Nada foi alterado'), aviso?.textContent);
+        verificar('nada mudou nos dados', localStorage.getItem(CHAVE) === dadosAntes);
+        await abrir('tanque-form.html');
+        preencher({ 'campo-nome': 'Sem espaço', 'campo-especie': 'Tilápia', 'campo-volume': '3' });
+        await enviarSemSair('formulario-tanque');
+        verificar('formulário avisa e mantém o que foi digitado', texto('erro-geral-tanque')?.includes('Nada foi alterado')
+            && porId('campo-nome').value === 'Sem espaço' && pagina() === 'tanque-form.html', texto('erro-geral-tanque'));
+        verificar('tanque não foi criado', localStorage.getItem(CHAVE) === dadosAntes);
+    } finally {
+        esvaziarArmazenamento();
+    }
 
     etapa = 'Dados ilegíveis: tela de bloqueio';
     localStorage.setItem(CHAVE, '{quebrado');

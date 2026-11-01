@@ -5,7 +5,7 @@ import { paraNumero } from '../core/utils.js';
 import { excluirTabela, listarTabelas, MODELO_EMBRAPA, obterTabela, salvarTabela } from '../domain/arracoamento.js';
 import { calcularRacaoSugerida } from '../domain/indicadores.js';
 import { criarEditorPlano } from '../ui/editor-plano.js';
-import { apagarDados, lerDados } from '../core/storage.js';
+import { apagarDados, lerDados, listarCopiasIlegiveis } from '../core/storage.js';
 import { definirUnidadesExibicao, formatarGramas, formatarPercentual, pluralizar } from '../core/format.js';
 import { listarTanques, ROTULOS_STATUS } from '../domain/tanques.js';
 import { obterLimitesPadrao, obterMetaFca, obterUnidades, restaurarLimitesPadrao, salvarLimitesPadrao, salvarUnidades } from '../domain/configuracoes.js';
@@ -18,7 +18,6 @@ import {
     restaurarBackup,
     voltarAntesDaRestauracao,
 } from '../services/exportacao.js';
-import { listarCopiasIlegiveis } from '../core/storage.js';
 import { carregarDadosExemplo } from '../services/seed.js';
 
 import {
@@ -254,7 +253,12 @@ function configurarTabelas() {
             const plano = obterTabela(excluir.dataset.excluirTabela);
             const confirmado = await confirmar(`Excluir o plano "${plano.nome}"? Os tanques que o usam ficam sem plano.`, { textoConfirmar: 'Excluir' });
             if (confirmado) {
-                excluirTabela(plano.id);
+                try {
+                    excluirTabela(plano.id);
+                } catch (erro) {
+                    mostrarErro(porId('mensagem-tabelas'), erro);
+                    return;
+                }
                 renderizarTabelas();
                 mostrarMensagem(porId('mensagem-tabelas'), 'Plano excluído.');
             }

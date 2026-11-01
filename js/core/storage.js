@@ -380,6 +380,7 @@ function completarConfig(lido) {
     };
 }
 
+// Só formato, para o backup não quebrar o app. Os limites da RN24 ficam em domain/arracoamento.js.
 function conferirPlano(plano) {
     const numero = (valor) => Number.isFinite(valor);
     const valido = plano && typeof plano === 'object' && typeof plano.id === 'string'

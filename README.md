@@ -2,7 +2,7 @@
 
 > Registrar os dados do cultivo de forma simples e transformar esses dados em informações claras sobre a produção.
 
-**Versão atual:** v1.0 (MVP) · **Status:** implementado, em validação com produtores · **Atualizado em:** 01/11/2026
+**Versão atual:** v1.0 (MVP) · **Status:** em teste no laboratório, com dados reais · **Atualizado em:** 01/11/2026
 
 ## O que é
 
@@ -10,13 +10,13 @@ O **Fish Track** é um sistema web para gerenciar cultivos de peixes, pensado pa
 
 Esse controle manual dificulta acompanhar a evolução do cultivo, comparar ciclos, perceber problemas a tempo e ter uma visão geral de vários tanques ao mesmo tempo. O Fish Track reúne tudo num só lugar e transforma os registros do dia a dia em indicadores, gráficos e alertas fáceis de entender.
 
-O sistema é feito para ser **simples**: um registro leva menos de um minuto, e a situação de cada tanque é entendida olhando a tela.
+O sistema é feito para ser **simples**: o produtor informa só o que mede, o sistema calcula o resto, e a situação de cada tanque aparece em uma palavra.
 
 ## Diferenciais
 
 * **Qualquer espécie:** tilápia, tambaqui, pintado ou outra; todos os tanques usam a mesma estrutura.
 * **Funciona sem internet:** depois de aberto uma vez, roda no celular, tablet ou computador, sem instalação.
-* **Visão de toda a produção:** um painel compara todos os tanques.
+* **Visão de toda a produção:** a tela Hoje mostra o que fazer em cada tanque e, recolhida, a produção de todos eles.
 * **Os dados são do produtor:** não é preciso criar conta, e os dados podem ser exportados a qualquer momento.
 
 ## Como funciona
@@ -64,7 +64,17 @@ Esta é a primeira versão completa do sistema. Ela inclui:
 * exportação CSV, backup e restauração;
 * funcionamento offline (PWA).
 
-**Fora desta versão:** contas de usuário e sincronização na nuvem, gestão financeira, parâmetros de qualidade da água, sensores e relatórios em PDF. Esses itens serão avaliados depois da validação com produtores.
+**Fora desta versão:** contas de usuário e sincronização na nuvem, gestão financeira, parâmetros de qualidade da água e sensores. Esses itens serão avaliados depois da validação com produtores.
+
+## 🧪 Etapa atual: teste no laboratório
+
+O app está sendo usado pelo laboratório com dados reais. Antes do teste entraram:
+
+* **Prompt 04:** biometria no tanque, unidades com seletor, plano de alimentação, tela Hoje, folha do dia e textos mais claros;
+* **Prompt 04.1:** proteção dos dados (dados ilegíveis, restauração de backup, exclusão de tanque e falta de espaço);
+* **Prompt 04.2:** conversão alimentar (FCA) correta logo depois de um povoamento por pesagem e alertas sem depender da preferência guardada na página.
+
+Depois do teste, o retorno do laboratório orienta as mudanças de tela do Prompt 05. O formato dos dados está na versão 5, e os dados dos testadores são preservados em toda atualização.
 
 ## 🛠️ Tecnologias
 

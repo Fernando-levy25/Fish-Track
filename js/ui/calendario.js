@@ -5,7 +5,7 @@
 
 import { diaDaSemana, montarDataISO, paraNumero, partesData, somarDias } from '../core/utils.js';
 import { formatarDataCompleta, formatarDataPorExtenso, formatarMesAno, pluralizar } from '../core/format.js';
-import { criarElemento, criarSelo, iniciarFormulario, limparErrosFormulario, preencherFormulario } from './componentes.js';
+import { criarElemento, criarSelo, iniciarFormulario, limparErrosFormulario, mostrarErroJunto, preencherFormulario } from './componentes.js';
 import { criarIcone } from './icones.js';
 
 const DIAS_DA_SEMANA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
@@ -548,10 +548,15 @@ export function criarAgenda(raiz, {
         } else if (alvo.closest('[data-remover-lembrete]')) {
             const botaoRemover = alvo.closest('[data-remover-lembrete]');
             const resposta = await perguntarRemocao(botaoRemover.dataset.repete === 'sim');
-            if (resposta === 'ocorrencia') {
-                acoes.removerOcorrencia(botaoRemover.dataset.removerLembrete, botaoRemover.dataset.ocorrencia);
-            } else if (resposta === 'todas') {
-                acoes.removerLembrete(botaoRemover.dataset.removerLembrete);
+            try {
+                if (resposta === 'ocorrencia') {
+                    acoes.removerOcorrencia(botaoRemover.dataset.removerLembrete, botaoRemover.dataset.ocorrencia);
+                } else if (resposta === 'todas') {
+                    acoes.removerLembrete(botaoRemover.dataset.removerLembrete);
+                }
+            } catch (erro) {
+                mostrarErroJunto(botaoRemover.closest('li') ?? botaoRemover, erro);
+                return;
             }
             renderizar();
         }
@@ -559,7 +564,14 @@ export function criarAgenda(raiz, {
     quadro.addEventListener('change', (evento) => {
         const caixa = evento.target.closest('[data-concluir]');
         if (caixa) {
-            acoes.alternarConclusao(caixa.dataset.concluir, caixa.dataset.ocorrencia);
+            try {
+                acoes.alternarConclusao(caixa.dataset.concluir, caixa.dataset.ocorrencia);
+            } catch (erro) {
+                // Não salvou: a caixa volta ao que era, para não parecer feito.
+                caixa.checked = !caixa.checked;
+                mostrarErroJunto(caixa.closest('li') ?? caixa, erro);
+                return;
+            }
             renderizar();
         }
     });

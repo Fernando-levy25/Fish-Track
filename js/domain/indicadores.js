@@ -114,8 +114,8 @@ export function calcularIndicadores({ tanque, ciclo, registros, hoje }) {
     // Biomassa = peixes × peso médio (Embrapa, cálculo de povoamento de viveiros, 2015).
     const biomassaKg = (quantidade * pesoMedioG) / 1000;
     const cargaMaximaKg = calcularCargaMaximaKg(tanque.densidadeMaximaKgM3, tanque.volumeM3);
-    const biomassaInicialKg = obterBiomassaInicialKg(ciclo);
-    const ganhoBiomassaKg = biomassaKg - biomassaInicialKg;
+    // Seção 9.4: estimado menos estimado. A biomassa pesada só entra no fechamento (9.4.1).
+    const ganhoBiomassaKg = biomassaKg - calcularBiomassaInicialEstimadaKg(ciclo);
     const racaoAcumuladaKg = somarRacaoConsumida(ordenados);
     const diasCultivo = diasEntre(ciclo.dataInicio, ciclo.dataDespesca ?? hoje);
     // Comprimento só vem da última biometria por amostra que o informou.
@@ -156,7 +156,16 @@ export function calcularIndicadores({ tanque, ciclo, registros, hoje }) {
     };
 }
 
-// Ciclos novos guardam a biomassa do povoamento (contada ou pesada); a conta é só para garantia.
+// Base do ganho estimado durante o ciclo (seção 9.4): a biomassa do povoamento
+// calculada do mesmo jeito que a biomassa estimada de cada dia. No povoamento
+// por pesagem a quantidade é arredondada (RN21), então usar a biomassa pesada
+// aqui criaria um ganho que não existe. No dia do povoamento, o ganho é 0.
+export function calcularBiomassaInicialEstimadaKg(ciclo) {
+    return (ciclo.quantidadeInicial * ciclo.pesoMedioInicialG) / 1000;
+}
+
+// Biomassa pesada (ou contada) no povoamento, só para o resultado do ciclo
+// encerrado (9.4.1), que compara pesado com pesado. A conta é só para ciclos antigos.
 function obterBiomassaInicialKg(ciclo) {
     return ciclo.biomassaInicialKg ?? (ciclo.quantidadeInicial * ciclo.pesoMedioInicialG) / 1000;
 }
@@ -367,7 +376,7 @@ export function calcularSeries(ciclo, registros) {
 // Dias antes do povoamento ou depois da despesca ficam null.
 export function calcularSerieDiaria(ciclo, registros, dataInicio, dataFim) {
     const dias = calcularLinhaDoTempo(ciclo, registros);
-    const biomassaInicialKg = (ciclo.quantidadeInicial * ciclo.pesoMedioInicialG) / 1000;
+    const biomassaInicialKg = calcularBiomassaInicialEstimadaKg(ciclo);
     const serie = [];
     let indice = -1;
     for (let data = dataInicio; data <= dataFim; data = somarDias(data, 1)) {
@@ -417,13 +426,12 @@ export function calcularResumoPeriodo(itens, { dataInicio, dataFim }) {
         datas.push(data);
     }
     const porTanque = itens.map((item) => ({ ...item, serie: calcularSerieDiaria(item.ciclo, item.registros, dataInicio, dataFim) }));
-    const biomassaInicial = (ciclo) => (ciclo.quantidadeInicial * ciclo.pesoMedioInicialG) / 1000;
 
     // Totais de cada dia, somando só os tanques já povoados naquele dia.
     const totais = datas.map((data, indice) => {
         const presentes = porTanque.filter(({ serie }) => serie[indice]);
         const somar = (obterValor) => presentes.reduce((total, item) => total + obterValor(item), 0);
-        const ganhoKg = somar(({ serie, ciclo }) => serie[indice].biomassaKg - biomassaInicial(ciclo));
+        const ganhoKg = somar(({ serie, ciclo }) => serie[indice].biomassaKg - calcularBiomassaInicialEstimadaKg(ciclo));
         const quantidadeInicial = somar(({ ciclo }) => ciclo.quantidadeInicial);
         return {
             data,
@@ -446,7 +454,7 @@ export function calcularResumoPeriodo(itens, { dataInicio, dataFim }) {
     const biomassaFim = somarPontas(({ fim }) => fim.biomassaKg);
     const ganhoPeriodoKg = biomassaFim - biomassaInicio;
     const racaoPeriodoKg = somarPontas(({ inicio, fim }) => fim.racaoAcumuladaKg - inicio.racaoAcumuladaKg);
-    const ganhoCicloKg = biomassaFim - somarPontas(({ ciclo }) => biomassaInicial(ciclo));
+    const ganhoCicloKg = biomassaFim - somarPontas(({ ciclo }) => calcularBiomassaInicialEstimadaKg(ciclo));
     const mortalidadeInicio = somarPontas(({ inicio }) => inicio.mortalidadeAcumulada);
     const mortalidadeFim = somarPontas(({ fim }) => fim.mortalidadeAcumulada);
     const quantidadeInicial = somarPontas(({ ciclo }) => ciclo.quantidadeInicial);

@@ -22,7 +22,7 @@ import {
 import { listarSituacoes, obterSituacao, ROTULOS_STATUS } from '../domain/tanques.js';
 import { calcularCargaMaximaKg, calcularResumoProducao, calcularSeries } from '../domain/indicadores.js';
 import { analisarTanque, ordenarAlertas, resolverLimites } from '../domain/alertas.js';
-import { obterLimitesPadrao, obterMetaFca } from '../domain/configuracoes.js';
+import { obterLimitesPadrao, obterMetaFca, obterUnidades } from '../domain/configuracoes.js';
 import { resumirRegistro } from '../domain/registros.js';
 import { criarElemento, mostrarErroPagina, renderizarAlertas } from '../ui/componentes.js';
 import { desenharGraficoLinha } from '../ui/graficos.js';
@@ -90,7 +90,7 @@ function montarRelatorioTanque(situacao) {
         return;
     }
 
-    const { indicadores, alertas } = analisarTanque(situacao, { limitesPadrao, hoje });
+    const { indicadores, alertas } = analisarTanque(situacao, { limitesPadrao, hoje, unidades: obterUnidades() });
     const limites = resolverLimites(limitesPadrao, tanque.limitesAlerta);
     const metaFca = obterMetaFca(tanque);
     secoes.push(
@@ -175,7 +175,7 @@ function montarRelatorioGeral(situacoes) {
     const limitesPadrao = obterLimitesPadrao();
     const ativos = situacoes
         .filter((situacao) => situacao.cicloAtivo)
-        .map((situacao) => ({ ...situacao, ciclo: situacao.cicloAtivo, ...analisarTanque(situacao, { limitesPadrao, hoje }) }));
+        .map((situacao) => ({ ...situacao, ciclo: situacao.cicloAtivo, ...analisarTanque(situacao, { limitesPadrao, hoje, unidades: obterUnidades() }) }));
     const resumo = calcularResumoProducao(ativos);
     const alertas = ordenarAlertas(ativos.flatMap((item) => item.alertas));
     const semCiclo = situacoes.filter((situacao) => !situacao.cicloAtivo);
