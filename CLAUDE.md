@@ -1,6 +1,6 @@
 # Fish Track
 
-Sistema web para gerenciamento de cultivos de peixes, voltado ao pequeno e médio produtor que hoje usa caderno ou planilha. MVP em HTML, CSS e JavaScript puros: sem frameworks, sem dependências externas e sem backend. Os dados ficam no `localStorage` e o app deve funcionar offline (PWA).
+Sistema web para gerenciamento de cultivos aquícolas (nasceu para peixes; em teste com camarão), voltado ao pequeno e médio produtor que hoje usa caderno ou planilha. MVP em HTML, CSS e JavaScript puros: sem frameworks, sem dependências externas e sem backend. Os dados ficam no `localStorage` e o app deve funcionar offline (PWA).
 
 ## Documentação
 
@@ -16,7 +16,7 @@ A especificação completa está em [docs/fish-track.md](docs/fish-track.md) e �
 
 Se o código e o documento divergirem, avise antes de seguir um dos dois. Quando uma decisão mudar uma regra, atualize o documento na mesma alteração.
 
-Contexto do produto, histórico de decisões e retorno dos testadores: `docs/CONTEXTO.md` e as atualizações datadas em `docs/` (se existirem). Prompts de implementação numerados ficam em `docs/prompts/`: cada um parte do estado atual do código; não reaplique um prompt já implementado.
+Os documentos de consulta do projeto são só este `CLAUDE.md` (regras e padrões de trabalho) e `docs/fish-track.md` (comportamento do app, decisões e pontos em aberto). O contexto do produto e o retorno dos testadores ficam nas seções 1, 2, 3 e 13 da especificação; não procure outros documentos de contexto.
 
 ## Como rodar
 
@@ -47,9 +47,10 @@ O service worker (`sw.js`) busca na rede primeiro, então alterações aparecem 
 
 Aprendido com os testes do laboratório e com fontes técnicas (Embrapa). Orienta toda decisão de dados e de tela:
 
-- Não se contam os peixes durante o ciclo. A quantidade é sempre **estimada** (inicial − mortos encontrados + natalidade), e tudo que depende dela aparece marcado como estimado, com o símbolo ≈ e uma legenda. Os números reais (sobrevivência, mortalidade, FCA final) só existem na despesca, a partir da biomassa final pesada.
+- Não se contam os animais durante o ciclo. A quantidade é sempre **estimada** (inicial − mortos encontrados + natalidade), e tudo que depende dela aparece marcado como estimado, com o símbolo ≈ e uma legenda. Os números reais (sobrevivência, mortalidade, FCA final) só existem na despesca, a partir da biomassa final pesada.
 - Biometria é um evento próprio, feito por amostragem a cada ~15 dias, e não parte da rotina diária (ração, sobra, mortos).
 - O usuário informa só o que mede; o sistema calcula o resto e mostra o resultado na hora, enquanto ele digita.
 - Fale como o produtor fala: evite jargão na interface; termos técnicos (FCA, TCE, biomassa) vêm com uma frase de ajuda e um exemplo. Se algo exige explicação longa, o problema é a tela.
-- Não invente valores padrão que dependem de espécie, ração ou sistema de cultivo (capacidade, % de alimentação). Modelos prontos só com a fonte explícita no nome e um aviso de quando valem.
+- Não invente valores padrão que dependem de espécie, ração ou sistema de cultivo (capacidade, % de alimentação). Modelos prontos só com a fonte explícita no nome e um aviso de quando valem. Todo modelo pronto diz para que espécie e sistema vale (ex.: "tilápia em tanque-rede").
+- O app nasceu para peixe e está em teste com camarão, e o foco ainda não foi decidido (`docs/fish-track.md`, seção 13). Nas regras, nos comentários e na documentação, use termos gerais ("animais"). Não mude textos de tela, nomes no código ou nos dados por causa disso sem um pedido explícito. Não implemente nada específico de camarão (bandeja de alimentação, salinidade, densidade por área) por suposição.
 - Métricas e números sobre o uso do app só podem ser citados se forem medidos; o app não coleta dados de uso.

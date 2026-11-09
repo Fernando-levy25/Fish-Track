@@ -6,7 +6,7 @@
 
 ## O que é
 
-O **Fish Track** é um sistema web para gerenciar cultivos de peixes, pensado para o pequeno e médio produtor que hoje controla a produção em cadernos, fichas ou planilhas.
+O **Fish Track** é um sistema web para gerenciar cultivos aquícolas (peixes e, em teste, camarão), pensado para o pequeno e médio produtor que hoje controla a produção em cadernos, fichas ou planilhas.
 
 Esse controle manual dificulta acompanhar a evolução do cultivo, comparar ciclos, perceber problemas a tempo e ter uma visão geral de vários tanques ao mesmo tempo. O Fish Track reúne tudo num só lugar e transforma os registros do dia a dia em indicadores, gráficos e alertas fáceis de entender.
 
@@ -14,7 +14,7 @@ O sistema é feito para ser **simples**: o produtor informa só o que mede, o si
 
 ## Diferenciais
 
-* **Qualquer espécie:** tilápia, tambaqui, pintado ou outra; todos os tanques usam a mesma estrutura.
+* **Qualquer espécie:** a espécie é só uma identificação, e todos os tanques usam a mesma estrutura. Validado com fontes de piscicultura; em teste com camarão.
 * **Funciona sem internet:** depois de aberto uma vez, roda no celular, tablet ou computador, sem instalação.
 * **Visão de toda a produção:** a tela Hoje mostra o que fazer em cada tanque e, recolhida, a produção de todos eles.
 * **Os dados são do produtor:** não é preciso criar conta, e os dados podem ser exportados a qualquer momento.
@@ -24,13 +24,13 @@ O sistema é feito para ser **simples**: o produtor informa só o que mede, o si
 O uso segue um fluxo simples:
 
 1. **Tanque:** o produtor cadastra cada tanque, viveiro ou tanque-rede, com volume e capacidade.
-2. **Ciclo:** ao povoar um tanque, inicia um ciclo com a quantidade e o peso médio dos peixes. O ciclo termina na despesca.
+2. **Ciclo:** ao povoar um tanque, inicia um ciclo com a quantidade e o peso médio dos animais. O ciclo termina na despesca.
 3. **Registros:** durante o ciclo, anota o que mediu ou observou no dia. Todos os campos são opcionais:
    * ração fornecida e sobra, em kg ou g (com a ração sugerida pelo plano de alimentação do tanque);
    * mortos encontrados, com a causa provável, e natalidade;
    * observações.
    A **biometria** (pesar uma amostra a cada ~15 dias) é feita à parte, no painel "Fazer biometria" da página do tanque: amostra, pesos individuais (com o coeficiente de variação) ou só o peso médio. O app avisa quando ela atrasa.
-4. **Indicadores:** durante o ciclo o sistema estima a quantidade de peixes (o povoamento menos os mortos encontrados), biomassa, conversão alimentar (FCA), taxas de mortalidade e crescimento, densidade e capacidade utilizada.
+4. **Indicadores:** durante o ciclo o sistema estima a quantidade de animais (o povoamento menos os mortos encontrados), biomassa, conversão alimentar (FCA), taxas de mortalidade e crescimento, densidade e capacidade utilizada.
 5. **Alertas:** avisa quando algo pede atenção, como mortalidade elevada, ração acima do limite, peso abaixo do esperado, tanque perto da capacidade ou muitos dias sem registro.
 
 ## Telas
@@ -70,11 +70,11 @@ Esta é a primeira versão completa do sistema. Ela inclui:
 
 O app está sendo usado pelo laboratório com dados reais. Antes do teste entraram:
 
-* **Prompt 04:** biometria no tanque, unidades com seletor, plano de alimentação, tela Hoje, folha do dia e textos mais claros;
-* **Prompt 04.1:** proteção dos dados (dados ilegíveis, restauração de backup, exclusão de tanque e falta de espaço);
-* **Prompt 04.2:** conversão alimentar (FCA) correta logo depois de um povoamento por pesagem e alertas sem depender da preferência guardada na página.
+* biometria no tanque, unidades com seletor, plano de alimentação, tela Hoje, folha do dia e textos mais claros;
+* proteção dos dados (dados ilegíveis, restauração de backup, exclusão de tanque e falta de espaço);
+* conversão alimentar (FCA) correta logo depois de um povoamento por pesagem.
 
-Depois do teste, o retorno do laboratório orienta as mudanças de tela do Prompt 05. O formato dos dados está na versão 5, e os dados dos testadores são preservados em toda atualização.
+Depois do teste, o retorno do laboratório orienta as próximas mudanças de tela. O formato dos dados está na versão 5, e os dados dos testadores são preservados em toda atualização.
 
 ## 🛠️ Tecnologias
 

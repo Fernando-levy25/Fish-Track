@@ -29,11 +29,13 @@
 
 ## 1. Objetivo
 
-O **Fish Track** é um sistema web para **gerenciamento de cultivos de peixes**. Ele ajuda o produtor a acompanhar seus tanques, substituindo o controle feito em **cadernos, fichas ou planilhas** por uma plataforma única, que transforma os registros em indicadores e gráficos fáceis de entender.
+O **Fish Track** é um sistema web para **gerenciamento de cultivos aquícolas** (peixes e, em teste, camarão). Ele ajuda o produtor a acompanhar seus tanques, substituindo o controle feito em **cadernos, fichas ou planilhas** por uma plataforma única, que transforma os registros em indicadores e gráficos fáceis de entender.
 
 O foco é permitir que o produtor saiba, rapidamente, **como está cada tanque e como está a produção como um todo**.
 
 O sistema deve ser **simples, intuitivo e visual**.
+
+**Escopo:** o app nasceu para peixe e foi validado com fontes de piscicultura. O laboratório parceiro que o testa trabalha mais com camarão (carcinicultura), e o foco do produto (só camarão, ou peixe e camarão) ainda não foi decidido (seção 13). Por isso esta especificação usa termos gerais ("animais") nas regras e nos conceitos; os textos de tela citados entre aspas continuam como estão no app.
 
 ---
 
@@ -41,7 +43,7 @@ O sistema deve ser **simples, intuitivo e visual**.
 
 ### 2.1 Problema
 
-Durante o cultivo, o produtor precisa acompanhar periodicamente quantidade de peixes, peso médio, consumo de ração e mortalidade. Quando isso é feito à mão, fica difícil:
+Durante o cultivo, o produtor precisa acompanhar periodicamente quantidade de animais, peso médio, consumo de ração e mortalidade. Quando isso é feito à mão, fica difícil:
 
 - acompanhar a evolução do cultivo;
 - comparar períodos e ciclos;
@@ -66,7 +68,7 @@ A pesquisa de mercado (out/2026) confirmou que o problema é real:
 | **Aquicultura Certa** (Embrapa) | App Android gratuito | Concorrente mais próximo. Tanques, biometria, curva de crescimento, alimentação e relatórios. Começou só com tilápia e tambaqui. |
 | **Meu Pescado** | Startup (SC) | App offline e acompanhamento técnico. Também atua na comercialização. |
 | **AgroInova** (QFish / InovaPeixe) | Startup / ERP | Foco em ração e qualidade da água. ERP para grandes operações. |
-| **Aquabit, Aquaweb, Aquímetro, Blue Aqua** | Softwares nacionais | Mais voltados à carcinicultura. |
+| **Aquabit, Aquaweb, Aquímetro, Blue Aqua** | Softwares nacionais | Mais voltados à carcinicultura; concorrentes diretos se o foco for camarão. |
 | **Fishtalk** (AKVA), **Aquanetix** | Internacionais | Voltados a grandes empresas. |
 | **Fish Farm Monitor, Aqua Siri, Fidelaqua** | Apps de loja | Registro por viveiro, alguns com financeiro e funcionários. |
 
@@ -76,7 +78,7 @@ A pesquisa de mercado (out/2026) confirmou que o problema é real:
 
 ## 3. Público-alvo
 
-Pequeno e médio produtor que:
+Pequeno e médio produtor, e laboratórios de aquicultura, que:
 
 - controla o cultivo em caderno, fichas ou planilhas;
 - tem um ou vários tanques, de uma ou mais espécies;
@@ -87,7 +89,7 @@ Pequeno e médio produtor que:
 
 ## 4. Diferenciais
 
-1. **Qualquer espécie.** A espécie é só uma identificação, e todos os tanques usam a mesma estrutura de registros e indicadores.
+1. **Qualquer espécie, em teoria.** A espécie é só uma identificação, e todos os tanques usam a mesma estrutura de registros e indicadores. Validado com fontes de piscicultura; em teste com camarão.
 2. **Simples de verdade.** Não é um ERP. Um registro deve levar **menos de um minuto**, e a situação do tanque deve ser entendida **olhando a tela**.
 3. **Sem internet e em qualquer aparelho.** É web, roda no celular, tablet ou computador, sem instalação, e funciona offline.
 4. **Visão de toda a produção.** Um painel único compara todos os tanques.
@@ -117,6 +119,7 @@ Pequeno e médio produtor que:
 - Contas de usuário, login e sincronização em nuvem.
 - Integrações externas.
 - Campos específicos por espécie.
+- Escolher peixe ou camarão por tanque (vocabulário e indicadores adequados a cada um) está em discussão; ver seção 13.
 
 ---
 
@@ -127,11 +130,11 @@ Pequeno e médio produtor que:
 | Conceito | Descrição |
 |---|---|
 | **Tanque** | Estrutura física de cultivo (tanque, viveiro, tanque-rede). Existe independentemente de estar povoado. |
-| **Ciclo** | Período entre o povoamento e a despesca de um tanque. Um tanque pode ter vários ciclos ao longo do tempo. |
+| **Ciclo** | Período entre o povoamento (soltura dos animais jovens: alevinos ou pós-larvas) e a despesca de um tanque. Um tanque pode ter vários ciclos ao longo do tempo. |
 | **Registro** | Anotação feita em uma data, dentro de um ciclo, com o que o produtor mediu ou observou naquele dia. |
 | **Indicador** | Valor calculado a partir do ciclo e dos registros. Nunca é digitado. |
 | **Alerta** | Situação calculada que pede atenção, com base em limites configuráveis. |
-| **Biometria por amostragem** | A cada 15 a 30 dias, pesa-se uma amostra (em geral 50 a 100 peixes): peso médio = peso total da amostra ÷ peixes amostrados. A cada biometria, a ração é recalculada. |
+| **Biometria por amostragem** | A cada 15 a 30 dias, pesa-se uma amostra (em geral 50 a 100 animais): peso médio = peso total da amostra ÷ animais amostrados. A cada biometria, a ração é recalculada. |
 | **Tabela de arraçoamento** | Para cada faixa de peso, a taxa de ração (% da biomassa por dia) e o número de refeições. Ração do dia = biomassa × taxa ÷ 100, dividida pelas refeições. |
 
 **Princípio:** o produtor informa só o que mede (lote contado ou pesado, amostra da biometria, ração fornecida e sobra, mortos encontrados), e o sistema calcula o resto.
@@ -146,7 +149,7 @@ Pequeno e médio produtor que:
 
 A primeira tela responde "o que eu faço agora?". No computador, as tarefas ficam numa coluna larga ao lado dos tanques; no celular, tudo se empilha nesta ordem.
 
-- **Tarefas do dia** (`domain/tarefas.js`, seção 9.12), por urgência: todo alerta ativo vira tarefa ("Tanque 02 · 45 peixes mortos ontem"), com a ação do alerta (Ver tanque, Planejar despesca, Fazer biometria, Anotar); "Alimentar N tanques · X kg no total" com os tanques que têm ração sugerida e ainda não foram anotados hoje (tanque com alerta "sem registro" não entra de novo); biometrias previstas para hoje; lembretes de hoje e atrasados (selo "Atrasado"), com a caixa "Feito". As feitas descem para "Feito hoje". Lista vazia: "Nada pendente" e o próximo acontecimento ("Próxima biometria: Tanque 02, em 3 dias").
+- **Tarefas do dia** (`domain/tarefas.js`, seção 9.12), por urgência: todo alerta ativo vira tarefa ("Tanque 02 · 45 peixes mortos ontem"), com a ação do alerta (Ver tanque, Planejar despesca, Fazer biometria, Anotar); "Alimentar N tanques · X kg no total" com os tanques que têm ração sugerida e ainda não foram anotados hoje (tanque com alerta "sem registro" não entra de novo); biometrias previstas para hoje; lembretes de hoje e atrasados (selo "Atrasado"), com a caixa "Feito". As feitas descem para "Feito hoje". Lista vazia: "Nada pendente" e o próximo acontecimento ("Próxima biometria: Tanque 02, em 3 dias"). (Texto atual da tela, ainda escrito para peixe; ver seção 13.)
 - **Tanques em cultivo:** cartão compacto por tanque, com o estado (seção 9.12) e uma linha de motivo, a ração de hoje (ou o motivo de não haver sugestão) e uma ação.
 - **Primeiros passos** (sem nenhum tanque com cultivo): Cadastrar tanque → Povoar tanque → Escolher plano de alimentação → Anotar o primeiro dia, cada passo marcado quando feito.
 - **Produção** (recolhida, lembra se ficou aberta): os indicadores gerais com rótulos simples (os estimados com ≈), o gráfico com seletor de período e filtro por tanque, "Baixar imagem" e "Exportar relatório" (seção 7.12). Termos técnicos com o balão de ajuda (seção 11.6).
@@ -163,7 +166,7 @@ Em telas largas, coluna escura com a marca, o destaque "Anotar o dia" (seção 7
 
 ### 7.2 Tanques (`tanques.html`)
 
-- Lista de todos os tanques com o estado (seção 9.12) e a linha de motivo, espécie, peixes (≈), biomassa (≈), último registro e "Ver tanque".
+- Lista de todos os tanques com o estado (seção 9.12) e a linha de motivo, espécie, peixes (≈), biomassa (≈), último registro e "Ver tanque". (Texto atual da tela, ainda escrito para peixe; ver seção 13.)
 - Filtro por status (ativo, vazio, manutenção, arquivado). Sem filtro, a lista mostra todos menos os arquivados.
 - Botão **Novo tanque**.
 
@@ -173,8 +176,8 @@ Página própria de cada tanque, organizada em abas:
 
 - **Cabeçalho:** além de nome, espécie, volume, status e ações, a barra de andamento do ciclo: "Dia 84 de 180 · despesca prevista em 96 dias" (sem data prevista, só "84 dias de cultivo", sem barra).
 - **Resumo:** só fica em destaque o que ajuda a decidir algo durante o ciclo; nenhum cálculo de `indicadores.js` foi removido, muda só a exibição. Ordem (no celular, uma coluna nesta ordem; no computador, a ração numa coluna larga ao lado dos destaques e o acompanhamento em 3 colunas):
-  1. **Ração de hoje** (cartão principal): ração já registrada hoje, botão "+ Registrar alimentação" (registro com o tanque e a data de hoje) e aviso quando a última biometria tem mais de 30 dias. A ração sugerida por dia, por refeição e a faixa, com a barra do que já foi registrado, dependem da tabela de alimentação (Prompt 02, ainda não implementado); até lá, o cartão diz que a sugestão chega com ela.
-  2. **Destaques:** Peso médio (barra até o peso alvo, "381 g de 800 g · 48%", "Biometria em 17/10 · há 3 dias", em âmbar acima de 30 dias); Biomassa (estimada) ("+X kg nos últimos 7 dias", "≈ 2.434 peixes"); Capacidade (estimada) (barra de capacidade compacta da seção 9.8 e densidade).
+  1. **Ração de hoje** (cartão principal): a ração sugerida pelo plano de alimentação do tanque (seção 9.10), por dia e por refeição, com a faixa ou a porcentagem; "Registrado hoje: X de Y", com a barra do que já foi anotado; o plano usado, com "Ver plano"; e o botão "Anotar" (registro com o tanque e a data de hoje). Sem sugestão, o motivo e o link que resolve ("Sem plano de alimentação · Configurar"). Com a biometria atrasada pelo intervalo do tanque (seção 9.11), o aviso de que a sugestão pode estar desatualizada.
+  2. **Destaques:** Peso médio (barra até o peso alvo, "381 g de 800 g · 48%", "Biometria em 17/10 · há 3 dias", em âmbar acima de 30 dias); Biomassa (estimada) ("+X kg nos últimos 7 dias", "≈ 2.434 peixes"); Capacidade (estimada) (barra de capacidade compacta da seção 9.8 e densidade). (Texto atual da tela, ainda escrito para peixe; ver seção 13.)
   3. **Acompanhamento:** Mortalidade observada ("Últimos 7 dias: X%", "Real só na despesca"); FCA (estimada) ("X kg de ração consumida para Y kg de ganho", meta); Crescimento (g/dia entre as duas últimas biometrias, "Peso alvo em ~N dias (dd/mm)" com peso alvo e ganho positivo).
   4. **"Ver todos os indicadores"** (recolhido; lembra se ficou aberto, como preferência de tela): tabela com nome, valor e como é calculado, estimados marcados. Natalidade só aparece com nascimento registrado no ciclo.
   5. Gráficos, alertas e registros recentes, como antes.
@@ -195,7 +198,7 @@ Cria ou edita um tanque (nome, espécie, volume, capacidade máxima, status, obs
 
 ### 7.5 Formulário de ciclo (`ciclo-form.html`)
 
-- **Iniciar ciclo:** data de povoamento; "Como você vai informar o lote?" com **"Contei os peixes"** (quantidade + peso médio) ou **"Pesei o lote"** (biomassa do lote em kg + peso médio da amostra), RN21; peso alvo (opcional) e data prevista de despesca (opcional). O valor calculado aparece ao vivo abaixo dos campos: "Biomassa inicial: 10 kg" ou "≈ 2.471 peixes (estimado)".
+- **Iniciar ciclo:** data de povoamento; "Como você vai informar o lote?" com **"Contei os peixes"** (quantidade + peso médio) ou **"Pesei o lote"** (biomassa do lote em kg + peso médio da amostra), RN21; peso alvo (opcional) e data prevista de despesca (opcional). O valor calculado aparece ao vivo abaixo dos campos: "Biomassa inicial: 10 kg" ou "≈ 2.471 peixes (estimado)". (Texto atual da tela, ainda escrito para peixe; ver seção 13.)
 - **Iniciar ciclo:** com ciclo encerrado anterior, mostra a caixa "Último ciclo: sobrevivência de X%, FCA de Y, Z dias."
 - **Biomassa do lote** e **biomassa final** têm seletor kg · t, com a conversão visível abaixo do campo (seção 8.1).
 - **Registrar despesca:** data, **biomassa final** ("Peso total dos peixes despescados."), peso médio final ("Peso médio da amostra.") e quantidade despescada opcional ("Só se os peixes foram contados."), com RN19 e RN20. Encerra o ciclo e leva à página do tanque com o resumo do ciclo (seção 9.4.1).
@@ -208,7 +211,7 @@ Só a rotina do dia; a biometria tem painel próprio (seção 7.13).
 - Data (padrão: hoje; vindo da agenda, `registro.html?data=AAAA-MM-DD` preenche o dia escolhido, e uma data futura é ignorada);
 - Duas seções recolhíveis, abertas por padrão e opcionais (RN11 continua valendo):
   - **Alimentação:** ração fornecida e sobra (RN23), cada uma com seletor kg · g e a conversão visível ("= 0,5 kg"); a ração sugerida para hoje e o botão "Usar sugestão" (seção 9.10). Sem sugestão, o motivo e o link que resolve ("Sem plano de alimentação · Configurar").
-  - **Mortalidade:** mortos encontrados (com a ajuda "Peixes mortos vistos neste dia. O número real só é conhecido na despesca." e a quantidade estimada atual) e causa provável: Desconhecida, Manejo, Predação, Doença, Qualidade da água ou Outra.
+  - **Mortalidade:** mortos encontrados (com a ajuda "Peixes mortos vistos neste dia. O número real só é conhecido na despesca." e a quantidade estimada atual) e causa provável: Desconhecida, Manejo, Predação, Doença, Qualidade da água ou Outra. (Texto atual da tela, ainda escrito para peixe; ver seção 13.)
 - Aviso discreto: "Vai pesar os peixes? Use a Biometria do tanque" (link para `tanque.html?id=...&acao=biometria`).
 - Observações e, recolhida em "Mais campos", a natalidade (rara).
 - Se houver erro num campo de uma seção recolhida, a seção abre.
@@ -278,7 +281,7 @@ A biometria é feita a cada ~15 dias por amostragem, e não junto da rotina diá
 - **Como se chega:** botão "Fazer biometria" no cabeçalho e no cartão de peso do tanque, aba "Biometrias", ação do alerta "Biometria atrasada" e o quadro do dia da agenda. Endereço: `tanque.html?id=...&acao=biometria` (com `&data=AAAA-MM-DD` opcional, ou `&registro=ID` para editar). Não há item "Biometria" no menu.
 - **Topo:** faixa na cor do tanque, o **nome em destaque**, a espécie, o dia do ciclo e "Última biometria: 381 g em 09/10". Não há como trocar de tanque dentro do painel.
 - **Modos:**
-  - **Amostra** (padrão): data, peixes na amostra (já preenchido com o tamanho da última amostra do tanque), peso total da amostra (kg · g) e, em "Medir comprimento", o comprimento médio. "Pesei em partes" troca o peso total por uma lista de pesagens parciais (peixes e peso de cada uma), que o app soma.
+  - **Amostra** (padrão): data, peixes na amostra (já preenchido com o tamanho da última amostra do tanque), peso total da amostra (kg · g) e, em "Medir comprimento", o comprimento médio. "Pesei em partes" troca o peso total por uma lista de pesagens parciais (peixes e peso de cada uma), que o app soma. (Texto atual da tela, ainda escrito para peixe; ver seção 13.)
   - **Pesos individuais:** um peso por linha, em g (aceita colar de planilha). O app calcula peixes, total, média, menor e maior peso e o coeficiente de variação (seção 9.11), e guarda a lista em `biometria.pesosIndividuaisG` (RN26).
   - **"Já tenho o peso médio":** só o peso médio.
 - **Prévia ao vivo** (ao lado no computador, abaixo no celular): peso médio; comparação com a biometria anterior ("+48,2 g em 15 dias · 3,2 g/dia"); peso alvo ("800 g (68%)"); biomassa ≈ antes e depois; nova ração sugerida, se o tanque tiver plano. Nos pesos individuais, menor e maior peso e o CV com "Lote uniforme" (até 20%) ou "Lote desuniforme: considere classificar". Se o peso médio cair mais de 10% em relação à anterior, um aviso (não bloqueia): "O peso médio caiu em relação à última biometria. Confira os valores."
@@ -292,7 +295,7 @@ A biometria é feita a cada ~15 dias por amostragem, e não junto da rotina diá
 
 Na interface, "tabela de alimentação" / "arraçoamento" passou a se chamar **Plano de alimentação**; o termo técnico só aparece no texto de ajuda. Os nomes internos (`tabelasArracoamento`, `tabelaArracoamentoId`, `arracoamento.js`) ficaram. O editor (`js/ui/editor-plano.js`, num `<dialog>`) é o mesmo em Configurações e no formulário do tanque:
 
-- **Explicação no topo:** "O plano diz quanto de ração dar por dia, como uma porcentagem do peso total dos peixes no tanque. Exemplo: se o tanque tem 500 kg de peixe e o plano diz 3%, você dá 15 kg de ração por dia. Com 4 refeições, são 3,75 kg em cada."
+- **Explicação no topo:** "O plano diz quanto de ração dar por dia, como uma porcentagem do peso total dos peixes no tanque. Exemplo: se o tanque tem 500 kg de peixe e o plano diz 3%, você dá 15 kg de ração por dia. Com 4 refeições, são 3,75 kg em cada." (Texto atual da tela, ainda escrito para peixe; ver seção 13.)
 - **Dois tipos:** "Porcentagem fixa" (`tipo: "fixo"`: uma taxa e as refeições) e "Muda com o tamanho do peixe" (`tipo: "faixas"`).
 - **Faixas como frases:** "Peixes de 190 g a 225 g → 3,4% do peso total por dia, em 4 refeições", editadas com rótulos completos ("Peso dos peixes: de ___ g até ___ g", "Quanto dar por dia: ___ % do peso total do tanque", "Dividir em ___ refeições"). "Adicionar faixa" começa no "até" da faixa anterior.
 - **Régua** com as faixas lado a lado e o marcador "seus peixes estão aqui" no peso médio do simulador.
@@ -308,7 +311,7 @@ Relatório pronto para imprimir ou salvar em PDF, sem bibliotecas: o PDF sai da 
 - Na tela: uma folha branca, com a escolha do relatório ("Toda a produção" ou um tanque) e o botão "Imprimir ou salvar PDF" acima dela.
 - Na impressão: só a folha, em A4 com margens, sem menu nem botões; cores e fundos mantidos; cartões, gráficos e linhas da tabela não se dividem entre páginas. O título da página ("Fish Track - Relatório Tanque 01 - 2026-10-17") vira o nome sugerido do PDF.
 - Cabeçalho: logo, título e data de emissão.
-- **Relatório do tanque:** dados do tanque e do ciclo; indicadores com contexto (peixes e perdas, peso médio e alvo, biomassa e densidade, FCA e meta, mortalidade e limite, capacidade, crescimento, dias de cultivo); gráficos de peso, biomassa e mortalidade; alertas ativos; tabela com todos os registros do ciclo. Sem ciclo em andamento, mostra os dados do tanque e o resumo do último ciclo.
+- **Relatório do tanque:** dados do tanque e do ciclo; indicadores com contexto (peixes e perdas, peso médio e alvo, biomassa e densidade, FCA e meta, mortalidade e limite, capacidade, crescimento, dias de cultivo); gráficos de peso, biomassa e mortalidade; alertas ativos; tabela com todos os registros do ciclo. Sem ciclo em andamento, mostra os dados do tanque e o resumo do último ciclo. (Texto atual da tela, ainda escrito para peixe; ver seção 13.)
 - **Relatório da produção:** resumo (tanques em cultivo, peixes, biomassa, ração, mortalidade média, alertas), os tanques sem ciclo, um bloco por tanque em cultivo (indicadores, gráfico de biomassa e último registro) e todos os alertas.
 
 O conteúdo exato ainda será refinado depois dos primeiros testes com produtores (seção 13).
@@ -351,7 +354,7 @@ Os valores são sempre armazenados nestas unidades e convertidos apenas na exibi
   nome: "Tanque 01",
   especie: "Tilápia",
   volumeM3: 300,
-  densidadeMaximaKgM3: 4,      // kg de peixe por m³ de água; null = não definida
+  densidadeMaximaKgM3: 4,      // kg de animal por m³ de água; null = não definida
   tabelaArracoamentoId: null,  // plano de alimentação (config.tabelasArracoamento) ou null
   intervaloBiometriaDias: 15,  // biometria a cada N dias (RN25)
   status: "ativo",             // "ativo" | "vazio" | "manutencao" | "arquivado"
@@ -369,7 +372,7 @@ Os valores são sempre armazenados nestas unidades e convertidos apenas na exibi
   id: "uuid",
   tanqueId: "uuid",
   dataInicio: "2026-08-01",
-  modoPovoamento: "contagem",   // "contagem" (peixes contados) | "pesagem" (lote pesado)
+  modoPovoamento: "contagem",   // "contagem" (animais contados) | "pesagem" (lote pesado)
   quantidadeInicial: 2500,      // informada ou calculada (biomassa ÷ peso médio)
   pesoMedioInicialG: 5,
   biomassaInicialKg: 12.5,      // informada ou calculada (quantidade × peso médio)
@@ -378,7 +381,7 @@ Os valores são sempre armazenados nestas unidades e convertidos apenas na exibi
   dataDespesca: null,           // preenchida ao encerrar
   biomassaFinalKg: null,        // pesada na despesca (obrigatória ao encerrar)
   pesoMedioFinalG: null,        // peso médio da amostra na despesca
-  quantidadeDespescada: null,   // opcional: só se os peixes foram contados
+  quantidadeDespescada: null,   // opcional: só se os animais foram contados
   status: "ativo"               // "ativo" | "encerrado"
 }
 ```
@@ -523,24 +526,24 @@ Regra: o app **nunca** troca dados que não conseguiu ler por uma base vazia gra
 - **RN07.** Quantidade inicial e peso médio inicial são obrigatórios e maiores que zero, e a quantidade é inteira. A data do povoamento não pode ser futura nem anterior à última despesca do tanque. O peso alvo, se informado, deve ser maior que o peso inicial, e a despesca prevista deve ser depois do povoamento.
 - **RN08.** Registrar a despesca encerra o ciclo, e o tanque volta a `vazio`.
 - **RN09.** A data de despesca não pode ser anterior à data de início nem ao último registro, nem futura.
-- **RN19.** A despesca fecha o ciclo pelo que foi pesado: **biomassa final (kg)** e **peso médio final (g)** são obrigatórios e maiores que zero. A **quantidade despescada** é opcional (só se os peixes foram contados), inteira e ≥ 0.
+- **RN19.** A despesca fecha o ciclo pelo que foi pesado: **biomassa final (kg)** e **peso médio final (g)** são obrigatórios e maiores que zero. A **quantidade despescada** é opcional (só se os animais foram contados), inteira e ≥ 0.
 - **RN20.** Com a quantidade despescada informada, `quantidade × peso médio` não pode diferir mais de 20% da biomassa final. Se diferir, a despesca é recusada com a mensagem "Os valores não batem: confira a biomassa, o peso médio ou a quantidade." no campo da quantidade.
 
 ### 9.3 Registros
 
 - **RN10.** Todo registro pertence a um ciclo ativo. Não há registro em tanque vazio. Registros de ciclos encerrados ficam só para consulta: não podem ser alterados nem excluídos.
-- **RN11.** Apenas a **data** é obrigatória, mas pelo menos um campo de medição (peso médio, ração, mortos encontrados, natalidade) ou observação deve ser preenchido. Não há contagem de peixes durante o ciclo: na prática ela não é feita.
+- **RN11.** Apenas a **data** é obrigatória, mas pelo menos um campo de medição (peso médio, ração, mortos encontrados, natalidade) ou observação deve ser preenchido. Não há contagem de animais durante o ciclo: na prática ela não é feita.
 - **RN12.** A data não pode ser futura nem anterior ao início do ciclo.
 - **RN13.** Valores numéricos não podem ser negativos. Contagens são inteiras, e o peso médio, se informado, é maior que zero.
-- **RN14.** Os mortos encontrados de um registro não podem passar da quantidade **estimada** de peixes naquela data. A regra é conferida em todos os registros do ciclo a cada inclusão, alteração ou exclusão, porque um registro muda o estoque estimado dos que vêm depois dele.
+- **RN14.** Os mortos encontrados de um registro não podem passar da quantidade **estimada** de animais naquela data. A regra é conferida em todos os registros do ciclo a cada inclusão, alteração ou exclusão, porque um registro muda o estoque estimado dos que vêm depois dele.
 - **RN15.** Pode haver mais de um registro na mesma data. Os valores de ração, mortalidade e natalidade são somados.
 
-- **RN21.** No povoamento, o lote é informado de um de dois jeitos: **contado** (quantidade inteira > 0 e peso médio > 0; a biomassa inicial é calculada) ou **pesado** (biomassa do lote > 0 e peso médio da amostra > 0; a quantidade é calculada, `biomassa × 1000 ÷ peso médio`, arredondada, e precisa dar pelo menos 1 peixe).
-- **RN22.** Na biometria por amostra, peixes na amostra (inteiro) e peso da amostra vêm juntos e são maiores que zero; o comprimento médio, se informado, é maior que zero. A amostra não pode passar da quantidade estimada no tanque naquela data. O peso médio do registro é `peso da amostra ÷ peixes na amostra`. Continua valendo informar só o peso médio.
+- **RN21.** No povoamento, o lote é informado de um de dois jeitos: **contado** (quantidade inteira > 0 e peso médio > 0; a biomassa inicial é calculada) ou **pesado** (biomassa do lote > 0 e peso médio da amostra > 0; a quantidade é calculada, `biomassa × 1000 ÷ peso médio`, arredondada, e precisa dar pelo menos 1 animal).
+- **RN22.** Na biometria por amostra, animais na amostra (inteiro) e peso da amostra vêm juntos e são maiores que zero; o comprimento médio, se informado, é maior que zero. A amostra não pode passar da quantidade estimada no tanque naquela data. O peso médio do registro é `peso da amostra ÷ animais na amostra`. Continua valendo informar só o peso médio.
 - **RN23.** A sobra de ração é ≥ 0, só pode ser informada com a ração fornecida e não pode ser maior que ela. A causa da mortalidade é uma da lista e só pode ser informada com mortos encontrados.
 - **RN24.** Num plano de alimentação, o nome é obrigatório (até 80 caracteres). No plano **fixo**, a taxa vai de 0,1 a 20% do peso total por dia e as refeições de 1 a 12. No plano **por faixas**, há pelo menos uma faixa; em cada uma, "peso até" é maior que "peso de", com a mesma taxa e refeições; as faixas não se sobrepõem (podem encostar, como 190–225 e 225–265). Os erros aparecem no campo da faixa, em linguagem simples. O tanque, se tiver plano, aponta para um existente.
 - **RN25.** O intervalo da biometria do tanque é um número inteiro de 1 a 90 dias (padrão 15).
-- **RN26.** Na biometria por pesos individuais, há pelo menos 2 pesos, todos maiores que zero; deles saem os peixes na amostra (quantidade) e o peso da amostra (soma).
+- **RN26.** Na biometria por pesos individuais, há pelo menos 2 pesos, todos maiores que zero; deles saem os animais na amostra (quantidade) e o peso da amostra (soma).
 
 ### 9.3.1 Lembretes
 
@@ -552,11 +555,11 @@ Regra: o app **nunca** troca dados que não conseguiu ler por uma base vazia gra
 
 Todos os indicadores são calculados a partir do ciclo e dos registros, ordenados por data.
 
-**Durante o ciclo, a quantidade é estimada.** Não dá para contar os peixes no viveiro, e muitos mortos não são vistos: os mortos anotados são uma observação parcial. Por isso a quantidade, a biomassa, a FCA e a capacidade do ciclo ativo são **estimativas**, e as telas dizem isso nos rótulos: "Peixes (estimado)", "Biomassa (estimada)", "FCA (estimada)", "Capacidade (estimada)", "Mortalidade observada" (com "Real só na despesca") e "Sobrevivência estimada". Na página do tanque, um botão "i" ao lado dos indicadores explica a estimativa. Os valores reais só saem na despesca (seção 9.4.1).
+**Durante o ciclo, a quantidade é estimada.** Não dá para contar os animais no viveiro, e muitos mortos não são vistos: os mortos anotados são uma observação parcial. Por isso a quantidade, a biomassa, a FCA e a capacidade do ciclo ativo são **estimativas**, e as telas dizem isso nos rótulos: "Peixes (estimado)", "Biomassa (estimada)", "FCA (estimada)", "Capacidade (estimada)", "Mortalidade observada" (com "Real só na despesca") e "Sobrevivência estimada". Na página do tanque, um botão "i" ao lado dos indicadores explica a estimativa. Os valores reais só saem na despesca (seção 9.4.1). (Texto atual da tela, ainda escrito para peixe; ver seção 13.)
 
 | Indicador | Fórmula |
 |---|---|
-| **Quantidade de peixes (estimada)** | `quantidadeInicial − mortos encontrados + natalidade`, acumulados até a data. |
+| **Quantidade de animais (estimada)** | `quantidadeInicial − mortos encontrados + natalidade`, acumulados até a data. |
 | **Peso médio atual** | Último `pesoMedioG` informado. Se nenhum, usa `pesoMedioInicialG`. |
 | **Biomassa (kg)** | `quantidade × pesoMedio / 1000` |
 | **Ração consumida (kg)** | Soma de `racaoKg − racaoSobraKg` no ciclo. É a consumida que entra na FCA e nos totais de ração. |
@@ -570,15 +573,17 @@ Todos os indicadores são calculados a partir do ciclo e dos registros, ordenado
 | **Densidade (kg/m³)** | `biomassa / volumeM3` |
 | **Carga máxima (kg)** | `densidadeMaximaKgM3 × volumeM3`. Derivada, nunca armazenada. |
 | **Capacidade utilizada (%)** | `biomassa / cargaMaxima × 100`. Sem densidade máxima, não é calculada. |
-| **Densidade de povoamento (peixes/m³)** | `quantidadeInicial / volumeM3`. Informativo. |
+| **Densidade de povoamento (animais/m³)** | `quantidadeInicial / volumeM3`. Informativo. |
 | **Projeção até o limite (dias)** | `(cargaMaxima − biomassa) / ganho de biomassa por dia entre as duas últimas pesagens`. Só aparece com ganho positivo e resultado entre 1 e 180 dias. Não é previsão: estende o ritmo recente. |
 | **Dias de cultivo** | Dias entre `dataInicio` e hoje (ou `dataDespesca`). |
 | **TCE (%/dia)** | `(ln pesoMedioAtual − ln pesoMedioInicial) ÷ dias do início até a última pesagem × FATOR_TCE` |
 | **Fator de condição K** | `FATOR_K × peso médio (g) ÷ comprimento médio (cm)³`, da última biometria com comprimento. Só aparece com comprimento. |
-| **Mortalidade da semana (%)** | mortos encontrados nos últimos 7 dias ÷ peixes estimados no início da semana × 100 |
+| **Mortalidade da semana (%)** | mortos encontrados nos últimos 7 dias ÷ animais estimados no início da semana × 100 |
 | **Dias para o peso alvo** | `(pesoAlvoG − peso atual) ÷ crescimento entre as duas últimas pesagens`, contados a partir da última; só com peso alvo e ganho positivo, com a data estimada. |
 
 `FATOR_TCE` e `FATOR_K` valem 100 e ficam em constantes em `indicadores.js` (seção 13).
+
+Fontes de piscicultura (tilápia). Para camarão, ainda não validadas.
 
 **Referências das fórmulas** (citadas também em comentário junto de cada fórmula em `indicadores.js`):
 
@@ -623,10 +628,10 @@ Na despesca a biomassa é pesada, e daí saem os números reais do ciclo, que se
 | Cabeçalho | dias de cultivo e andamento até a despesca prevista |
 | Destaque | peso médio (com o peso alvo), biomassa (estimada), capacidade (estimada) com densidade |
 | Acompanhamento | mortalidade observada (e a dos últimos 7 dias), FCA (estimada) com ração e ganho, crescimento entre as duas últimas biometrias |
-| Só em "Ver todos" | peixes (estimado), sobrevivência estimada, ganho de biomassa, ração acumulada, crescimento no ciclo, densidade, densidade de povoamento, natalidade (só com nascimentos) |
+| Só em "Ver todos" | peixes (estimado), sobrevivência estimada, ganho de biomassa, ração acumulada, crescimento no ciclo, densidade, densidade de povoamento, natalidade (só com nascimentos) (Texto atual da tela, ainda escrito para peixe; ver seção 13.) |
 | Resumo da despesca | sobrevivência e mortalidade reais, FCA final, ganho de peso diário, produtividade |
 
-As leituras de curto prazo (ganho de biomassa e mortalidade dos últimos 7 dias, ração de hoje, dias desde a biometria, data prevista do peso alvo) vêm de `calcularAcompanhamento`, em `indicadores.js`. O peso alvo é projetado no ritmo das duas últimas biometrias, a partir da última. TCE e fator de condição entram em "Ver todos" quando a biometria tiver os dados do Prompt 02.
+As leituras de curto prazo (ganho de biomassa e mortalidade dos últimos 7 dias, ração de hoje, dias desde a biometria, data prevista do peso alvo) vêm de `calcularAcompanhamento`, em `indicadores.js`. O peso alvo é projetado no ritmo das duas últimas biometrias, a partir da última. TCE e fator de condição entram em "Ver todos" quando houver os dados (o fator K só com comprimento médio na biometria).
 
 **Tela Hoje (Produção):** os totais somam os tanques com ciclo ativo. As taxas gerais são médias ponderadas pela quantidade inicial de cada ciclo.
 
@@ -677,7 +682,7 @@ Na agenda geral, tanques arquivados ficam de fora. A despesca prevista só apare
 
 ### 9.8 Barra de capacidade
 
-O limite real de um tanque é o peso de peixe por volume de água, e não o número de peixes: a carga cresce com o peixe, mesmo quando a quantidade cai. A barra mostra a biomassa atual contra a carga máxima, em três lugares: cartões da tela Hoje, lista de tanques e página do tanque.
+O limite real de um tanque é o peso de animal por volume de água, e não o número de animais: a carga cresce com o animal, mesmo quando a quantidade cai. A barra mostra a biomassa atual contra a carga máxima, em três lugares: cartões da tela Hoje, lista de tanques e página do tanque.
 
 | Faixa | Cor da água | Rótulo |
 |---|---|---|
@@ -709,7 +714,7 @@ O botão "Baixar imagem" (gráfico da Produção na tela Hoje e gráficos do tan
 
 Onde aparece: no registro (seção Alimentação, com "Usar sugestão", que preenche a ração fornecida), no cartão "Ração de hoje" da página do tanque ("19,4 kg por dia · 4 refeições de 4,85 kg · faixa 520–565 g (1,9%)", com "Registrado hoje: 12 kg de 19,4 kg" e a barra) e nos cartões da lista de tanques ("Ração sugerida").
 
-**Ideia para depois (não implementada):** sugerir a quantidade de alevinos ao iniciar o ciclo pela mortalidade do ciclo anterior: quantidade a povoar = quantidade final desejada × (1 + mortalidade esperada). Exemplo da Embrapa: 5.000 peixes com 4% → 5.200 alevinos.
+**Ideia para depois (não implementada):** sugerir a quantidade de animais jovens (alevinos ou pós-larvas) ao iniciar o ciclo pela mortalidade do ciclo anterior: quantidade a povoar = quantidade final desejada × (1 + mortalidade esperada). Exemplo da Embrapa: 5.000 peixes com 4% → 5.200 alevinos.
 
 ---
 
@@ -724,7 +729,7 @@ Onde aparece: no registro (seção Alimentação, com "Usar sugestão", que pree
 
 - **Estado** (`domain/estado.js`, `calcularEstadoTanque`): vem só dos alertas da seção 9.5, sem critério novo, para que estado, tarefas e página de alertas nunca se contradigam. Algum alerta de gravidade alta: **Agir agora**; qualquer outro alerta: **Atenção**; nenhum: **Tudo certo**. Sem ciclo: **Vazio**, **Em manutenção** ou **Arquivado**. O motivo é o `resumo` do alerta principal (o alto, ou o primeiro), com "(+N)" quando há outros. Estado sempre com ícone e texto, nunca só cor.
 - **Tarefas** (`domain/tarefas.js`, `gerarTarefasDoDia`, pura): ordem de urgência alerta alto → alerta médio → alimentar → lembrete atrasado → alerta baixo → biometria de hoje → lembrete. Quando duas origens dizem a mesma coisa, fica uma tarefa só (biometria atrasada é só o alerta; tanque sem registro não entra em "Alimentar").
-- Cada alerta tem um `resumo` de uma linha ("45 peixes mortos ontem", "Capacidade em 82%", "Biometria atrasada há 3 dias"), usado no estado e nas tarefas.
+- Cada alerta tem um `resumo` de uma linha ("45 peixes mortos ontem", "Capacidade em 82%", "Biometria atrasada há 3 dias"), usado no estado e nas tarefas. (Texto atual da tela, ainda escrito para peixe; ver seção 13.)
 
 ---
 
@@ -850,7 +855,7 @@ fish-track/
 
 - HTML semântico: `header`, `nav`, `main`, `section`, `button`, `label`.
 - Todo campo de formulário tem `label` associado.
-- Campos numéricos usam `type="text"` com `inputmode="decimal"` (valores com casas decimais) ou `inputmode="numeric"` (contagens de peixes), para abrir o teclado numérico no celular. Não use `type="number"`: dependendo do navegador e do teclado, ele descarta a vírgula antes de o JavaScript ver o valor ("2,5" vira 25). A conversão é feita por `paraNumero` (`core/utils.js`), no padrão brasileiro: vírgula decimal e ponto de milhar. Os campos também levam `autocomplete="off"` e `pattern` (`[0-9]*[.,]?[0-9]*` para decimais, `[0-9]*` para contagens), que ajuda o teclado do iOS; a validação continua no domínio.
+- Campos numéricos usam `type="text"` com `inputmode="decimal"` (valores com casas decimais) ou `inputmode="numeric"` (contagens de animais), para abrir o teclado numérico no celular. Não use `type="number"`: dependendo do navegador e do teclado, ele descarta a vírgula antes de o JavaScript ver o valor ("2,5" vira 25). A conversão é feita por `paraNumero` (`core/utils.js`), no padrão brasileiro: vírgula decimal e ponto de milhar. Os campos também levam `autocomplete="off"` e `pattern` (`[0-9]*[.,]?[0-9]*` para decimais, `[0-9]*` para contagens), que ajuda o teclado do iOS; a validação continua no domínio.
 - O `name` de cada campo é igual à propriedade do modelo de dados (`pesoMedioG`, `racaoKg`), e cada campo aponta para sua mensagem de erro com `aria-describedby`.
 - Ganchos para o JavaScript usam `data-campo` e `data-indicador` com o nome da propriedade em `camelCase`, nunca classes de estilo.
 - O link da página atual no menu é marcado com `aria-current="page"`.
@@ -885,7 +890,7 @@ Sete princípios para toda tela nova:
 
 1. A primeira tela diz o que fazer agora, não só números.
 2. Cada tanque tem um estado em uma palavra, com ícone, e uma linha de motivo.
-3. Valor estimado leva ≈, e a página tem a legenda "≈ estimado: os peixes não são contados durante o ciclo".
+3. Valor estimado leva ≈, e a página tem a legenda "≈ valor estimado: os números reais saem na despesca.".
 4. Nenhum traço solto: valor ausente diz o motivo e a ação que resolve.
 5. Uma ação principal por tela; o resto em "Mais ações".
 6. Termo técnico vem com balão de ajuda (frase + exemplo, `ui/glossario.js`, `criarTermo`).
@@ -897,7 +902,7 @@ Textos: frases curtas, voz ativa, verbo no início dos botões, todo número com
 
 ### Fase 0 — Preparação
 
-- [ ] Conversar com 3 a 5 piscicultores para validar indicadores, campos do registro e limites dos alertas.
+- [ ] Conversar com 3 a 5 produtores (peixe e camarão) para validar indicadores, campos do registro e limites dos alertas.
 - [ ] Definir identidade visual básica (nome, cores, ícone). Cores e ícone provisórios já aplicados.
 - [x] Criar repositório e estrutura de pastas.
 
@@ -942,7 +947,8 @@ Textos: frases curtas, voz ativa, verbo no início dos botões, todo número com
 
 - Contas de usuário e sincronização em nuvem.
 - Gestão de custos.
-- Parâmetros de qualidade da água.
+- Qualidade da água (oxigênio, pH, temperatura; para camarão, também salinidade e alcalinidade).
+- Adaptação para camarão: vocabulário, ração por bandeja, densidade por área, salinidade (depende do teste e da decisão de foco).
 - Relatórios em PDF.
 
 ---
@@ -952,14 +958,20 @@ Textos: frases curtas, voz ativa, verbo no início dos botões, todo número com
 | Ponto | Decisão provisória | Validar com |
 |---|---|---|
 | Limites padrão dos alertas | Valores da seção 9.5 | Produtores / técnicos |
-| Incluir o peso dos peixes mortos no ganho de biomassa da FCA | Não incluir no MVP | Técnicos |
+| Incluir o peso dos animais mortos no ganho de biomassa da FCA | Não incluir no MVP | Técnicos |
 | Campo de natalidade é relevante para a maioria dos produtores | Manter como opcional | Produtores |
-| Registrar parâmetros da água (oxigênio, pH, temperatura) | Fora do MVP | Produtores |
+| Registrar parâmetros da água (oxigênio, pH, temperatura) | Fora do MVP; para camarão, incluir salinidade e alcalinidade | Produtores |
 | Corrigir ou cancelar um ciclo iniciado com dados errados | Não previsto no MVP: hoje só é possível registrar a despesca | Produtores |
 | Conteúdo exato dos relatórios em PDF | O da seção 7.12 | Produtores |
-| Tabela de alimentação padrão por espécie | Só o modelo Embrapa de tilápia em tanque-rede, como exemplo; cada produtor cria a sua | Laboratório de piscicultura |
-| Limite de CV para "lote uniforme" | 20% (`LIMITE_CV_UNIFORME_PCT`) | Laboratório de piscicultura |
-| Intervalo padrão da biometria | 15 dias, ajustável por tanque (RN25) | Laboratório de piscicultura |
-| Unidades preferidas (inclusive se a tonelada é usada) | Biomassa em kg ou t, ração em kg ou g; padrão kg e kg | Laboratório de piscicultura |
-| Escala da TCE e do fator K (com ou sem × 100) | Com × 100, em `FATOR_TCE` e `FATOR_K` | Laboratório de piscicultura |
-| Fórmulas do fechamento do ciclo (seção 9.4.1) | As da tabela, com a quantidade final estimada pela biomassa quando não houver contagem | Laboratório de piscicultura |
+| Tabela de alimentação padrão por espécie | Só o modelo Embrapa de tilápia em tanque-rede, como exemplo; cada produtor cria a sua | Laboratório parceiro (carcinicultura) |
+| Limite de CV para "lote uniforme" | 20% (`LIMITE_CV_UNIFORME_PCT`) | Laboratório parceiro (carcinicultura) |
+| Intervalo padrão da biometria | 15 dias, ajustável por tanque (RN25) | Laboratório parceiro (carcinicultura) |
+| Unidades preferidas (inclusive se a tonelada é usada) | Biomassa em kg ou t, ração em kg ou g; padrão kg e kg | Laboratório parceiro (carcinicultura) |
+| Escala da TCE e do fator K (com ou sem × 100) | Com × 100, em `FATOR_TCE` e `FATOR_K` | Laboratório parceiro (carcinicultura) |
+| Fórmulas do fechamento do ciclo (seção 9.4.1) | As da tabela, com a quantidade final estimada pela biomassa quando não houver contagem | Laboratório parceiro (carcinicultura) |
+| Foco do produto: só camarão, ou peixe e camarão | Em aberto; documentação em termos gerais, telas ainda em peixe | Fernando, depois do teste |
+| Vocabulário das telas ("peixes", "alevinos") | Mantido até a decisão de foco | Laboratório |
+| Fator de condição (K) para camarão | Fórmula de peixe; avaliar se faz sentido | Laboratório |
+| Densidade por volume (kg/m³) ou por área (animais/m², kg/ha) | Só por volume | Laboratório |
+| Ração ajustada por bandeja de alimentação (camarão) | Não existe no app | Laboratório |
+| Modelos prontos (plano Embrapa de tilápia) usados com camarão | Aviso "vale para tilápia" no modelo | Laboratório |
