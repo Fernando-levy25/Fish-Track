@@ -633,6 +633,12 @@
     font-size: var(--texto-1);
 }
 
+/* FCA com poucos dias de ração anotada (seção 9.4): aviso em âmbar. */
+.resumo-ciclo__apoio--atencao {
+    color: var(--cor-atencao);
+    font-weight: 600;
+}
+
 .resumo-ciclo__valor {
     margin: 0;
     font-weight: 700;

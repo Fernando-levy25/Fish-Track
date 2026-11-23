@@ -129,6 +129,65 @@ describe('Prompt 05, A3: "Alimentei conforme o plano" grava a sugestão exata', 
     });
 });
 
+describe('Prompt 05, B1: sem alerta de peso abaixo do esperado', () => {
+    it('o começo lento do ciclo não gera alerta de peso', () => {
+        const id = criarViveiro();
+        // Esperado pela linha reta no dia 28: 4,6 g; pesou 1,04 g.
+        biometrias.salvarBiometria({ tanqueId: id, data: '2026-11-23', biometria: { peixesAmostra: 50, pesoAmostraG: 52 } });
+        assert.deepEqual(doTipo(analisar(id).alertas, 'peso'), []);
+    });
+});
+
+describe('Prompt 05, B3 e B4: FCA sem ração e cobertura da ração', () => {
+    const ciclo = { dataInicio: '2026-10-26', quantidadeInicial: 10000, pesoMedioInicialG: 0.01, dataDespesca: null };
+    const tanque = { volumeM3: 10, densidadeMaximaKgM3: 4 };
+    const r = (data, campos) => ({ data, criadoEm: data, pesoMedioG: null, racaoKg: null, racaoSobraKg: null, mortalidade: null, natalidade: null, ...campos });
+    it('com ganho e nenhuma ração anotada, a FCA é null (não "0,00")', () => {
+        const registros = [r('2026-11-23', { pesoMedioG: 1.04 })];
+        const indicadores = ind.calcularIndicadores({ tanque, ciclo, registros, hoje: HOJE });
+        assert.ok(indicadores.ganhoBiomassaKg > 0);
+        assert.equal(indicadores.fca, null);
+        assert.equal(ind.calcularSerieDiaria(ciclo, registros, HOJE, HOJE)[0].fca, null);
+        assert.equal(ind.calcularResumoPeriodo([{ tanque, ciclo, registros }], { dataInicio: '2026-11-20', dataFim: HOJE }).fca.geral, null);
+        const encerrado = { ...ciclo, biomassaInicialKg: 0.1, dataDespesca: HOJE, biomassaFinalKg: 9, pesoMedioFinalG: 1.1, quantidadeDespescada: null };
+        assert.equal(ind.calcularResultadoCiclo({ tanque, ciclo: encerrado, registros }).fcaFinal, null);
+    });
+    it('ração anotada em 2 de 28 dias: 7,1%, com aviso; completa, sem aviso', () => {
+        const registros = [r('2026-11-22', { racaoKg: 0.5 }), r('2026-11-23', { racaoKg: 0.6 }), r('2026-11-23', { mortalidade: 1 })];
+        const cobertura = ind.calcularCoberturaRacao({ ciclo, registros, ate: HOJE });
+        assert.deepEqual([cobertura.diasComRacao, cobertura.diasCiclo, cobertura.baixa], [2, 28, true]);
+        assert.equal(format.formatarPercentual(cobertura.percentual), '7,1%');
+        const todos = Array.from({ length: 28 }, (_, indice) => r(`2026-${indice < 5 ? '10' : '11'}-${String(indice < 5 ? 27 + indice : indice - 4).padStart(2, '0')}`, { racaoKg: 0.1 }));
+        const completa = ind.calcularCoberturaRacao({ ciclo, registros: todos, ate: HOJE });
+        assert.deepEqual([completa.diasComRacao, completa.percentual, completa.baixa], [28, 100, false]);
+        assert.equal(ind.COBERTURA_MINIMA_RACAO_PCT, 80);
+    });
+    it('o resultado do ciclo traz a cobertura da ração', () => {
+        const encerrado = { ...ciclo, biomassaInicialKg: 0.1, dataDespesca: HOJE, biomassaFinalKg: 9, pesoMedioFinalG: 1.1, quantidadeDespescada: null };
+        const registros = [r('2026-11-22', { racaoKg: 0.5, racaoSobraKg: 0.05, mortalidade: 400 }), r('2026-11-23', { racaoKg: 0.6, racaoSobraKg: 0.02, mortalidade: 3 })];
+        const resultado = ind.calcularResultadoCiclo({ tanque, ciclo: encerrado, registros });
+        assert.deepEqual([resultado.coberturaRacao.diasComRacao, resultado.coberturaRacao.diasCiclo], [2, 28]);
+        assert.equal(resultado.quantidadeFinal, 8182);
+    });
+});
+
+describe('Prompt 05, B5 e B6: datas de projeção e ciclos encerrados', () => {
+    it('data de outro ano mostra o ano', () => {
+        assert.equal(format.formatarDataProjecao('2026-12-08', HOJE), '08/12');
+        assert.equal(format.formatarDataProjecao('2027-12-08', HOJE), '08/12/2027');
+    });
+    it('lista os ciclos encerrados no período, do mais recente ao mais antigo', () => {
+        const id = criarViveiro();
+        registros.salvarRegistro({ tanqueId: id, data: '2026-11-22', racaoKg: 0.5, racaoSobraKg: 0.05, mortalidade: 400 });
+        ciclos.registrarDespesca(id, { dataDespesca: '2026-11-23', biomassaFinalKg: 9, pesoMedioFinalG: 1.1 });
+        const lista = ciclos.listarCiclosEncerrados({ inicio: '2026-11-01', fim: HOJE });
+        assert.equal(lista.length, 1);
+        assert.equal(lista[0].tanque.nome, 'Viveiro 01');
+        assert.equal(Math.round(lista[0].resultado.sobrevivenciaReal * 10) / 10, 81.8);
+        assert.deepEqual(ciclos.listarCiclosEncerrados({ inicio: '2026-11-24', fim: '2026-12-31' }), []);
+    });
+});
+
 describe('Prompt 05, A5: alerta de ração coerente com o plano', () => {
     const anotar = (id, racaoKg) => {
         biometrias.salvarBiometria({ tanqueId: id, data: '2026-11-23', biometria: { peixesAmostra: 50, pesoAmostraG: 52 } });

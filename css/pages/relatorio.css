@@ -128,6 +128,12 @@
     font-size: var(--texto-1);
 }
 
+/* FCA com poucos dias de ração anotada (seção 9.4). */
+.relatorio__apoio--atencao {
+    color: var(--cor-atencao);
+    font-weight: 600;
+}
+
 .relatorio__indicadores--compacto {
     grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
     gap: var(--espaco-2);

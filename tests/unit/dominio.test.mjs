@@ -471,7 +471,10 @@ describe('domain/indicadores (seção 9.4) com valores calculados à mão', () =
         // Semana de 27/01 a 03/02: só o registro de 31/01 (20 mortos, 30 g → 60 g),
         // sobre os 987 peixes estimados no início da semana.
         perto(acompanhamento.taxaMortalidadeSemana, (20 / 987) * 100);
-        perto(acompanhamento.ganhoBiomassaSemanaKg, 967 * 0.06 - 987 * 0.03);
+        // Prompt 05, B2: o ganho é desde a pesagem anterior (11/01: 990 × 30 g), e não
+        // dos últimos 7 dias (antes: 967 × 0,06 − 987 × 0,03).
+        perto(acompanhamento.ganhoBiomassaDesdePesagemKg, 967 * 0.06 - 990 * 0.03);
+        assert.equal(acompanhamento.dataPesagemAnterior, '2026-01-11');
         assert.equal(acompanhamento.racaoHojeKg, 0);
         assert.equal(acompanhamento.diasDesdePesagem, 3);
         perto(acompanhamento.percentualPesoAlvo, 50);
@@ -558,12 +561,12 @@ describe('domain/alertas (seção 9.5)', () => {
         assert.deepEqual(avaliar([r(dia(-1), { natalidade: 799 })]), []);
         assert.deepEqual(avaliar([r(dia(-1), { natalidade: 4000 })], { t: { ...tanque, densidadeMaximaKgM3: null } }), [], 'sem densidade máxima não avalia');
     });
-    it('peso abaixo de 85% do esperado na data da pesagem', () => {
+    it('peso abaixo do esperado não gera alerta sem curva de crescimento (Prompt 05, B1)', () => {
+        // Antes: 16,9 g, abaixo de 85% do esperado pela linha reta, gerava "peso".
         const comAlvo = { ...ciclo, pesoAlvoG: 210, dataPrevistaDespesca: dia(180) };
-        assert.deepEqual(avaliar([r(dia(-10), { pesoMedioG: 17 }), r(dia(-1), { racaoKg: 0.1 })], { c: comAlvo }), []);
-        assert.deepEqual(avaliar([r(dia(-10), { pesoMedioG: 16.9 }), r(dia(-1), { racaoKg: 0.1 })], { c: comAlvo }), ['peso']);
-        assert.deepEqual(avaliar([r(dia(-1), { racaoKg: 0.1 })], { c: comAlvo }), [], 'sem pesagem não compara');
-        assert.equal(alertas.calcularPesoEsperado(comAlvo, dia(500)), 210);
+        assert.deepEqual(avaliar([r(dia(-10), { pesoMedioG: 16.9 }), r(dia(-1), { racaoKg: 0.1 })], { c: comAlvo }), []);
+        assert.ok(!('pesoEsperadoPct' in alertas.LIMITES_PADRAO));
+        assert.equal(alertas.calcularPesoEsperado, undefined);
     });
     it('sem registro há mais de 7 dias (ou desde o povoamento)', () => {
         assert.deepEqual(avaliar([r(dia(-7), { racaoKg: 0.1 })]), []);
@@ -593,7 +596,6 @@ describe('domain/configuracoes', () => {
         recusa(() => config.salvarLimitesPadrao({ ...valido, capacidadePct: null }), 'capacidadePct', /Informe/);
         recusa(() => config.salvarLimitesPadrao({ ...valido, racaoDiariaPct: 101 }), 'racaoDiariaPct', /máximo/);
         recusa(() => config.salvarLimitesPadrao({ ...valido, diasSemRegistro: 2.5 }), 'diasSemRegistro', /inteiro/);
-        recusa(() => config.salvarLimitesPadrao({ ...valido, pesoEsperadoPct: 0 }), 'pesoEsperadoPct');
         recusa(() => config.salvarLimitesPadrao({ ...valido, metaFca: null }), 'metaFca', /Informe/);
         config.salvarLimitesPadrao(valido);
         assert.equal(config.obterLimitesPadrao().capacidadePct, 80);
@@ -603,6 +605,15 @@ describe('domain/configuracoes', () => {
         config.restaurarLimitesPadrao();
         assert.equal(config.obterLimitesPadrao().capacidadePct, 90);
         assert.equal(config.obterMetaFca(), 1.6);
+        // Prompt 05, B1: quem já tinha pesoEsperadoPct gravado continua com a chave,
+        // ignorada: salvar os limites não muda o formato dos dados.
+        const comChaveAntiga = storage.lerDados();
+        comChaveAntiga.config.limitesAlerta = { ...comChaveAntiga.config.limitesAlerta, pesoEsperadoPct: 85 };
+        storage.salvarDados(comChaveAntiga);
+        config.salvarLimitesPadrao(valido);
+        assert.equal(storage.lerDados().config.limitesAlerta.pesoEsperadoPct, 85);
+        assert.ok(!('pesoEsperadoPct' in config.obterLimitesPadrao()));
+        assert.equal(config.obterMetaFca(), 1.5);
     });
     it('limites do tanque guardam só o que sobrescreve', () => {
         const tanque = tanqueBase();

@@ -177,8 +177,8 @@ Página própria de cada tanque, organizada em abas:
 - **Cabeçalho:** além de nome, espécie, volume, status e ações, a barra de andamento do ciclo: "Dia 84 de 180 · despesca prevista em 96 dias" (sem data prevista, só "84 dias de cultivo", sem barra).
 - **Resumo:** só fica em destaque o que ajuda a decidir algo durante o ciclo; nenhum cálculo de `indicadores.js` foi removido, muda só a exibição. Ordem (no celular, uma coluna nesta ordem; no computador, a ração numa coluna larga ao lado dos destaques e o acompanhamento em 3 colunas):
   1. **Ração de hoje** (cartão principal): a ração sugerida pelo plano de alimentação do tanque (seção 9.10), por dia e por refeição, com a faixa ou a porcentagem; "Registrado hoje: X de Y", com a barra do que já foi anotado; o plano usado, com "Ver plano"; e o botão "Anotar" (registro com o tanque e a data de hoje). Sem sugestão, o motivo e o link que resolve ("Sem plano de alimentação · Configurar"). Com a biometria atrasada pelo intervalo do tanque (seção 9.11), o aviso de que a sugestão pode estar desatualizada.
-  2. **Destaques:** Peso médio (barra até o peso alvo, "381 g de 800 g · 48%", "Biometria em 17/10 · há 3 dias", em âmbar acima de 30 dias); Biomassa (estimada) ("+X kg nos últimos 7 dias", "≈ 2.434 peixes"); Capacidade (estimada) (barra de capacidade compacta da seção 9.8 e densidade). (Texto atual da tela, ainda escrito para peixe; ver seção 13.)
-  3. **Acompanhamento:** Mortalidade observada ("Últimos 7 dias: X%", "Real só na despesca"); FCA (estimada) ("X kg de ração consumida para Y kg de ganho", meta); Crescimento (g/dia entre as duas últimas biometrias, "Peso alvo em ~N dias (dd/mm)" com peso alvo e ganho positivo).
+  2. **Destaques:** Peso médio (barra até o peso alvo, "381 g de 800 g · 48%", "Biometria em 17/10 · há 3 dias", em âmbar acima de 30 dias); Biomassa (estimada) ("+10,3 kg desde 26/10 (pesagem anterior)": o ganho desde a pesagem anterior, já que a biomassa só muda com biometria; sem biometria depois do povoamento, "Ganho: aparece depois da primeira biometria"; "≈ 2.434 peixes"); Capacidade (estimada) (barra de capacidade compacta da seção 9.8 e densidade). (Texto atual da tela, ainda escrito para peixe; ver seção 13.)
+  3. **Acompanhamento:** Mortalidade observada ("Últimos 7 dias: X%", "Real só na despesca"); FCA (estimada) ("X kg de ração consumida para Y kg de ganho", "Ração anotada em 2 de 28 dias" e, abaixo de 80%, o aviso em âmbar "FCA provavelmente menor que a real: faltam dias de ração anotada.", meta; sem ração anotada, "Sem ração anotada · Anotar o dia" no lugar do número); Crescimento (g/dia entre as duas últimas biometrias, "Peso alvo em ~N dias (dd/mm)" com peso alvo e ganho positivo, com o ano quando for outro: "08/12/2027").
   4. **"Ver todos os indicadores"** (recolhido; lembra se ficou aberto, como preferência de tela): tabela com nome, valor e como é calculado, estimados marcados. Natalidade só aparece com nascimento registrado no ciclo.
   5. Gráficos, alertas e registros recentes, como antes.
 - **Tanque sem ciclo ativo:** no lugar dos cartões, o resumo do último ciclo encerrado (seção 9.4.1) e "Povoar tanque".
@@ -311,8 +311,8 @@ Relatório pronto para imprimir ou salvar em PDF, sem bibliotecas: o PDF sai da 
 - Na tela: uma folha branca, com a escolha do relatório ("Toda a produção" ou um tanque) e o botão "Imprimir ou salvar PDF" acima dela.
 - Na impressão: só a folha, em A4 com margens, sem menu nem botões; cores e fundos mantidos; cartões, gráficos e linhas da tabela não se dividem entre páginas. O título da página ("Fish Track - Relatório Tanque 01 - 2026-10-17") vira o nome sugerido do PDF.
 - Cabeçalho: logo, título e data de emissão.
-- **Relatório do tanque:** dados do tanque e do ciclo; indicadores com contexto (peixes e perdas, peso médio e alvo, biomassa e densidade, FCA e meta, mortalidade e limite, capacidade, crescimento, dias de cultivo); gráficos de peso, biomassa e mortalidade; alertas ativos; tabela com todos os registros do ciclo. Sem ciclo em andamento, mostra os dados do tanque e o resumo do último ciclo. (Texto atual da tela, ainda escrito para peixe; ver seção 13.)
-- **Relatório da produção:** resumo (tanques em cultivo, peixes, biomassa, ração, mortalidade média, alertas), os tanques sem ciclo, um bloco por tanque em cultivo (indicadores, gráfico de biomassa e último registro) e todos os alertas.
+- **Relatório do tanque:** dados do tanque e do ciclo; indicadores com contexto (peixes e perdas, peso médio e alvo, biomassa e densidade, FCA e meta com a cobertura da ração, mortalidade e limite, capacidade, crescimento, dias de cultivo); gráficos de peso, biomassa e mortalidade; alertas ativos; tabela com todos os registros do ciclo. Sem ciclo em andamento, mostra os dados do tanque e o **resultado do último ciclo encerrado**, com os mesmos números do resumo da despesca (`calcularResultadoCiclo`): datas e dias de cultivo, animais e biomassa no povoamento e na despesca, ração total, sobrevivência e mortalidade reais, mortos encontrados e não observados, biomassa final e ganho, FCA final (com a cobertura da ração), ganho de peso diário, TCE e produtividade, com a comparação com o ciclo anterior quando houver, e a tabela de registros daquele ciclo. (Texto atual da tela, ainda escrito para peixe; ver seção 13.)
+- **Relatório da produção:** resumo (tanques em cultivo, peixes, biomassa, ração, mortalidade média, alertas; sem tanque em cultivo, "Nenhum tanque em cultivo agora" no lugar dos zeros), os tanques sem ciclo, um bloco por tanque em cultivo (indicadores, gráfico de biomassa e último registro), **"Ciclos encerrados no período"** (uma linha por ciclo com despesca no período: tanque, datas, sobrevivência, FCA final, biomassa final e produtividade; `listarCiclosEncerrados` em `domain/ciclos.js`) e todos os alertas. O período é escolhido acima da folha ("Ciclos encerrados nos": últimos 30 dias, 90 dias (padrão), 12 meses ou desde o início; `relatorio.html?periodo=30|90|365|tudo`).
 
 O conteúdo exato ainda será refinado depois dos primeiros testes com produtores (seção 13).
 
@@ -571,7 +571,8 @@ Todos os indicadores são calculados a partir do ciclo e dos registros, ordenado
 | **Biomassa (kg)** | `quantidade × pesoMedio / 1000` |
 | **Ração consumida (kg)** | Soma de `racaoKg − racaoSobraKg` no ciclo. É a consumida que entra na FCA e nos totais de ração. |
 | **Ganho de biomassa (kg)** | biomassa estimada atual − biomassa estimada no povoamento (`quantidadeInicial × pesoMedioInicialG / 1000`, em `calcularBiomassaInicialEstimadaKg`). Não usa a biomassa pesada no povoamento: no povoamento por pesagem a quantidade é arredondada (RN21), e misturar valor pesado com valor estimado criaria um ganho que não existe. O ganho com a biomassa pesada é o do fechamento (9.4.1). A mesma base vale para a página do tanque, os gráficos, o resumo do período e a tela Hoje. |
-| **Conversão alimentar (FCA)** | `racaoAcumulada / ganhoDeBiomassa`. Exibe "—" se o ganho for ≤ 0. |
+| **Conversão alimentar (FCA)** | `racaoAcumulada / ganhoDeBiomassa` (`calcularFca`). Vazia (`null`) se o ganho for ≤ 0 ou se não houver ração anotada: "0,00" pareceria excelente quando na verdade falta dado. A tela diz o motivo ("Aparece depois da primeira biometria", "Ainda sem ganho de peso" ou "Sem ração anotada · Anotar o dia"). Vale também para a série diária, o resumo do período e a FCA final. |
+| **Cobertura da ração (%)** | dias do ciclo com ração informada (`racaoKg` > 0) ÷ dias do ciclo até a data × 100 (`calcularCoberturaRacao`). Aparece junto da FCA do ciclo ativo e da FCA final ("Ração anotada em 2 de 28 dias"); abaixo de `COBERTURA_MINIMA_RACAO_PCT` (80%), o aviso em âmbar "FCA provavelmente menor que a real: faltam dias de ração anotada.", com o número ainda visível. Dias de jejum são legítimos: é aviso, nunca bloqueio. |
 | **Taxa de mortalidade (%)** | `mortalidadeAcumulada / quantidadeInicial × 100` |
 | **Taxa de sobrevivência (%)** | `100 − taxaDeMortalidade` |
 | **Taxa de natalidade (%)** | `natalidadeAcumulada / quantidadeInicial × 100` |
@@ -620,7 +621,8 @@ Na despesca a biomassa é pesada, e daí saem os números reais do ciclo, que se
 | Mortalidade não observada | `max(0, quantidadeInicial − quantidadeFinal − mortosEncontrados)` |
 | Ganho de biomassa (kg) | `biomassaFinalKg − biomassaInicialKg`: o fechamento compara pesado com pesado (biomassa final pesada na despesca e biomassa do povoamento gravada) |
 | Ração total (kg) | soma de `racaoKg` dos registros do ciclo |
-| FCA final | `racaoTotalKg / ganhoBiomassaKg` (vazia se o ganho for ≤ 0) |
+| FCA final | `racaoTotalKg / ganhoBiomassaKg` (vazia se o ganho for ≤ 0 ou sem ração anotada no ciclo: "Sem ração anotada") |
+| Cobertura da ração | dias com ração anotada ÷ dias de cultivo (seção 9.4), mostrada com a FCA final e com o aviso abaixo de 80% |
 | Dias de cultivo | dias entre `dataInicio` e `dataDespesca` |
 | Ganho de peso diário (g/dia) | `(pesoMedioFinalG − pesoMedioInicialG) / diasCultivo` |
 | Produtividade (kg/m³) | `biomassaFinalKg / volumeM3` |
@@ -638,7 +640,7 @@ Na despesca a biomassa é pesada, e daí saem os números reais do ciclo, que se
 | Só em "Ver todos" | peixes (estimado), sobrevivência estimada, ganho de biomassa, ração acumulada, crescimento no ciclo, densidade, densidade de povoamento, natalidade (só com nascimentos) (Texto atual da tela, ainda escrito para peixe; ver seção 13.) |
 | Resumo da despesca | sobrevivência e mortalidade reais, FCA final, ganho de peso diário, produtividade |
 
-As leituras de curto prazo (ganho de biomassa e mortalidade dos últimos 7 dias, ração de hoje, dias desde a biometria, data prevista do peso alvo) vêm de `calcularAcompanhamento`, em `indicadores.js`. O peso alvo é projetado no ritmo das duas últimas biometrias, a partir da última. TCE e fator de condição entram em "Ver todos" quando houver os dados (o fator K só com comprimento médio na biometria).
+As leituras de curto prazo (ganho de biomassa desde a pesagem anterior, com a data dela; mortalidade dos últimos 7 dias, porque mortos são anotados todo dia; ração de hoje, dias desde a biometria, data prevista do peso alvo) vêm de `calcularAcompanhamento`, em `indicadores.js`. Datas de projeção (peso alvo, próxima biometria) mostram o ano quando não for o ano atual (`formatarDataProjecao` em `core/format.js`). O peso alvo é projetado no ritmo das duas últimas biometrias, a partir da última. TCE e fator de condição entram em "Ver todos" quando houver os dados (o fator K só com comprimento médio na biometria).
 
 **Tela Hoje (Produção):** os totais somam os tanques com ciclo ativo. As taxas gerais são médias ponderadas pela quantidade inicial de cada ciclo.
 
@@ -656,18 +658,15 @@ Os alertas são calculados sempre que os dados mudam e não são armazenados. Ca
 | **Mortalidade acumulada elevada** | taxa de mortalidade do ciclo > X% | 10% | Média |
 | **Ração acima do limite** | com plano de alimentação que cobre o peso do dia: ração fornecida > sugestão do plano para o dia + 20%; sem plano (ou peso fora das faixas): ração fornecida > X% da biomassa | 5% (sem plano) | Média |
 | **Tanque próximo da capacidade** | capacidade utilizada (biomassa ÷ carga máxima) ≥ X%; não avaliado sem densidade máxima | 90% | Média |
-| **Peso médio abaixo do esperado** | peso atual < X% do peso esperado na data* | 85% | Baixa |
 | **Tanque sem registro** | nenhum registro há mais de X dias | 7 dias | Baixa |
 | **Biometria atrasada** | passou da próxima biometria (seção 9.11): "Última biometria em dd/mm, há N dias (a cada X dias)"; ação "Fazer biometria" | intervalo do tanque (15 dias) | Baixa |
 
-\* O **peso esperado** é uma interpolação linear entre o peso inicial (na data de início) e o peso alvo (na data prevista de despesca). Esse alerta só é avaliado se o ciclo tiver peso alvo e data prevista.
+**Peso médio abaixo do esperado: desligado.** O peso esperado era uma linha reta do peso inicial ao peso alvo, que não representa o crescimento de nenhuma espécie (lento no começo) e disparava em quase todo começo de ciclo (no teste de 23/11, o esperado no dia 28 era 4,6 g). O alerta não é gerado enquanto o app não tiver uma curva de crescimento com fonte, e o limite `pesoEsperadoPct` saiu das telas de limites. Nos dados de quem já o tinha, a chave continua gravada e é ignorada (o formato não muda). O cartão "Peso médio" continua com o progresso até o peso alvo ("1,04 g de 15 g · 7%"), que é informação e não julgamento.
 
 Os alertas só são avaliados para tanques com ciclo ativo. Os registros da mesma data são somados (RN15).
 
 - **Mortalidade no registro:** avalia cada dia com registro na janela de `JANELA_ALERTA_MORTALIDADE_DIAS` (7, a mesma da "Mortalidade da semana"), contada a partir de hoje e não do último registro; um pico não some quando se anota o dia seguinte, e um dia anotado com atraso dentro da janela também entra. Com mais de um dia acima do limite, o alerta é um só, aponta o pior dia (data do alerta) e diz quantos outros passaram: "400 peixes mortos em 22/11/2026: 4% do estoque estimado (limite de 1%). Mais 1 dia acima do limite nesta semana." (Texto atual da tela, ainda escrito para peixe; ver seção 13.)
 - **Ração:** olha o último dia com registro e compara a ração **fornecida** (o plano diz quanto fornecer). Uma função pura decide o limite, `calcularLimiteRacaoDia({ plano, indicadores, limites })` em `alertas.js`: com plano que cobre o peso do dia, a sugestão do plano para aquele dia (biomassa e peso estimados do dia, seção 9.10) mais `TOLERANCIA_RACAO_PLANO_PCT` (20%): "Ração de 900 g em 23/11/2026, 44% acima do plano (624 g; tolerância de 20%)."; sem plano, ou com o peso fora das faixas (ou plano por faixas antes da primeira biometria), o limite geral em % da biomassa, como antes. O plano vem na situação do tanque (`domain/tanques.js`), e a agenda (seção 9.6) usa as mesmas regras, com o plano atual do tanque.
-
-O peso médio é comparado com o esperado na data da última pesagem; sem pesagem após o povoamento, esse alerta não é avaliado.
 
 > ⚠️ Os limites padrão são valores iniciais de referência e devem ser **validados com produtores** antes de serem considerados definitivos.
 
@@ -989,4 +988,6 @@ Textos: frases curtas, voz ativa, verbo no início dos botões, todo número com
 | Modelos prontos (plano Embrapa de tilápia) usados com camarão | Aviso "vale para tilápia" no modelo | Laboratório |
 | Janela do alerta de mortalidade | 7 dias até hoje (`JANELA_ALERTA_MORTALIDADE_DIAS`) | Laboratório parceiro (carcinicultura) |
 | Tolerância da ração sobre o plano antes do alerta | 20% (`TOLERANCIA_RACAO_PLANO_PCT`) | Laboratório parceiro (carcinicultura) |
+| Peso esperado (alerta "Peso médio abaixo do esperado") | Desligado até haver curva de crescimento com fonte; a chave `pesoEsperadoPct` gravada é ignorada | Laboratório parceiro (carcinicultura) |
+| Cobertura mínima da ração para a FCA sem aviso | 80% dos dias do ciclo (`COBERTURA_MINIMA_RACAO_PCT`) | Laboratório parceiro (carcinicultura) |
 | Aviso de unidade improvável na folha do dia | Ração menor que 1% ou maior que 10 vezes a sugestão (`FATOR_RACAO_IMPROVAVEL_MINIMO` e `FATOR_RACAO_IMPROVAVEL_MAXIMO`) | Laboratório parceiro (carcinicultura) |

@@ -179,6 +179,15 @@ export function formatarDataCurta(dataISO) {
     return ehDataISO(dataISO) ? formatarData(dataISO).slice(0, 5) : VAZIO;
 }
 
+// Datas de projeção (peso alvo, despesca prevista, próxima biometria): "08/12"
+// no ano de hoje, "08/12/2027" em outro ano, para ninguém ler o ano errado.
+export function formatarDataProjecao(dataISO, hoje) {
+    if (!ehDataISO(dataISO)) {
+        return VAZIO;
+    }
+    return ehDataISO(hoje) && dataISO.slice(0, 4) === hoje.slice(0, 4) ? formatarDataCurta(dataISO) : formatarData(dataISO);
+}
+
 export function formatarDataPorExtenso(dataISO) {
     const { ano, mes, dia } = partesData(dataISO);
     return `${dia === 1 ? '1º' : dia} de ${MESES[mes - 1]} de ${ano}`;

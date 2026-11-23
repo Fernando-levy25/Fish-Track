@@ -2,7 +2,7 @@
 // (?tanqueId=...) ou de toda a produção. Sem bibliotecas: o PDF sai da
 // impressão do navegador. Com ?imprimir=1, a janela de impressão abre sozinha.
 
-import { hojeISO } from '../core/utils.js';
+import { hojeISO, somarDias } from '../core/utils.js';
 import {
     formatarBiomassa,
     formatarData,
@@ -21,14 +21,30 @@ import {
     pluralizar,
 } from '../core/format.js';
 import { listarSituacoes, obterSituacao, ROTULOS_STATUS } from '../domain/tanques.js';
-import { calcularCargaMaximaKg, calcularResumoProducao, calcularSeries } from '../domain/indicadores.js';
+import { calcularCargaMaximaKg, calcularCoberturaRacao, calcularResumoProducao, calcularSeries } from '../domain/indicadores.js';
 import { analisarTanque, ordenarAlertas, resolverLimites } from '../domain/alertas.js';
+import { listarCiclosEncerrados, listarResultadosCiclos } from '../domain/ciclos.js';
 import { obterLimitesPadrao, obterMetaFca, obterUnidades } from '../domain/configuracoes.js';
-import { resumirRegistro } from '../domain/registros.js';
-import { criarElemento, mostrarErroPagina, renderizarAlertas } from '../ui/componentes.js';
+import { listarRegistrosDoCiclo, resumirRegistro } from '../domain/registros.js';
+import {
+    AVISO_COBERTURA_RACAO,
+    criarElemento,
+    criarResumoCiclo,
+    descreverCoberturaRacao,
+    mostrarErroPagina,
+    renderizarAlertas,
+} from '../ui/componentes.js';
 import { desenharGraficoLinha } from '../ui/graficos.js';
 import { irPara, lerParametro, montarUrl } from '../ui/nav.js';
 import { iniciarPagina } from './comum.js';
+
+// Período dos ciclos encerrados no relatório da produção (?periodo=30|90|365|tudo).
+const PERIODOS = Object.freeze({
+    30: 'nos últimos 30 dias',
+    90: 'nos últimos 90 dias',
+    365: 'nos últimos 12 meses',
+    tudo: 'desde o início',
+});
 
 const porId = (id) => document.getElementById(id);
 const tanqueId = lerParametro('tanqueId');
@@ -73,20 +89,22 @@ function iniciar() {
 // ---------- Relatório do tanque ----------
 
 function montarRelatorioTanque(situacao) {
-    const { tanque, cicloAtivo, ciclos, registros } = situacao;
+    const { tanque, cicloAtivo, registros } = situacao;
     porId('titulo-relatorio').textContent = `Relatório do ${tanque.nome}`;
     const limitesPadrao = obterLimitesPadrao();
     const secoes = [criarSecao('Tanque e ciclo', [criarDadosTanque(situacao)])];
 
     if (!cicloAtivo) {
-        const ultimo = ciclos.find((ciclo) => ciclo.status === 'encerrado');
-        secoes.push(criarElemento('p', {
-            classe: 'relatorio__nota',
-            texto: ultimo
-                ? `Sem ciclo em andamento. Último ciclo: povoamento em ${formatarData(ultimo.dataInicio)}, despesca em ${formatarData(ultimo.dataDespesca)} `
-                    + `com ${formatarBiomassa(ultimo.biomassaFinalKg)} e peso médio de ${formatarGramas(ultimo.pesoMedioFinalG)}.`
-                : 'Este tanque ainda não teve ciclos.',
-        }));
+        // Sem ciclo em andamento: o resultado real do último ciclo encerrado, os
+        // mesmos números do resumo da despesca, com a comparação (seção 7.12).
+        const ultimo = listarResultadosCiclos(tanque.id)[0];
+        secoes.push(ultimo
+            ? criarSecao('Resultado do último ciclo', [criarDadosCicloEncerrado(ultimo), criarResumoCiclo(ultimo.resultado, ultimo.anterior)])
+            : criarElemento('p', { classe: 'relatorio__nota', texto: 'Este tanque ainda não teve ciclos.' }));
+        if (ultimo) {
+            const registrosDoUltimo = listarRegistrosDoCiclo(ultimo.ciclo.id);
+            secoes.push(criarSecao(`Registros do ciclo (${formatarInteiro(registrosDoUltimo.length)})`, [criarTabelaRegistros(registrosDoUltimo)]));
+        }
         conteudo.replaceChildren(...secoes);
         return;
     }
@@ -94,12 +112,18 @@ function montarRelatorioTanque(situacao) {
     const { indicadores, alertas } = analisarTanque(situacao, { limitesPadrao, hoje, unidades: obterUnidades() });
     const limites = resolverLimites(limitesPadrao, tanque.limitesAlerta);
     const metaFca = obterMetaFca(tanque);
+    const cobertura = calcularCoberturaRacao({ ciclo: cicloAtivo, registros, ate: hoje });
     secoes.push(
         criarSecao('Indicadores', [criarIndicadores([
             { rotulo: 'Peixes', valor: `≈ ${formatarInteiro(indicadores.quantidade)}`, apoio: `${pluralizar(indicadores.mortalidadeAcumulada, 'morto encontrado', 'mortos encontrados')} · sobrevivência estimada de ${formatarPercentual(indicadores.taxaSobrevivencia)}` },
             { rotulo: 'Peso médio', valor: formatarGramas(indicadores.pesoMedioG), apoio: [`pesado em ${formatarData(indicadores.dataPesoAtual)}`, cicloAtivo.pesoAlvoG && `alvo de ${formatarGramas(cicloAtivo.pesoAlvoG)}`] },
             { rotulo: 'Biomassa', valor: `≈ ${formatarBiomassa(indicadores.biomassaKg)}`, apoio: `${formatarDensidade(indicadores.densidadeKgM3)} de água` },
-            { rotulo: 'FCA', valor: `≈ ${formatarFca(indicadores.fca)}`, apoio: [`meta de ${formatarFca(metaFca)}`, `${formatarRacao(indicadores.racaoAcumuladaKg)} de ração para ${formatarBiomassa(indicadores.ganhoBiomassaKg)} de ganho`] },
+            {
+                rotulo: 'FCA',
+                valor: descreverFca(indicadores),
+                apoio: [`meta de ${formatarFca(metaFca)}`, `${formatarRacao(indicadores.racaoAcumuladaKg)} de ração para ${formatarBiomassa(indicadores.ganhoBiomassaKg)} de ganho`, descreverCoberturaRacao(cobertura)],
+                aviso: cobertura.baixa ? AVISO_COBERTURA_RACAO : '',
+            },
             { rotulo: 'Mortalidade observada', valor: formatarPercentual(indicadores.taxaMortalidade), apoio: `real só na despesca · limite de ${formatarPercentual(limites.mortalidadeAcumuladaPct)}` },
             { rotulo: 'Capacidade', valor: `≈ ${formatarPercentual(indicadores.capacidadeUtilizada)}`, apoio: indicadores.cargaMaximaKg ? `de ${formatarBiomassa(indicadores.cargaMaximaKg)} de carga máxima` : 'capacidade não definida' },
             { rotulo: 'Crescimento', valor: formatarGramasPorDia(indicadores.taxaCrescimentoGDia), apoio: `média do ciclo: ${formatarGramasPorDia(indicadores.crescimentoCicloGDia)}` },
@@ -110,6 +134,28 @@ function montarRelatorioTanque(situacao) {
         criarSecao(`Registros do ciclo (${formatarInteiro(registros.length)})`, [criarTabelaRegistros(registros)]),
     );
     conteudo.replaceChildren(...secoes, criarElemento('p', { classe: 'relatorio__nota', texto: '≈ valor estimado: os números reais saem na despesca.' }));
+}
+
+// FCA do ciclo ativo: "≈ 1,52", ou o motivo de não haver (seção 9.4).
+function descreverFca(indicadores) {
+    if (indicadores.fca !== null) {
+        return `≈ ${formatarFca(indicadores.fca)}`;
+    }
+    return indicadores.ganhoBiomassaKg > 0 && !(indicadores.racaoAcumuladaKg > 0) ? 'Sem ração anotada' : 'Sem ganho de peso ainda';
+}
+
+// Datas e povoamento do ciclo encerrado, antes do resumo dos resultados.
+function criarDadosCicloEncerrado({ ciclo, resultado }) {
+    const itens = [
+        ['Ciclo', `${formatarData(ciclo.dataInicio)} a ${formatarData(ciclo.dataDespesca)} (${pluralizar(resultado.diasCultivo, 'dia', 'dias')})`],
+        ['Povoamento', `${pluralizar(ciclo.quantidadeInicial, 'peixe', 'peixes')} de ${formatarGramas(ciclo.pesoMedioInicialG)} · ${formatarBiomassa(resultado.biomassaInicialKg)}`],
+        ['Despesca', `${pluralizar(resultado.quantidadeFinal, 'peixe', 'peixes')}${resultado.quantidadeFinalEstimada ? ' (estimados pela biomassa)' : ''} de ${formatarGramas(ciclo.pesoMedioFinalG)} · ${formatarBiomassa(resultado.biomassaFinalKg)}`],
+        ['Ração total', formatarRacao(resultado.racaoTotalKg)],
+    ];
+    return criarElemento('dl', { classe: 'relatorio__dados' }, itens.map(([rotulo, valor]) => criarElemento('div', {}, [
+        criarElemento('dt', { texto: rotulo }),
+        criarElemento('dd', { texto: valor }),
+    ])));
 }
 
 function criarDadosTanque({ tanque, cicloAtivo }) {
@@ -183,28 +229,63 @@ function montarRelatorioGeral(situacoes) {
     const alertas = ordenarAlertas(ativos.flatMap((item) => item.alertas));
     const semCiclo = situacoes.filter((situacao) => !situacao.cicloAtivo);
 
+    const periodo = configurarPeriodo();
+    const encerrados = listarCiclosEncerrados({ inicio: periodo.inicio, fim: hoje });
+
     const secoes = [
         criarSecao('Resumo da produção', [
-            criarIndicadores([
-                { rotulo: 'Tanques em cultivo', valor: formatarInteiro(resumo.tanquesAtivos), apoio: `de ${pluralizar(situacoes.length, 'tanque cadastrado', 'tanques cadastrados')}` },
-                { rotulo: 'Peixes', valor: `≈ ${formatarInteiro(resumo.totalPeixes)}` },
-                { rotulo: 'Biomassa', valor: `≈ ${formatarBiomassa(resumo.biomassaTotalKg)}` },
-                { rotulo: 'Ração consumida', valor: formatarRacao(resumo.racaoAcumuladaKg), apoio: 'nos ciclos em andamento' },
-                { rotulo: 'Mortalidade média', valor: formatarPercentual(resumo.mortalidadeMedia), apoio: 'ponderada pelo povoamento' },
-                { rotulo: 'Alertas', valor: formatarInteiro(alertas.length), apoio: alertas.length > 0 ? 'detalhes no fim do relatório' : 'nenhum no momento' },
-            ]),
+            // Sem tanque em cultivo, a frase no lugar de uma fileira de zeros.
+            ativos.length === 0
+                ? criarElemento('p', { classe: 'relatorio__nota', texto: 'Nenhum tanque em cultivo agora.' })
+                : criarIndicadores([
+                    { rotulo: 'Tanques em cultivo', valor: formatarInteiro(resumo.tanquesAtivos), apoio: `de ${pluralizar(situacoes.length, 'tanque cadastrado', 'tanques cadastrados')}` },
+                    { rotulo: 'Peixes', valor: `≈ ${formatarInteiro(resumo.totalPeixes)}` },
+                    { rotulo: 'Biomassa', valor: `≈ ${formatarBiomassa(resumo.biomassaTotalKg)}` },
+                    { rotulo: 'Ração consumida', valor: formatarRacao(resumo.racaoAcumuladaKg), apoio: 'nos ciclos em andamento' },
+                    { rotulo: 'Mortalidade média', valor: formatarPercentual(resumo.mortalidadeMedia), apoio: 'ponderada pelo povoamento' },
+                    { rotulo: 'Alertas', valor: formatarInteiro(alertas.length), apoio: alertas.length > 0 ? 'detalhes no fim do relatório' : 'nenhum no momento' },
+                ]),
             semCiclo.length > 0 && criarElemento('p', {
                 classe: 'relatorio__nota',
                 texto: `Sem ciclo em andamento: ${semCiclo.map(({ tanque }) => `${tanque.nome} (${ROTULOS_STATUS[tanque.status].toLowerCase()})`).join(', ')}.`,
             }),
         ]),
         ...ativos.map(criarBlocoTanque),
+        criarSecao(`Ciclos encerrados ${periodo.texto}`, [criarTabelaEncerrados(encerrados)]),
         criarSecao('Alertas', [criarListaAlertas(alertas, { mostrarTanque: true, textoVazio: 'Nenhum alerta no momento.' })]),
     ];
-    if (ativos.length === 0) {
-        secoes.splice(1, 0, criarElemento('p', { classe: 'relatorio__nota', texto: 'Nenhum tanque com ciclo em andamento.' }));
-    }
     conteudo.replaceChildren(...secoes, criarElemento('p', { classe: 'relatorio__nota', texto: '≈ valor estimado: os números reais saem na despesca.' }));
+}
+
+function configurarPeriodo() {
+    const escolhido = lerParametro('periodo') in PERIODOS ? lerParametro('periodo') : '90';
+    const seletor = porId('campo-periodo-relatorio');
+    porId('campo-periodo-relatorio-caixa').hidden = false;
+    seletor.value = escolhido;
+    seletor.addEventListener('change', () => irPara(montarUrl('relatorio.html', { periodo: seletor.value })));
+    return {
+        inicio: escolhido === 'tudo' ? null : somarDias(hoje, -Number(escolhido)),
+        texto: PERIODOS[escolhido],
+    };
+}
+
+// Uma linha por ciclo encerrado, com os resultados reais (seção 9.4.1).
+function criarTabelaEncerrados(encerrados) {
+    if (encerrados.length === 0) {
+        return criarElemento('p', { classe: 'relatorio__nota', texto: 'Nenhuma despesca neste período.' });
+    }
+    const colunas = ['Tanque', 'Ciclo', 'Sobrevivência', 'FCA final', 'Biomassa final', 'Produtividade'];
+    return criarElemento('div', { classe: 'tabela-rolagem' }, [criarElemento('table', { classe: 'tabela relatorio__tabela', atributos: { 'data-campo': 'ciclosEncerrados' } }, [
+        criarElemento('thead', {}, [criarElemento('tr', {}, colunas.map((coluna) => criarElemento('th', { texto: coluna, atributos: { scope: 'col' } })))]),
+        criarElemento('tbody', {}, encerrados.map(({ tanque, ciclo, resultado }) => criarElemento('tr', {}, [
+            tanque.nome,
+            `${formatarData(ciclo.dataInicio)} a ${formatarData(ciclo.dataDespesca)}`,
+            formatarPercentual(resultado.sobrevivenciaReal),
+            resultado.fcaFinal === null ? (resultado.racaoTotalKg > 0 ? 'Sem ganho de peso' : 'Sem ração anotada') : formatarFca(resultado.fcaFinal),
+            formatarBiomassa(resultado.biomassaFinalKg),
+            `${formatarNumero(resultado.produtividadeKgM3, 2)} kg/m³`,
+        ].map((valor) => criarElemento('td', { texto: valor }))))),
+    ])]);
 }
 
 function criarBlocoTanque({ tanque, ciclo, registros, indicadores, alertas }) {
@@ -251,12 +332,13 @@ function criarSecao(titulo, filhos, { nivel = 3, inteira = false } = {}) {
 }
 
 function criarIndicadores(itens, { compacto = false } = {}) {
-    return criarElemento('dl', { classe: `relatorio__indicadores${compacto ? ' relatorio__indicadores--compacto' : ''}` }, itens.map(({ rotulo, valor, apoio }) => {
+    return criarElemento('dl', { classe: `relatorio__indicadores${compacto ? ' relatorio__indicadores--compacto' : ''}` }, itens.map(({ rotulo, valor, apoio, aviso = '' }) => {
         const textoApoio = [apoio].flat().filter(Boolean).join(' · ');
         return criarElemento('div', { classe: 'relatorio__indicador' }, [
             criarElemento('dt', { classe: 'relatorio__rotulo', texto: rotulo }),
             criarElemento('dd', { classe: 'relatorio__valor', texto: valor }),
             textoApoio && criarElemento('dd', { classe: 'relatorio__apoio', texto: textoApoio }),
+            aviso && criarElemento('dd', { classe: 'relatorio__apoio relatorio__apoio--atencao', texto: aviso }),
         ]);
     }));
 }

@@ -17,7 +17,6 @@ const REGRAS_LIMITES = {
     mortalidadeAcumuladaPct: { maximo: 100 },
     racaoDiariaPct: { maximo: 100 },
     capacidadePct: { maximo: 100 },
-    pesoEsperadoPct: { maximo: 100 },
     diasSemRegistro: { maximo: 365, inteiro: true },
     metaFca: { maximo: 5 },
 };
@@ -57,7 +56,7 @@ export function salvarLimitesPadrao(entrada) {
     // A meta de FCA é validada com os limites, mas fica guardada à parte.
     const { metaFca, ...limites } = validarLimites(entrada, { obrigatorios: true });
     const dados = lerDados();
-    dados.config.limitesAlerta = limites;
+    dados.config.limitesAlerta = { ...manterChavesAntigas(dados.config.limitesAlerta), ...limites };
     dados.config.metaFca = metaFca;
     salvarDados(dados);
     return limites;
@@ -65,7 +64,7 @@ export function salvarLimitesPadrao(entrada) {
 
 export function restaurarLimitesPadrao() {
     const dados = lerDados();
-    dados.config.limitesAlerta = { ...LIMITES_PADRAO };
+    dados.config.limitesAlerta = { ...manterChavesAntigas(dados.config.limitesAlerta), ...LIMITES_PADRAO };
     dados.config.metaFca = META_FCA_PADRAO;
     salvarDados(dados);
     return { ...LIMITES_PADRAO };
@@ -79,10 +78,17 @@ export function salvarLimitesTanque(tanqueId, entrada) {
     if (!tanque) {
         falharRegra('Tanque não encontrado.');
     }
-    tanque.limitesAlerta = Object.keys(limites).length > 0 ? limites : null;
+    const todos = { ...manterChavesAntigas(tanque.limitesAlerta), ...limites };
+    tanque.limitesAlerta = Object.keys(todos).length > 0 ? todos : null;
     tanque.atualizadoEm = agoraISO();
     salvarDados(dados);
     return tanque.limitesAlerta;
+}
+
+// Chaves gravadas que a tela não edita mais (pesoEsperadoPct, do alerta de peso
+// esperado, seção 9.5): ficam como estão, ignoradas, para não mudar o formato.
+function manterChavesAntigas(limites) {
+    return Object.fromEntries(Object.entries(limites ?? {}).filter(([chave]) => !(chave in REGRAS_LIMITES)));
 }
 
 function validarLimites(entrada, { obrigatorios }) {

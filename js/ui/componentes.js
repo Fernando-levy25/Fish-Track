@@ -349,16 +349,28 @@ export function criarResumoCiclo(resultado, anterior = null) {
         ['Mortalidade real', comparar(resultado.mortalidadeReal, formatarPercentual, 'mortalidadeReal'),
             `${pluralizar(resultado.mortalidadeNaoObservada, 'não observado', 'não observados')} · ${pluralizar(resultado.mortosEncontrados, 'encontrado', 'encontrados')}`],
         ['Biomassa final', formatarBiomassa(resultado.biomassaFinalKg), `ganho de ${formatarBiomassa(resultado.ganhoBiomassaKg)}`],
-        ['FCA final', comparar(resultado.fcaFinal, formatarFca, 'fcaFinal'), `${formatarRacao(resultado.racaoTotalKg)} de ração`],
+        ['FCA final', resultado.fcaFinal === null && !(resultado.racaoTotalKg > 0) ? 'Sem ração anotada' : comparar(resultado.fcaFinal, formatarFca, 'fcaFinal'),
+            [`${formatarRacao(resultado.racaoTotalKg)} de ração`, descreverCoberturaRacao(resultado.coberturaRacao)].filter(Boolean).join(' · '),
+            resultado.coberturaRacao?.baixa ? AVISO_COBERTURA_RACAO : ''],
         ['Ganho de peso diário', formatarGramasPorDia(resultado.ganhoPesoDiarioG), resultado.tceCiclo === null ? '' : `TCE de ${formatarNumero(resultado.tceCiclo, 2)}%/dia`],
         ['Produtividade', `${formatarNumero(resultado.produtividadeKgM3, 2)} kg/m³`, ''],
         ['Dias de cultivo', comparar(resultado.diasCultivo, formatarInteiro, 'diasCultivo'), ''],
     ];
-    return criarElemento('dl', { classe: 'resumo-ciclo' }, itens.map(([rotulo, valor, apoio]) => criarElemento('div', { classe: 'resumo-ciclo__item' }, [
+    return criarElemento('dl', { classe: 'resumo-ciclo' }, itens.map(([rotulo, valor, apoio, aviso = '']) => criarElemento('div', { classe: 'resumo-ciclo__item' }, [
         criarElemento('dt', { classe: 'resumo-ciclo__rotulo', texto: rotulo }),
         criarElemento('dd', { classe: 'resumo-ciclo__valor', texto: valor }),
         apoio && criarElemento('dd', { classe: 'resumo-ciclo__apoio', texto: apoio }),
+        aviso && criarElemento('dd', { classe: 'resumo-ciclo__apoio resumo-ciclo__apoio--atencao', texto: aviso }),
     ])));
+}
+
+// Cobertura da ração anotada (seção 9.4): "Ração anotada em 2 de 28 dias".
+export const AVISO_COBERTURA_RACAO = 'FCA provavelmente menor que a real: faltam dias de ração anotada.';
+
+export function descreverCoberturaRacao(cobertura) {
+    return cobertura && cobertura.percentual !== null
+        ? `Ração anotada em ${formatarInteiro(cobertura.diasComRacao)} de ${pluralizar(cobertura.diasCiclo, 'dia', 'dias')}`
+        : '';
 }
 
 // ---------- Clareza (seção 11.6) ----------

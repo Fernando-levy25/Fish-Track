@@ -6,6 +6,7 @@ import {
     formatarBiomassa,
     formatarData,
     formatarDataCurta,
+    formatarDataProjecao,
     formatarDensidade,
     formatarFca,
     formatarGramas,
@@ -21,7 +22,14 @@ import {
 import { arquivarTanque, contarLembretesDoTanque, desarquivarTanque, excluirTanque, listarTanques, obterSituacao } from '../domain/tanques.js';
 import { listarResultadosCiclos } from '../domain/ciclos.js';
 import { excluirRegistro, listarRegistrosDoCiclo, resumirRegistro } from '../domain/registros.js';
-import { calcularAcompanhamento, calcularCargaMaximaKg, calcularEstatisticasPesos, calcularProximaBiometria, calcularSeries } from '../domain/indicadores.js';
+import {
+    calcularAcompanhamento,
+    calcularCargaMaximaKg,
+    calcularCoberturaRacao,
+    calcularEstatisticasPesos,
+    calcularProximaBiometria,
+    calcularSeries,
+} from '../domain/indicadores.js';
 import {
     calcularPreviaBiometria,
     ehRegistroDeBiometria,
@@ -332,7 +340,7 @@ function textoBiometria({ indicadores, acompanhamento, proxima }) {
         classe: `cartao-indicador__apoio${atrasada ? ' cartao-indicador__apoio--atencao' : ''}`,
         texto: atrasada
             ? `Biometria atrasada há ${pluralizar(proxima.diasAtraso, 'dia', 'dias')}`
-            : proxima.diasAteProxima === 0 ? 'Próxima biometria: hoje' : `Próxima biometria em ${formatarDataCurta(proxima.dataProxima)}`,
+            : proxima.diasAteProxima === 0 ? 'Próxima biometria: hoje' : `Próxima biometria em ${formatarDataProjecao(proxima.dataProxima, hojeISO())}`,
         atributos: { 'data-indicador': 'proximaBiometria' },
     }));
     linhas.push(criarElemento('button', {
@@ -410,7 +418,11 @@ function criarDestaques({ tanque, ciclo, indicadores, acompanhamento, limites })
             valor: formatarBiomassa(indicadores.biomassaKg),
             indicador: 'biomassa',
             apoio: [
-                acompanhamento.ganhoBiomassaSemanaKg !== null && `${acompanhamento.ganhoBiomassaSemanaKg >= 0 ? '+' : ''}${formatarBiomassa(acompanhamento.ganhoBiomassaSemanaKg)} nos últimos 7 dias`,
+                // O ganho desde a pesagem anterior, com a data: a biomassa só muda com biometria.
+                acompanhamento.ganhoBiomassaDesdePesagemKg === null
+                    ? 'Ganho: aparece depois da primeira biometria'
+                    : `${acompanhamento.ganhoBiomassaDesdePesagemKg >= 0 ? '+' : ''}${formatarBiomassa(acompanhamento.ganhoBiomassaDesdePesagemKg)} `
+                        + `desde ${formatarDataCurta(acompanhamento.dataPesagemAnterior)} (pesagem anterior)`,
                 `≈ ${formatarInteiro(indicadores.quantidade)} peixes`,
             ],
         }),
@@ -439,8 +451,9 @@ function criarDestaques({ tanque, ciclo, indicadores, acompanhamento, limites })
     ];
 }
 
-function criarAcompanhamento({ tanque, ciclo, indicadores, acompanhamento }) {
+function criarAcompanhamento({ tanque, ciclo, indicadores, acompanhamento, hoje }) {
     const metaFca = obterMetaFca(tanque);
+    const cobertura = calcularCoberturaRacao({ ciclo, registros: situacao.registros, ate: hoje });
     return [
         criarCartao({
             rotulo: 'Mortalidade observada',
@@ -455,14 +468,14 @@ function criarAcompanhamento({ tanque, ciclo, indicadores, acompanhamento }) {
             termo: 'fca',
             estimado: true,
             valor: formatarFca(indicadores.fca),
-            // FCA precisa de ganho de peso: antes da primeira biometria não há.
-            ausente: indicadores.fca === null
-                ? { motivo: acompanhamento.houvePesagem ? 'Ainda sem ganho de peso' : 'Aparece depois da primeira biometria' }
-                : null,
+            // FCA precisa de ganho de peso (antes da primeira biometria não há) e
+            // de ração anotada: sem ela, "0,00" pareceria excelente (seção 9.4).
+            ausente: indicadores.fca === null ? descreverFcaAusente(acompanhamento, indicadores) : null,
             indicador: 'fca',
             classe: 'cartao-indicador--compacto',
             apoio: [
                 `${formatarRacao(indicadores.racaoAcumuladaKg)} de ração consumida para ${formatarBiomassa(indicadores.ganhoBiomassaKg)} de ganho`,
+                ...criarApoioCobertura(cobertura),
                 metaFca && `Meta de ${formatarFca(metaFca)}`,
             ],
         }),
@@ -474,22 +487,53 @@ function criarAcompanhamento({ tanque, ciclo, indicadores, acompanhamento }) {
             classe: 'cartao-indicador--compacto',
             apoio: [
                 'Entre as duas últimas biometrias',
-                acompanhamento.dataPesoAlvo && `Peso alvo em ~${pluralizar(acompanhamento.diasAtePesoAlvo, 'dia', 'dias')} (${formatarDataCurta(acompanhamento.dataPesoAlvo)})`,
+                acompanhamento.dataPesoAlvo && `Peso alvo em ~${pluralizar(acompanhamento.diasAtePesoAlvo, 'dia', 'dias')} (${formatarDataProjecao(acompanhamento.dataPesoAlvo, hojeISO())})`,
                 ciclo.pesoAlvoG && indicadores.pesoMedioG >= ciclo.pesoAlvoG && 'Peso alvo atingido',
             ],
         }),
     ];
 }
 
+// Motivo de não haver FCA, com a ação que resolve (seção 11.6).
+function descreverFcaAusente(acompanhamento, indicadores) {
+    if (!acompanhamento.houvePesagem) {
+        return { motivo: 'Aparece depois da primeira biometria' };
+    }
+    if (!(indicadores.ganhoBiomassaKg > 0)) {
+        return { motivo: 'Ainda sem ganho de peso' };
+    }
+    return { motivo: 'Sem ração anotada', acao: 'Anotar o dia', href: montarUrl('folha.html', { tanque: tanqueId }) };
+}
+
+// "Ração anotada em 2 de 28 dias" e, abaixo do mínimo, o aviso em âmbar (seção 9.4).
+function criarApoioCobertura(cobertura) {
+    if (cobertura.percentual === null) {
+        return [];
+    }
+    return [
+        `Ração anotada em ${formatarInteiro(cobertura.diasComRacao)} de ${pluralizar(cobertura.diasCiclo, 'dia', 'dias')}`,
+        cobertura.baixa && criarElemento('p', {
+            classe: 'cartao-indicador__apoio cartao-indicador__apoio--atencao',
+            texto: 'FCA provavelmente menor que a real: faltam dias de ração anotada.',
+            atributos: { 'data-indicador': 'avisoCoberturaRacao' },
+        }),
+    ];
+}
+
 // "Ver todos os indicadores": tabela de conferência, com o cálculo de cada um.
-function criarLinhasTodos({ indicadores, acompanhamento }) {
+function criarLinhasTodos({ ciclo, indicadores, acompanhamento, hoje }) {
+    const cobertura = calcularCoberturaRacao({ ciclo, registros: situacao.registros, ate: hoje });
     const linhas = [
         ['Peixes (estimado)', formatarInteiro(indicadores.quantidade), 'quantidade', 'Povoamento − mortos encontrados + nascimentos'],
         ['Peso médio', formatarGramas(indicadores.pesoMedioG), null, 'Última biometria (ou o peso do povoamento)'],
         ['Biomassa (estimada)', formatarBiomassa(indicadores.biomassaKg), null, 'Peixes estimados × peso médio'],
         ['Ração consumida', formatarRacao(indicadores.racaoAcumuladaKg), 'racaoAcumulada', 'Ração fornecida − sobras, somadas no ciclo'],
         ['Ganho de biomassa (estimado)', formatarBiomassa(indicadores.ganhoBiomassaKg), 'ganhoBiomassa', 'Biomassa atual − biomassa do povoamento'],
-        ['FCA (estimada)', formatarFca(indicadores.fca), null, 'Ração acumulada ÷ ganho de biomassa'],
+        indicadores.fca === null
+            ? ['FCA', descreverFcaAusente(acompanhamento, indicadores).motivo, null, 'Ração acumulada ÷ ganho de biomassa']
+            : ['FCA (estimada)', formatarFca(indicadores.fca), null, 'Ração acumulada ÷ ganho de biomassa'],
+        cobertura.percentual !== null && ['Ração anotada', `${formatarInteiro(cobertura.diasComRacao)} de ${pluralizar(cobertura.diasCiclo, 'dia', 'dias')} (${formatarPercentual(cobertura.percentual)})`,
+            'coberturaRacao', 'Dias com ração anotada ÷ dias do ciclo; abaixo de 80%, a FCA sai menor que a real'],
         ['Mortalidade observada', formatarPercentual(indicadores.taxaMortalidade), null, 'Mortos encontrados ÷ peixes do povoamento'],
         ['Sobrevivência (estimada)', formatarPercentual(indicadores.taxaSobrevivencia), 'taxaSobrevivencia', '100% − mortalidade observada'],
         acompanhamento.houveNascimento && ['Natalidade', formatarPercentual(indicadores.taxaNatalidade), 'taxaNatalidade', 'Nascimentos ÷ peixes do povoamento'],
@@ -770,7 +814,7 @@ function salvarDoPainel(entrada, { irParaProximo }) {
     const doPainel = obterSituacao(tanqueDoPainel);
     const proxima = calcularProximaBiometria({ tanque: doPainel.tanque, ciclo: doPainel.cicloAtivo, registros: doPainel.registros, hoje: hojeISO() });
     const resumo = `${doPainel.tanque.nome}: biometria de ${formatarData(registro.data)} salva, ${formatarGramas(registro.pesoMedioG)}. `
-        + `Próxima biometria: ${formatarDataCurta(proxima.dataProxima)}.`;
+        + `Próxima biometria: ${formatarDataProjecao(proxima.dataProxima, hojeISO())}.`;
     const seguinte = irParaProximo ? obterProximoTanqueBiometria({ tanqueIdAtual: tanqueDoPainel, data: registro.data }) : null;
     if (seguinte) {
         mostrarMensagem(porId('mensagem-tanque'), resumo);
@@ -793,7 +837,7 @@ function renderizarBiometrias() {
     const pesagens = listarBiometriasDoCiclo(cicloAtivo.id);
     const proxima = calcularProximaBiometria({ tanque: situacao.tanque, ciclo: cicloAtivo, registros: situacao.registros, hoje: hojeISO() });
     porId('resumo-biometrias').textContent = `A cada ${pluralizar(proxima.intervaloDias, 'dia', 'dias')} · `
-        + (proxima.diasAtraso > 0 ? `atrasada há ${pluralizar(proxima.diasAtraso, 'dia', 'dias')}` : `próxima em ${formatarDataCurta(proxima.dataProxima)}`);
+        + (proxima.diasAtraso > 0 ? `atrasada há ${pluralizar(proxima.diasAtraso, 'dia', 'dias')}` : `próxima em ${formatarDataProjecao(proxima.dataProxima, hojeISO())}`);
     porId('rolagem-tabela-biometrias').hidden = false;
     const linhas = pesagens.map((pesagem, indice) => {
         const anterior = pesagens[indice - 1];

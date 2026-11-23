@@ -89,7 +89,8 @@ describe('services/seed (dados de exemplo)', () => {
             return [s.tanque.nome, { tipos: alertas.map((a) => a.tipo), indicadores }];
         }));
         assert.deepEqual(porTanque['Tanque 01'].tipos, []);
-        assert.deepEqual(porTanque['Tanque 02'].tipos, ['mortalidade-registro', 'peso']);
+        // Prompt 05, B1: o alerta de peso abaixo do esperado não é mais gerado.
+        assert.deepEqual(porTanque['Tanque 02'].tipos, ['mortalidade-registro']);
         assert.deepEqual(porTanque['Tanque 05'].tipos, ['capacidade', 'sem-registro']);
         assert.ok(Math.abs(porTanque['Tanque 01'].indicadores.capacidadeUtilizada - 77) < 2, 'Tanque 01 perto de 77%');
         for (const [nome, { indicadores }] of Object.entries(porTanque)) {

@@ -5,7 +5,6 @@ import { diasEntre, somarDias } from '../core/utils.js';
 import {
     formatarData,
     formatarDataCurta,
-    formatarGramas,
     formatarMassa,
     formatarPercentual,
     pluralizar,
@@ -24,12 +23,13 @@ export const TOLERANCIA_RACAO_PLANO_PCT = 20;
 // mesma entrada gerar sempre o mesmo texto.
 export const UNIDADES_PADRAO = Object.freeze({ biomassa: 'kg', racao: 'kg' });
 
+// pesoEsperadoPct saiu com o alerta de peso esperado (seção 9.5). Nos dados de
+// quem já o tinha, a chave fica gravada e é ignorada: o formato não muda.
 export const LIMITES_PADRAO = Object.freeze({
     mortalidadeRegistroPct: 1,
     mortalidadeAcumuladaPct: 10,
     racaoDiariaPct: 5,
     capacidadePct: 90,
-    pesoEsperadoPct: 85,
     diasSemRegistro: 7,
 });
 
@@ -136,20 +136,10 @@ export function avaliarAlertas({ tanque, ciclo, registros, indicadores, limites,
             `Capacidade em ${formatarPercentual(indicadores.capacidadeUtilizada)}`);
     }
 
-    // Compara na data da última pesagem, e não hoje: dias sem pesar não podem
-    // fazer o peso parecer atrasado. Sem pesagem após o povoamento, não há o que comparar.
-    const esperado = calcularPesoEsperado(ciclo, indicadores.dataPesoAtual);
-    if (esperado !== null && indicadores.dataPesoAtual > ciclo.dataInicio) {
-        const percentual = (indicadores.pesoMedioG / esperado) * 100;
-        if (percentual < limites.pesoEsperadoPct) {
-            adicionar('peso', 'baixa', 'Peso médio abaixo do esperado',
-                `${formatarGramas(indicadores.pesoMedioG)} em ${formatarData(indicadores.dataPesoAtual)}, `
-                + `quando o esperado era ${formatarGramas(esperado)}: ${formatarPercentual(percentual)} do esperado `
-                + `(mínimo de ${formatarPercentual(limites.pesoEsperadoPct)}).`,
-                indicadores.dataPesoAtual,
-                'Peso abaixo do esperado');
-        }
-    }
+    // "Peso médio abaixo do esperado" não é mais gerado (seção 9.5): o esperado
+    // era uma linha reta do peso inicial ao alvo, que não representa o
+    // crescimento de nenhuma espécie (lento no começo), e disparava em quase todo
+    // começo de ciclo. Volta só com uma curva de crescimento com fonte (seção 13).
 
     // Biometria atrasada (seção 9.11): passou do intervalo do tanque desde a última pesagem.
     const biometria = calcularProximaBiometria({ tanque, ciclo, registros, hoje });
@@ -257,17 +247,6 @@ export function avaliarAlertasDosDias({ ciclo, registros, limites, plano = null,
         }
     }
     return alertas;
-}
-
-// Interpolação linear entre o peso inicial, no povoamento, e o peso alvo, na
-// despesca prevista (seção 9.5). Depois da data prevista, o esperado é o alvo.
-export function calcularPesoEsperado(ciclo, data) {
-    if (!ciclo.pesoAlvoG || !ciclo.dataPrevistaDespesca) {
-        return null;
-    }
-    const total = diasEntre(ciclo.dataInicio, ciclo.dataPrevistaDespesca);
-    const decorridos = Math.min(Math.max(diasEntre(ciclo.dataInicio, data), 0), total);
-    return ciclo.pesoMedioInicialG + (ciclo.pesoAlvoG - ciclo.pesoMedioInicialG) * (decorridos / total);
 }
 
 // Mais graves primeiro; na mesma gravidade, os mais recentes.

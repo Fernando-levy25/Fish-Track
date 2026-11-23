@@ -137,8 +137,7 @@ export function calcularIndicadores({ tanque, ciclo, registros, hoje }) {
         biomassaKg,
         racaoAcumuladaKg,
         ganhoBiomassaKg,
-        // A FCA só faz sentido com ganho de biomassa; sem ele, a tela mostra "—".
-        fca: ganhoBiomassaKg > 0 ? racaoAcumuladaKg / ganhoBiomassaKg : null,
+        fca: calcularFca(racaoAcumuladaKg, ganhoBiomassaKg),
         mortalidadeAcumulada,
         taxaMortalidade,
         taxaSobrevivencia: 100 - taxaMortalidade,
@@ -159,6 +158,27 @@ export function calcularIndicadores({ tanque, ciclo, registros, hoje }) {
             : null,
         ultimoRegistro: ordenados.at(-1) ?? null,
     };
+}
+
+// FCA = ração ÷ ganho de biomassa (seção 9.4). Só faz sentido com ganho; sem
+// ração anotada, é null: "0,00" pareceria excelente quando na verdade falta dado.
+export function calcularFca(racaoKg, ganhoKg) {
+    return ganhoKg > 0 && racaoKg > 0 ? racaoKg / ganhoKg : null;
+}
+
+// Cobertura da ração (seção 9.4): dias do ciclo com ração informada (racaoKg > 0)
+// ÷ dias do ciclo até a data × 100. Abaixo do mínimo, a FCA sai menor que a
+// real. Dias de jejum são legítimos: por isso é só um aviso.
+export const COBERTURA_MINIMA_RACAO_PCT = 80;
+
+export function calcularCoberturaRacao({ ciclo, registros, ate }) {
+    const diasCiclo = diasEntre(ciclo.dataInicio, ate);
+    const datas = new Set(registros
+        .filter((registro) => registro.racaoKg > 0 && registro.data >= ciclo.dataInicio && registro.data <= ate)
+        .map((registro) => registro.data));
+    const diasComRacao = Math.min(datas.size, Math.max(diasCiclo, 0));
+    const percentual = diasCiclo > 0 ? (diasComRacao / diasCiclo) * 100 : null;
+    return { diasComRacao, diasCiclo, percentual, baixa: percentual !== null && percentual < COBERTURA_MINIMA_RACAO_PCT };
 }
 
 // Base do ganho estimado durante o ciclo (seção 9.4): a biomassa do povoamento
@@ -293,7 +313,8 @@ export function calcularResultadoCiclo({ tanque, ciclo, registros }) {
         mortalidadeNaoObservada: Math.max(0, ciclo.quantidadeInicial - quantidadeFinal - mortosEncontrados),
         ganhoBiomassaKg,
         racaoTotalKg,
-        fcaFinal: ganhoBiomassaKg > 0 ? racaoTotalKg / ganhoBiomassaKg : null,
+        fcaFinal: calcularFca(racaoTotalKg, ganhoBiomassaKg),
+        coberturaRacao: calcularCoberturaRacao({ ciclo, registros, ate: ciclo.dataDespesca }),
         diasCultivo,
         ganhoPesoDiarioG: diasCultivo > 0 ? (ciclo.pesoMedioFinalG - ciclo.pesoMedioInicialG) / diasCultivo : null,
         produtividadeKgM3: ciclo.biomassaFinalKg / tanque.volumeM3,
@@ -301,8 +322,9 @@ export function calcularResultadoCiclo({ tanque, ciclo, registros }) {
     };
 }
 
-// Leituras de curto prazo da aba Resumo do tanque (seção 7.3): o que mudou na
-// última semana, a ração anotada hoje e a previsão do peso alvo. Usa os mesmos cálculos de calcularIndicadores e da série diária.
+// Leituras de curto prazo da aba Resumo do tanque (seção 7.3): o ganho desde a
+// pesagem anterior, a mortalidade da semana, a ração anotada hoje e a previsão
+// do peso alvo. Usa os mesmos cálculos de calcularIndicadores e da série diária.
 export function calcularAcompanhamento({ ciclo, registros, indicadores, hoje }) {
     const semana = calcularSerieDiaria(ciclo, registros, somarDias(hoje, -7), hoje).filter(Boolean);
     const mortosSemana = semana.slice(1).reduce((total, dia) => total + dia.mortalidadeDia, 0);
@@ -313,8 +335,14 @@ export function calcularAcompanhamento({ ciclo, registros, indicadores, hoje }) 
     if (ciclo.pesoAlvoG && indicadores.taxaCrescimentoGDia > 0 && indicadores.pesoMedioG < ciclo.pesoAlvoG) {
         dataPesoAlvo = somarDias(indicadores.dataPesoAtual, Math.ceil((ciclo.pesoAlvoG - indicadores.pesoMedioG) / indicadores.taxaCrescimentoGDia));
     }
+    // Ganho de biomassa desde a pesagem anterior (o povoamento conta como
+    // pesagem). A biomassa só muda de verdade com biometria; medir "nos últimos
+    // 7 dias" jogava na semana todo o crescimento desde a pesagem de antes.
+    const pesagens = calcularLinhaDoTempo(ciclo, registros).filter((dia, indice) => indice === 0 || dia.pesou);
+    const anterior = pesagens.length > 1 ? pesagens.at(-2) : null;
     return {
-        ganhoBiomassaSemanaKg: semana.length > 1 ? semana.at(-1).biomassaKg - semana[0].biomassaKg : null,
+        ganhoBiomassaDesdePesagemKg: anterior ? indicadores.biomassaKg - anterior.biomassaKg : null,
+        dataPesagemAnterior: anterior?.data ?? null,
         taxaMortalidadeSemana: peixesInicioSemana > 0 ? (mortosSemana / peixesInicioSemana) * 100 : null,
         racaoHojeKg: registros.filter((registro) => registro.data === hoje).reduce((total, registro) => total + valorOuZero(registro.racaoKg), 0),
         diasDesdePesagem: diasEntre(indicadores.dataPesoAtual, hoje),
@@ -405,7 +433,7 @@ export function calcularSerieDiaria(ciclo, registros, dataInicio, dataFim) {
             mortalidadeDia: noProprioDia ? dia.mortalidadeDia : 0,
             mortalidadeAcumulada: dia.mortalidadeAcumulada,
             taxaMortalidade: (dia.mortalidadeAcumulada / ciclo.quantidadeInicial) * 100,
-            fca: ganhoKg > 0 ? dia.racaoAcumuladaKg / ganhoKg : null,
+            fca: calcularFca(dia.racaoAcumuladaKg, ganhoKg),
         });
     }
     return serie;
@@ -443,7 +471,7 @@ export function calcularResumoPeriodo(itens, { dataInicio, dataFim }) {
             biomassaKg: somar(({ serie }) => serie[indice].biomassaKg),
             quantidade: somar(({ serie }) => serie[indice].quantidade),
             racaoDiaKg: somar(({ serie }) => serie[indice].racaoDiaKg),
-            fca: ganhoKg > 0 ? somar(({ serie }) => serie[indice].racaoAcumuladaKg) / ganhoKg : null,
+            fca: calcularFca(somar(({ serie }) => serie[indice].racaoAcumuladaKg), ganhoKg),
             taxaMortalidade: quantidadeInicial > 0 ? (somar(({ serie }) => serie[indice].mortalidadeAcumulada) / quantidadeInicial) * 100 : null,
         };
     });
@@ -477,8 +505,10 @@ export function calcularResumoPeriodo(itens, { dataInicio, dataFim }) {
         peixes: { atual: somarPontas(({ fim }) => fim.quantidade), perdas: mortalidadeFim - mortalidadeInicio },
         // FCA do ciclo (geral) e do período: ração dividida pelo ganho de biomassa em cada intervalo.
         fca: {
-            geral: ganhoCicloKg > 0 ? somarPontas(({ fim }) => fim.racaoAcumuladaKg) / ganhoCicloKg : null,
-            periodo: ganhoPeriodoKg > 0 ? racaoPeriodoKg / ganhoPeriodoKg : null,
+            geral: calcularFca(somarPontas(({ fim }) => fim.racaoAcumuladaKg), ganhoCicloKg),
+            periodo: calcularFca(racaoPeriodoKg, ganhoPeriodoKg),
+            // Para a tela dizer por que não há FCA (sem ração ou sem ganho).
+            racaoCicloKg: somarPontas(({ fim }) => fim.racaoAcumuladaKg),
             racaoPeriodoKg,
             ganhoPeriodoKg,
         },

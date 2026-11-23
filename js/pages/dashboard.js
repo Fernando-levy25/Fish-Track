@@ -452,11 +452,13 @@ function montarDestaque(chave) {
                 visual: sparkline('quantidade'),
             };
         case 'fca': {
-            const { geral, periodo: fcaPeriodo } = resumo.fca;
+            const { geral, periodo: fcaPeriodo, racaoCicloKg } = resumo.fca;
             const meta = contexto.metaFca;
+            // Sem FCA, o motivo (seção 9.4): sem ração anotada, "0,00" pareceria excelente.
+            const motivo = racaoCicloKg > 0 ? 'Sem ganho de peso ainda' : 'Sem ração anotada';
             return {
-                valor: formatarFca(geral),
-                apoio: `FCA do período: ${formatarFca(fcaPeriodo)}`,
+                valor: geral === null ? motivo : formatarFca(geral),
+                apoio: fcaPeriodo === null ? 'FCA do período: sem dados no período' : `FCA do período: ${formatarFca(fcaPeriodo)}`,
                 selo: Number.isFinite(geral)
                     ? (geral <= meta ? { texto: 'Na meta', variante: 'sucesso' } : { texto: 'Acima da meta', variante: 'atencao' })
                     : null,

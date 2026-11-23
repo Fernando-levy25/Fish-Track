@@ -57,6 +57,15 @@
                         <option value="">Toda a produção</option>
                     </select>
                 </div>
+                <div class="campo" id="campo-periodo-relatorio-caixa" hidden>
+                    <label class="campo__rotulo" for="campo-periodo-relatorio">Ciclos encerrados nos</label>
+                    <select class="campo__select" id="campo-periodo-relatorio">
+                        <option value="30">Últimos 30 dias</option>
+                        <option value="90" selected>Últimos 90 dias</option>
+                        <option value="365">Últimos 12 meses</option>
+                        <option value="tudo">Desde o início</option>
+                    </select>
+                </div>
                 <button class="botao botao--primario" id="botao-imprimir" type="button">Imprimir ou salvar PDF</button>
             </div>
         </section>

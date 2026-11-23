@@ -45,6 +45,23 @@ export function listarResultadosCiclos(tanqueId) {
     return encerrados.map((item, indice) => ({ ...item, anterior: encerrados[indice - 1]?.resultado ?? null })).reverse();
 }
 
+// Ciclos encerrados de todos os tanques com despesca entre inicio e fim
+// (inicio null: desde o primeiro), do mais recente ao mais antigo, com o
+// resultado real de cada um (seção 7.12, relatório da produção).
+export function listarCiclosEncerrados({ inicio = null, fim }) {
+    const dados = lerDados();
+    const tanques = new Map(dados.tanques.map((tanque) => [tanque.id, tanque]));
+    return dados.ciclos
+        .filter((ciclo) => ciclo.status === 'encerrado' && tanques.has(ciclo.tanqueId)
+            && ciclo.dataDespesca <= fim && (!inicio || ciclo.dataDespesca >= inicio))
+        .sort((a, b) => b.dataDespesca.localeCompare(a.dataDespesca))
+        .map((ciclo) => {
+            const tanque = tanques.get(ciclo.tanqueId);
+            const registros = dados.registros.filter((registro) => registro.cicloId === ciclo.id);
+            return { tanque, ciclo, resultado: calcularResultadoCiclo({ tanque, ciclo, registros }) };
+        });
+}
+
 // Motivo pelo qual o tanque não pode iniciar um ciclo agora, ou null se pode.
 export function verificarInicioCiclo(tanqueId) {
     const dados = lerDados();

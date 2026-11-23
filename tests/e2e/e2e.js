@@ -509,11 +509,12 @@ async function roteiro() {
     etapa = 'Hoje com dados';
     verificar('resumo do dia', texto('resumo-producao') === '3 tanques em cultivo · 2 precisam de atenção', texto('resumo-producao'));
     verificar('data por extenso', /^[A-ZÀ-Ú][a-zà-úç-]+, \d/.test(texto('data-hoje')), texto('data-hoje'));
-    verificar('contadores do menu, inclusive lembretes na Agenda', doc().querySelector('[data-contador="alertas"]').textContent === '4'
+    // Prompt 05, B1: sem o alerta de peso abaixo do esperado, 3 alertas (antes 4).
+    verificar('contadores do menu, inclusive lembretes na Agenda', doc().querySelector('[data-contador="alertas"]').textContent === '3'
         && doc().querySelector('[data-contador="tanques"]').textContent === '5' && Number(doc().querySelector('[data-contador="lembretes"]').textContent) > 0);
     const tarefas = () => [...porId('lista-tarefas').querySelectorAll('.tarefa')];
     verificar('"O que fazer hoje" vem antes de tudo', doc().querySelector('main .secao__titulo')?.textContent === 'O que fazer hoje');
-    verificar('todo alerta vira tarefa, o alto primeiro', tarefas().filter((tarefa) => /tarefa--(alta|media|baixa)/.test(tarefa.className)).length === 4
+    verificar('todo alerta vira tarefa, o alto primeiro', tarefas().filter((tarefa) => /tarefa--(alta|media|baixa)/.test(tarefa.className)).length === 3
         && tarefas()[0].classList.contains('tarefa--alta') && tarefas()[0].textContent.includes('Tanque 02 · 45 peixes mortos ontem'), tarefas().map((t) => t.textContent).join(' | '));
     verificar('alimentar os tanques com plano, com uma ação', tarefas().some((tarefa) => tarefa.textContent.startsWith('Alimentar 2 tanques')
         && tarefa.querySelector('a')?.getAttribute('href') === 'folha.html'), tarefas().map((t) => t.textContent).join(' | '));
@@ -825,8 +826,9 @@ async function testarRelatorios() {
     verificar('item Relatórios no menu', doc().querySelector('.menu__link--lateral[href="relatorio.html"]')?.getAttribute('aria-current') === 'page');
     verificar('título e emissão', texto('titulo-relatorio') === 'Relatório da produção' && texto('emissao-relatorio').startsWith('Emitido em '));
     verificar('um bloco por tanque em cultivo', doc().querySelectorAll('.relatorio__secao--inteira').length === 3);
-    // Prompt 05, A1: os mortos de ontem do Tanque 02 continuam no alerta depois de anotar hoje.
-    verificar('alertas com o tanque', doc().querySelectorAll('#conteudo-relatorio .lista-alertas__item').length === 4,
+    // Prompt 05: os mortos de ontem do Tanque 02 continuam no alerta depois de anotar
+    // hoje (A1), e o alerta de peso esperado saiu (B1).
+    verificar('alertas com o tanque', doc().querySelectorAll('#conteudo-relatorio .lista-alertas__item').length === 3,
         [...doc().querySelectorAll('#conteudo-relatorio .lista-alertas__item')].map((item) => item.textContent).join(' | '));
     verificar('tanques sem ciclo citados', porId('conteudo-relatorio').textContent.includes('Tanque-rede 04 (em manutenção)'));
     verificar('nome do PDF pelo título', doc().title === `Fish Track - Relatório da produção - ${HOJE}`, doc().title);
@@ -840,12 +842,17 @@ async function testarRelatorios() {
     verificar('três gráficos', porId('conteudo-relatorio').querySelectorAll('.cartao-grafico svg').length === 3);
     const registrosT02 = dados().registros.filter((registro) => registro.tanqueId === tanque02).length;
     verificar('tabela com todos os registros do ciclo', porId('conteudo-relatorio').querySelectorAll('tbody tr').length === registrosT02, registrosT02);
-    verificar('alertas do tanque', porId('conteudo-relatorio').querySelectorAll('.lista-alertas__item').length === 2,
+    verificar('alertas do tanque', porId('conteudo-relatorio').querySelectorAll('.lista-alertas__item').length === 1,
         [...porId('conteudo-relatorio').querySelectorAll('.lista-alertas__item')].map((item) => item.textContent).join(' | '));
     verificar('FCA com meta e contexto', porId('conteudo-relatorio').textContent.includes('meta de 1,60'));
     const viveiro = dados().tanques.find((tanque) => tanque.nome === 'Viveiro Norte').id;
     await abrir(`relatorio.html?tanqueId=${viveiro}`);
-    verificar('tanque sem ciclo mostra o último', porId('conteudo-relatorio').textContent.includes('Sem ciclo em andamento. Último ciclo'));
+    // Prompt 05, B6: os resultados reais do último ciclo, e não só uma frase.
+    verificar('tanque sem ciclo mostra o resultado do último', porId('conteudo-relatorio').textContent.includes('Resultado do último ciclo')
+        && porId('conteudo-relatorio').querySelector('.resumo-ciclo')?.textContent.includes('Sobrevivência real'), porId('conteudo-relatorio').textContent.slice(0, 300));
+    await abrir('relatorio.html?periodo=tudo');
+    verificar('ciclos encerrados no período', porId('conteudo-relatorio').textContent.includes('Ciclos encerrados desde o início')
+        && porId('conteudo-relatorio').querySelector('[data-campo="ciclosEncerrados"] tbody tr') !== null && porId('campo-periodo-relatorio').value === 'tudo');
     await abrir('relatorio.html?tanqueId=inexistente');
     verificar('tanque inexistente', porId('conteudo-relatorio').textContent.includes('Tanque não encontrado'));
     quadro.style.width = '390px';
@@ -977,6 +984,14 @@ async function testarTesteDeUsuario() {
     const alertasDoTanque = () => porId('lista-alertas-tanque').textContent;
     verificar('mortalidade de ontem visível depois de anotar hoje', alertasDoTanque().includes('400 peixes mortos em'), alertasDoTanque());
     verificar('nenhum alerta de ração com o plano de 6%', !alertasDoTanque().includes('Ração acima'), alertasDoTanque());
+    verificar('nenhum alerta de peso abaixo do esperado', !alertasDoTanque().includes('abaixo do esperado'), alertasDoTanque());
+
+    etapa = 'Teste de 23/11: biomassa e FCA';
+    const inicioCiclo = somarDias(HOJE, -28);
+    const cartaoDe = (nome) => doc().querySelector(`[data-indicador="${nome}"]`)?.closest('.cartao-indicador')?.textContent ?? '';
+    verificar('ganho de biomassa desde a pesagem anterior, com a data', cartaoDe('biomassa').includes(`desde ${emBr(inicioCiclo).slice(0, 5)} (pesagem anterior)`), cartaoDe('biomassa'));
+    verificar('FCA com a ração anotada em 2 de 28 dias e o aviso', cartaoDe('fca').includes('Ração anotada em 2 de 28 dias')
+        && Boolean(doc().querySelector('[data-indicador="avisoCoberturaRacao"]')), cartaoDe('fca'));
 
     etapa = 'Teste de 23/11: ração em g';
     const unidades = dados();
@@ -986,6 +1001,19 @@ async function testarTesteDeUsuario() {
     // Depois dos 3 mortos de hoje: 9.597 × 1,04 g × 6% = 598,9 g, em 4 refeições de 149,7 g.
     verificar('ração do dia em g, com a refeição em casas', indicador('racaoSugerida') === '598,9 g por dia'
         && texto('cartao-racao').includes('4 refeições de 149,7 g'), `${indicador('racaoSugerida')} · ${texto('cartao-racao')}`);
+    unidades.config.unidades = { biomassa: 'kg', racao: 'kg' };
+    localStorage.setItem(CHAVE, JSON.stringify(unidades));
+
+    etapa = 'Teste de 23/11: despesca e relatório';
+    await abrir(`ciclo-form.html?tanqueId=${tanqueId}&acao=despesca`);
+    preencher({ 'campo-data-despesca': HOJE, 'campo-biomassa-final': '9', 'campo-peso-final': '1,1' });
+    await enviarENavegar('formulario-registrar-despesca');
+    await abrir(`relatorio.html?tanqueId=${tanqueId}`);
+    const relatorio = () => porId('conteudo-relatorio').textContent;
+    // 9 kg ÷ 1,1 g = 8.182 animais: sobrevivência de 81,8%, 1.415 não observados.
+    verificar('relatório do viveiro com os resultados reais', relatorio().includes('Resultado do último ciclo') && relatorio().includes('81,8%')
+        && relatorio().includes('1.415 não observados') && relatorio().includes('Ração anotada em 2 de 28 dias'), relatorio().slice(0, 400));
+    verificar('FCA final com o aviso de ração incompleta', relatorio().includes('FCA provavelmente menor que a real'), relatorio().slice(0, 400));
     localStorage.setItem(CHAVE, dadosAntes);
 }
 

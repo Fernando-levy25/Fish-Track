@@ -86,7 +86,6 @@ export function obterAcaoDoAlerta(alerta) {
         case 'mortalidade-registro':
         case 'racao':
         case 'mortalidade-acumulada':
-        case 'peso':
             return { texto: 'Ver tanque', icone: 'seta', href: tanque() };
         case 'capacidade':
             return { texto: 'Planejar despesca', icone: 'rede', href: montarUrl('ciclo-form.html', { tanqueId: alerta.tanqueId, acao: 'despesca' }) };
