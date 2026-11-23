@@ -156,7 +156,7 @@ A primeira tela responde "o que eu faço agora?". No computador, as tarefas fica
 
 ### 7.15 Folha do dia (`folha.html`)
 
-"Anotar o dia", o destaque do menu: uma linha por tanque com ciclo ativo, com ração (já preenchida com a sugestão, apagável), sobra e mortos, e a caixa "Anotado". "Conforme o plano" preenche a ração sugerida em todas as linhas vazias. "Salvar o dia" grava todas as linhas marcadas de uma vez, tudo ou nada (`salvarFolhaDoDia`): um erro aponta a linha e o campo e nada é salvo. Datas: hoje ou ontem. Um tanque que já tem rotina na data aparece como "Já anotado", com link para editar. `folha.html?tanque=...` destaca o tanque.
+"Anotar o dia", o destaque do menu: uma linha por tanque com ciclo ativo, com ração (já preenchida com a sugestão exata, apagável), sobra e mortos, e a caixa "Anotado". "Conforme o plano" preenche a ração sugerida exata em todas as linhas, e é esse valor que é gravado. A ração e a sobra de todas as linhas usam **uma unidade só** (kg ou g), em qualquer data: trocar a data mantém a unidade em uso, e trocar a unidade de um campo troca todas as linhas, convertendo os valores já preenchidos, com a conversão visível. Ração do dia menor que 1% ou maior que 10 vezes a sugestão mostra no campo "Confira a unidade: a sugestão é 624 g." (não bloqueia; fatores em `FATOR_RACAO_IMPROVAVEL_MINIMO` e `FATOR_RACAO_IMPROVAVEL_MAXIMO`, `domain/registros.js`, seção 13). "Salvar o dia" grava todas as linhas marcadas de uma vez, tudo ou nada (`salvarFolhaDoDia`): um erro aponta a linha e o campo e nada é salvo. Datas: hoje ou ontem. Um tanque que já tem rotina na data aparece como "Já anotado", com link para editar. `folha.html?tanque=...` destaca o tanque.
 
 ### 7.11 Menu lateral
 
@@ -334,7 +334,14 @@ Os valores são sempre armazenados nestas unidades e convertidos apenas na exibi
 | Biomassa final (despesca) | kg · t | kg |
 | Peso médio (povoamento, despesca, "já tenho o peso médio") | g | g (sem seletor) |
 
-**Exibição:** biomassa e ração seguem a preferência de Configurações (`config.unidades = { biomassa: "kg" | "t", racao: "kg" | "g" }`, padrão kg e kg) em todas as telas, gráficos (com a unidade no título) e relatórios, e **nunca trocam de unidade sozinhas** conforme o tamanho do número. Em `core/format.js`: `converterParaBase(valor, unidade, grandeza)`, `formatarBiomassa(kg)` e `formatarRacao(kg)`; a página define a preferência ao abrir (`definirUnidadesExibicao`). O CSV continua em kg, com a unidade no cabeçalho. As conversões arredondam o ruído do ponto flutuante (32,55 kg viraria 32.549,999… g).
+**Exibição:** biomassa e ração seguem a preferência de Configurações (`config.unidades = { biomassa: "kg" | "t", racao: "kg" | "g" }`, padrão kg e kg) em todas as telas, gráficos (com a unidade no título) e relatórios, e **nunca trocam de unidade sozinhas** conforme o tamanho do número. Em `core/format.js`: `converterParaBase(valor, unidade, grandeza)`, `formatarBiomassa(kg)` e `formatarRacao(kg)`; a página define a preferência ao abrir (`definirUnidadesExibicao`). O CSV continua em kg, com a unidade no cabeçalho e o valor completo, sem arredondar para exibição. As conversões arredondam o ruído do ponto flutuante (32,55 kg viraria 32.549,999… g).
+
+**Casas decimais dos pesos:** a unidade nunca muda; o que se adapta é o número de casas, decidido por uma função só, `calcularCasasDecimais(valor, casasPadrao)` em `core/format.js`, usada por `formatarGramas`, `formatarMassa`, `formatarBiomassa`, `formatarRacao`, `formatarGramasPorDia` e pela conversão abaixo dos campos (`formatarConversao`). Para camarão e animais pequenos, a casa decimal é a informação.
+
+- A partir de 10: as casas padrão (g e kg com 1, t com 2): "1.234,5 kg", "542,5 g", "22,5 g".
+- Maior que 0 e menor que 10: casas até mostrar dois algarismos depois da vírgula que importam, no máximo 3, sem zeros à direita: 1,04 g → "1,04 g"; 0,01 g → "0,01 g"; 0,624 kg → "0,62 kg"; 0,0225 kg → "0,023 kg"; 6,2 kg → "6,2 kg".
+- Maior que 0 que daria zero mesmo com 3 casas: "< 0,001" com a unidade ("< 0,001 kg"). **Nunca "0" para um valor maior que 0.** O zero de verdade continua "0".
+- O valor dentro de um campo editável (ex.: a ração sugerida já preenchida) vem com até 3 casas na unidade escolhida ("0,624" em kg, "624" em g), e o que aparece no campo é o que é gravado.
 
 | Grandeza | Unidade |
 |---|---|
@@ -645,9 +652,9 @@ Os alertas são calculados sempre que os dados mudam e não são armazenados. Ca
 
 | Alerta | Condição | Limite padrão | Gravidade |
 |---|---|---|---|
-| **Mortalidade elevada no registro** | mortos encontrados no registro > X% da quantidade estimada (a mensagem diz "do estoque estimado") | 1% | Alta |
+| **Mortalidade elevada no registro** | em algum dia com registro dos últimos 7 dias (contados até hoje), mortos encontrados no dia > X% da quantidade estimada no início do dia (a mensagem diz "do estoque estimado") | 1% | Alta |
 | **Mortalidade acumulada elevada** | taxa de mortalidade do ciclo > X% | 10% | Média |
-| **Ração acima do limite** | ração do dia > X% da biomassa | 5% | Média |
+| **Ração acima do limite** | com plano de alimentação que cobre o peso do dia: ração fornecida > sugestão do plano para o dia + 20%; sem plano (ou peso fora das faixas): ração fornecida > X% da biomassa | 5% (sem plano) | Média |
 | **Tanque próximo da capacidade** | capacidade utilizada (biomassa ÷ carga máxima) ≥ X%; não avaliado sem densidade máxima | 90% | Média |
 | **Peso médio abaixo do esperado** | peso atual < X% do peso esperado na data* | 85% | Baixa |
 | **Tanque sem registro** | nenhum registro há mais de X dias | 7 dias | Baixa |
@@ -655,7 +662,12 @@ Os alertas são calculados sempre que os dados mudam e não são armazenados. Ca
 
 \* O **peso esperado** é uma interpolação linear entre o peso inicial (na data de início) e o peso alvo (na data prevista de despesca). Esse alerta só é avaliado se o ciclo tiver peso alvo e data prevista.
 
-Os alertas só são avaliados para tanques com ciclo ativo. Os de registro (mortalidade no registro e ração) olham o último dia com registro, somando os registros da mesma data (RN15). O peso médio é comparado com o esperado na data da última pesagem; sem pesagem após o povoamento, esse alerta não é avaliado.
+Os alertas só são avaliados para tanques com ciclo ativo. Os registros da mesma data são somados (RN15).
+
+- **Mortalidade no registro:** avalia cada dia com registro na janela de `JANELA_ALERTA_MORTALIDADE_DIAS` (7, a mesma da "Mortalidade da semana"), contada a partir de hoje e não do último registro; um pico não some quando se anota o dia seguinte, e um dia anotado com atraso dentro da janela também entra. Com mais de um dia acima do limite, o alerta é um só, aponta o pior dia (data do alerta) e diz quantos outros passaram: "400 peixes mortos em 22/11/2026: 4% do estoque estimado (limite de 1%). Mais 1 dia acima do limite nesta semana." (Texto atual da tela, ainda escrito para peixe; ver seção 13.)
+- **Ração:** olha o último dia com registro e compara a ração **fornecida** (o plano diz quanto fornecer). Uma função pura decide o limite, `calcularLimiteRacaoDia({ plano, indicadores, limites })` em `alertas.js`: com plano que cobre o peso do dia, a sugestão do plano para aquele dia (biomassa e peso estimados do dia, seção 9.10) mais `TOLERANCIA_RACAO_PLANO_PCT` (20%): "Ração de 900 g em 23/11/2026, 44% acima do plano (624 g; tolerância de 20%)."; sem plano, ou com o peso fora das faixas (ou plano por faixas antes da primeira biometria), o limite geral em % da biomassa, como antes. O plano vem na situação do tanque (`domain/tanques.js`), e a agenda (seção 9.6) usa as mesmas regras, com o plano atual do tanque.
+
+O peso médio é comparado com o esperado na data da última pesagem; sem pesagem após o povoamento, esse alerta não é avaliado.
 
 > ⚠️ Os limites padrão são valores iniciais de referência e devem ser **validados com produtores** antes de serem considerados definitivos.
 
@@ -667,7 +679,7 @@ Eventos exibidos (`listarEventosCalendario` em `domain/ciclos.js`):
 - cada registro;
 - despesca prevista;
 - despesca realizada;
-- alertas do dia, calculados a partir dos registros daquela data (somados, RN15): mortalidade no registro acima do limite (gravidade alta) e ração acima do limite (média), com os limites do tanque (`avaliarAlertasDosDias` em `domain/alertas.js`);
+- alertas do dia, calculados a partir dos registros daquela data (somados, RN15): mortalidade no registro acima do limite (gravidade alta) e ração acima do limite (média), com os limites do tanque e a mesma regra de ração da seção 9.5 (plano do tanque ou limite geral) (`avaliarAlertasDosDias` em `domain/alertas.js`);
 - ocorrências de lembretes (seção 8.2).
 
 Na agenda geral, tanques arquivados ficam de fora. A despesca prevista só aparece enquanto o ciclo está ativo. Os eventos de um dia vêm na ordem das etiquetas: alertas, ciclo, lembretes, registros.
@@ -975,3 +987,6 @@ Textos: frases curtas, voz ativa, verbo no início dos botões, todo número com
 | Densidade por volume (kg/m³) ou por área (animais/m², kg/ha) | Só por volume | Laboratório |
 | Ração ajustada por bandeja de alimentação (camarão) | Não existe no app | Laboratório |
 | Modelos prontos (plano Embrapa de tilápia) usados com camarão | Aviso "vale para tilápia" no modelo | Laboratório |
+| Janela do alerta de mortalidade | 7 dias até hoje (`JANELA_ALERTA_MORTALIDADE_DIAS`) | Laboratório parceiro (carcinicultura) |
+| Tolerância da ração sobre o plano antes do alerta | 20% (`TOLERANCIA_RACAO_PLANO_PCT`) | Laboratório parceiro (carcinicultura) |
+| Aviso de unidade improvável na folha do dia | Ração menor que 1% ou maior que 10 vezes a sugestão (`FATOR_RACAO_IMPROVAVEL_MINIMO` e `FATOR_RACAO_IMPROVAVEL_MAXIMO`) | Laboratório parceiro (carcinicultura) |

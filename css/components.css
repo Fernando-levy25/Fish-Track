@@ -2602,6 +2602,20 @@
     display: none;
 }
 
+/* Aviso que não bloqueia: "Confira a unidade" (seção 7.15). */
+.campo__aviso {
+    padding: var(--espaco-1) var(--espaco-2);
+    border-radius: var(--raio);
+    background: var(--cor-atencao-suave);
+    color: var(--cor-atencao);
+    font-size: var(--texto-2);
+    font-weight: 600;
+}
+
+.campo__aviso:empty {
+    display: none;
+}
+
 .campo__input--curto {
     width: 6.5rem;
     min-width: 0;

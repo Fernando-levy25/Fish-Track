@@ -4,11 +4,17 @@
 // registrar uma alimentação que não aconteceu.
 
 import { hojeISO, paraNumero, somarDias } from '../core/utils.js';
-import { formatarDataCurta, pluralizar } from '../core/format.js';
+import { formatarDataCurta, formatarMassa, pluralizar } from '../core/format.js';
 import { lerDados, lerPreferencia, salvarPreferencia } from '../core/storage.js';
 import { analisarTanque } from '../domain/alertas.js';
 import { calcularEstadoTanque } from '../domain/estado.js';
-import { CAUSAS_MORTALIDADE, resumirRegistro, salvarFolhaDoDia, temRotinaNaData } from '../domain/registros.js';
+import {
+    avaliarRacaoImprovavel,
+    CAUSAS_MORTALIDADE,
+    resumirRegistro,
+    salvarFolhaDoDia,
+    temRotinaNaData,
+} from '../domain/registros.js';
 import { obterLimitesPadrao, obterUnidades } from '../domain/configuracoes.js';
 import { listarSituacoes, listarTanques } from '../domain/tanques.js';
 import { ErroValidacao } from '../domain/validacao.js';
@@ -164,20 +170,50 @@ function criarLinhaEditavel(situacao, estado, cor, posicao) {
             campo('observacoes', 'Observações', observacoes),
         ]),
     ]);
+    // Uma unidade só para a ração e a sobra de todas as linhas, em qualquer data
+    // (seção 7.15): a unidade em uso é lida a cada montagem e, trocada num campo,
+    // vale para todos. Antes cada campo tinha a sua, e trocar a data mudava a
+    // unidade sem aviso ("0,5" pensado em kg virava 0,5 g).
     const unidade = {
         grandeza: 'racao',
         unidades: ['kg', 'g'],
-        unidadeInicial: lerPreferencia(CHAVE_UNIDADE, 'kg'),
-        aoTrocarUnidade: (escolhida) => salvarPreferencia(CHAVE_UNIDADE, escolhida),
+        unidadeInicial: unidadeEmUso(),
+        aoTrocarUnidade: trocarUnidade,
     };
     const racao = iniciarCampoUnidade(entradaRacao, unidade);
     const sobra = iniciarCampoUnidade(entradaSobra, unidade);
-    // A ração sugerida já vem no campo, mas só vale se a linha for marcada.
+    // A ração sugerida já vem no campo, exata (até 3 casas na unidade em uso),
+    // mas só vale se a linha for marcada.
     if (descricao.sugestao) {
-        racao.definirBase(Math.round(descricao.sugestao.racaoDiaKg * 10) / 10);
+        racao.definirBase(descricao.sugestao.racaoDiaKg);
     }
-    linhas.push({ situacao, sugestao: descricao.sugestao, racao, sobra, item });
+    const avisoUnidade = criarElemento('p', { classe: 'campo__aviso', atributos: { 'aria-live': 'polite', 'data-campo': 'avisoUnidade' } });
+    entradaRacao.closest('.campo').querySelector('.campo__erro').before(avisoUnidade);
+    const linha = { situacao, sugestao: descricao.sugestao, racao, sobra, item, avisoUnidade };
+    entradaRacao.addEventListener('input', () => avisarUnidade(linha));
+    linhas.push(linha);
     return item;
+}
+
+function unidadeEmUso() {
+    return lerPreferencia(CHAVE_UNIDADE, 'kg') === 'g' ? 'g' : 'kg';
+}
+
+function trocarUnidade(escolhida) {
+    salvarPreferencia(CHAVE_UNIDADE, escolhida);
+    for (const linha of linhas) {
+        linha.racao.definirUnidade(escolhida);
+        linha.sobra.definirUnidade(escolhida);
+        avisarUnidade(linha);
+    }
+}
+
+// Valor muito longe da sugestão: provavelmente a unidade errada (não bloqueia).
+function avisarUnidade(linha) {
+    const improvavel = linha.sugestao && avaliarRacaoImprovavel(linha.racao.lerBase(), linha.sugestao.racaoDiaKg);
+    linha.avisoUnidade.textContent = improvavel
+        ? `Confira a unidade: a sugestão é ${formatarMassa(linha.sugestao.racaoDiaKg, 'racao', linha.racao.unidade())}.`
+        : '';
 }
 
 function linhasMarcadas() {
@@ -198,7 +234,9 @@ function atualizarBotao() {
 function alimentarConformePlano() {
     for (const linha of linhas) {
         if (linha.sugestao) {
-            linha.racao.definirBase(Math.round(linha.sugestao.racaoDiaKg * 10) / 10);
+            // A sugestão exata: o que o campo mostra é o que será gravado.
+            linha.racao.definirBase(linha.sugestao.racaoDiaKg);
+            avisarUnidade(linha);
             linha.item.querySelector('[data-anotado]').checked = true;
         }
     }

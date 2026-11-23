@@ -541,10 +541,12 @@ describe('domain/alertas (seção 9.5)', () => {
     it('mortalidade no registro: acima de 1% do estoque do dia, somando a data', () => {
         assert.deepEqual(avaliar([r(dia(-1), { mortalidade: 10 })]), []);
         assert.deepEqual(avaliar([r(dia(-1), { mortalidade: 6 }), r(dia(-1), { mortalidade: 5 })]), ['mortalidade-registro']);
-        assert.deepEqual(avaliar([r(dia(-2), { mortalidade: 11 }), r(dia(-1), { racaoKg: 0.1 })]), [], 'só o último dia conta');
+        // Prompt 05, A1: antes só o último dia contava; agora a janela de 7 dias.
+        assert.deepEqual(avaliar([r(dia(-2), { mortalidade: 11 }), r(dia(-1), { racaoKg: 0.1 })]), ['mortalidade-registro'], 'um pico não some com o dia seguinte');
     });
     it('mortalidade acumulada acima de 10%', () => {
-        assert.deepEqual(avaliar([r(dia(-5), { mortalidade: 101 }), r(dia(-1), { racaoKg: 0.1 })]), ['mortalidade-acumulada']);
+        // Prompt 05, A1: o pico fica fora da janela de 7 dias, para olhar só o acumulado.
+        assert.deepEqual(avaliar([r(dia(-8), { mortalidade: 101 }), r(dia(-1), { racaoKg: 0.1 })]), ['mortalidade-acumulada']);
     });
     it('ração do dia acima de 5% da biomassa', () => {
         assert.deepEqual(avaliar([r(dia(-1), { racaoKg: 0.5 })]), []);
@@ -573,7 +575,10 @@ describe('domain/alertas (seção 9.5)', () => {
         assert.equal(limites.capacidadePct, 95);
         assert.equal(limites.mortalidadeRegistroPct, 0.5);
         assert.ok(!('chaveDesconhecida' in limites));
-        assert.deepEqual(avaliar([r(dia(-9), { mortalidade: 50 }), r(dia(-8), { mortalidade: 8 })], { limites }), ['mortalidade-registro', 'sem-registro']);
+        // 8 mortos em 950 (0,84%): acima do limite do tanque (0,5%), abaixo do padrão (1%).
+        // Prompt 05, A1: os dias ficam dentro da janela de 7 dias; o "sem registro" tem teste próprio.
+        assert.deepEqual(avaliar([r(dia(-3), { mortalidade: 50 }), r(dia(-2), { mortalidade: 8 })], { limites }), ['mortalidade-registro']);
+        assert.deepEqual(avaliar([r(dia(-3), { mortalidade: 5 }), r(dia(-2), { mortalidade: 8 })]), []);
         const lista = [{ gravidade: 'baixa', data: 'a', tanqueNome: 'A' }, { gravidade: 'alta', data: 'a', tanqueNome: 'B' }];
         assert.equal(alertas.ordenarAlertas(lista)[0].gravidade, 'alta');
         assert.equal(alertas.gravidadeMaisAlta(lista), 'alta');
@@ -850,7 +855,8 @@ describe('Prompt 04, parte A: biometria, unidades e plano de alimentação (RN25
         assert.equal(format.converterParaBase(32.55, 'kg', 'pesoAmostra'), 32550);
         format.definirUnidadesExibicao({ biomassa: 't', racao: 'g' });
         assert.equal(format.formatarBiomassa(1820), '1,82 t');
-        assert.equal(format.formatarBiomassa(5), '0,01 t', 'continua em t mesmo pequeno');
+        // Regra de casas da seção 8.1 (Prompt 05, A2): antes "0,01 t".
+        assert.equal(format.formatarBiomassa(5), '0,005 t', 'continua em t mesmo pequeno, com as casas que precisa');
         assert.equal(format.formatarRacao(0.5), '500 g');
         format.definirUnidadesExibicao({ biomassa: 'kg', racao: 'kg' });
         assert.equal(format.formatarBiomassa(1820), '1.820 kg');

@@ -287,7 +287,8 @@ async function roteiro() {
     preencher({ 'campo-racao': '8,75' });
     await enviarENavegar('formulario-registro');
     verificar('volta ao histórico', doc().location.hash === '#historico' && !porId('painel-historico').hidden);
-    verificar('valor editado na tabela, com unidade', linhaRotina().cells[2].textContent === '8,8 kg', linhaRotina().cells[2].textContent);
+    // Seção 8.1 (Prompt 05, A2): abaixo de 10, duas casas; antes "8,8 kg".
+    verificar('valor editado na tabela, com unidade', linhaRotina().cells[2].textContent === '8,75 kg', linhaRotina().cells[2].textContent);
     const idEditado = new URL(linhaRotina().querySelector('a.link').href).searchParams.get('id');
     await abrir(`registro.html?id=${idEditado}`);
     verificar('edição mostra o valor com vírgula', porId('campo-racao').value === '8,75', porId('campo-racao').value);
@@ -432,7 +433,7 @@ async function roteiro() {
     simuladorBiomassa.value = '500';
     simuladorBiomassa.dispatchEvent(new Event('input', { bubbles: true }));
     const resultadoPlano = () => editor().querySelector('.plano__resultado').textContent;
-    verificar('simulador do plano fixo: 15 kg por dia, 3,75 kg por refeição', resultadoPlano().includes('15 kg por dia') && resultadoPlano().includes('4 refeições de 3,8 kg'), resultadoPlano());
+    verificar('simulador do plano fixo: 15 kg por dia, 3,75 kg por refeição', resultadoPlano().includes('15 kg por dia') && resultadoPlano().includes('4 refeições de 3,75 kg'), resultadoPlano());
     editor().querySelector('[data-acao-plano="modelo"]').click();
     editor().querySelector('[name="simuladorPeso"]').value = '112';
     simuladorBiomassa.dispatchEvent(new Event('input', { bubbles: true }));
@@ -447,7 +448,8 @@ async function roteiro() {
     await abrir(`registro.html?tanqueId=${t01}`);
     verificar('sugestão no registro', texto('texto-sugestao-racao')?.startsWith('Sugerida para hoje:') && !porId('botao-usar-sugestao').hidden);
     porId('botao-usar-sugestao').click();
-    verificar('"Usar sugestão" preenche a ração', /^\d+,\d$/.test(porId('campo-racao').value), porId('campo-racao').value);
+    // Prompt 05, A3: a sugestão exata, com até 3 casas (antes arredondada para 0,1 kg).
+    verificar('"Usar sugestão" preenche a ração', /^\d+(,\d{1,3})?$/.test(porId('campo-racao').value), porId('campo-racao').value);
     await abrir('tanques.html');
     verificar('ração sugerida na lista', [...doc().querySelectorAll('.cartao-tanque')].find((cartao) => cartao.textContent.includes('Tanque 01'))?.textContent.includes('kg por dia'));
     await abrir(`tanque-form.html?id=${t01}`);
@@ -460,7 +462,7 @@ async function roteiro() {
     doc().querySelector('#formulario-unidades [name="racao"][value="g"]').click();
     await enviarSemSair('formulario-unidades');
     await abrir(`tanque.html?id=${t01}`);
-    verificar('preferência de exibição: biomassa em t, ração em g', /^≈ \d+,\d\d t$/.test(indicador('biomassa') ?? '') && /^[\d.]+ g por dia$/.test(indicador('racaoSugerida') ?? ''),
+    verificar('preferência de exibição: biomassa em t, ração em g', /^≈ \d+,\d\d t$/.test(indicador('biomassa') ?? '') && /^[\d.]+(,\d)? g por dia$/.test(indicador('racaoSugerida') ?? ''),
         `${indicador('biomassa')} ${indicador('racaoSugerida')}`);
     await abrir('configuracoes.html');
     doc().querySelector('#formulario-unidades [name="biomassa"][value="kg"]').click();
@@ -585,6 +587,7 @@ async function roteiro() {
     await testarAgenda();
     await testarRelatorios();
     await testarGanhoPesagem();
+    await testarTesteDeUsuario();
     await testarProtecao();
     await abrir('tanques.html');
     verificar('5 tanques na lista padrão', doc().querySelectorAll('.cartao-tanque').length === 5);
@@ -822,7 +825,8 @@ async function testarRelatorios() {
     verificar('item Relatórios no menu', doc().querySelector('.menu__link--lateral[href="relatorio.html"]')?.getAttribute('aria-current') === 'page');
     verificar('título e emissão', texto('titulo-relatorio') === 'Relatório da produção' && texto('emissao-relatorio').startsWith('Emitido em '));
     verificar('um bloco por tanque em cultivo', doc().querySelectorAll('.relatorio__secao--inteira').length === 3);
-    verificar('alertas com o tanque', doc().querySelectorAll('#conteudo-relatorio .lista-alertas__item').length === 3,
+    // Prompt 05, A1: os mortos de ontem do Tanque 02 continuam no alerta depois de anotar hoje.
+    verificar('alertas com o tanque', doc().querySelectorAll('#conteudo-relatorio .lista-alertas__item').length === 4,
         [...doc().querySelectorAll('#conteudo-relatorio .lista-alertas__item')].map((item) => item.textContent).join(' | '));
     verificar('tanques sem ciclo citados', porId('conteudo-relatorio').textContent.includes('Tanque-rede 04 (em manutenção)'));
     verificar('nome do PDF pelo título', doc().title === `Fish Track - Relatório da produção - ${HOJE}`, doc().title);
@@ -836,7 +840,7 @@ async function testarRelatorios() {
     verificar('três gráficos', porId('conteudo-relatorio').querySelectorAll('.cartao-grafico svg').length === 3);
     const registrosT02 = dados().registros.filter((registro) => registro.tanqueId === tanque02).length;
     verificar('tabela com todos os registros do ciclo', porId('conteudo-relatorio').querySelectorAll('tbody tr').length === registrosT02, registrosT02);
-    verificar('alertas do tanque', porId('conteudo-relatorio').querySelectorAll('.lista-alertas__item').length === 1,
+    verificar('alertas do tanque', porId('conteudo-relatorio').querySelectorAll('.lista-alertas__item').length === 2,
         [...porId('conteudo-relatorio').querySelectorAll('.lista-alertas__item')].map((item) => item.textContent).join(' | '));
     verificar('FCA com meta e contexto', porId('conteudo-relatorio').textContent.includes('meta de 1,60'));
     const viveiro = dados().tanques.find((tanque) => tanque.nome === 'Viveiro Norte').id;
@@ -884,6 +888,104 @@ async function testarGanhoPesagem() {
     await esperar(150);
     // Ganho = 167 × (10 − 6) g = 0,668 kg; FCA = 0,08 ÷ 0,668 ≈ 0,12.
     verificar('depois da biometria a FCA aparece', /^≈ 0,1[0-9]$/.test(indicador('fca') ?? ''), indicador('fca'));
+    localStorage.setItem(CHAVE, dadosAntes);
+}
+
+// ---------- Teste de usuário de 23/11/2026 (Prompt 05) ----------
+
+// O roteiro da técnica de laboratório, com as datas contadas a partir de hoje:
+// Viveiro 01 (10 m³, 4 kg/m³, biometria a cada 7 dias, plano fixo de 6% em 4
+// refeições), lote pesado de 0,1 kg a 0,01 g (≈ 10.000), 400 mortos ontem,
+// biometria hoje (50 animais, 52 g) e a ração do plano hoje.
+async function testarTesteDeUsuario() {
+    const dadosAntes = localStorage.getItem(CHAVE);
+    const ONTEM = somarDias(HOJE, -1);
+    etapa = 'Teste de 23/11: povoamento com animais pequenos';
+    // O plano entra direto nos dados: o editor de planos tem teste próprio.
+    const base = dados();
+    const planoId = 'plano-teste-6pct';
+    base.config.tabelasArracoamento.push({ id: planoId, nome: 'Fixo 6% (teste)', tipo: 'fixo', taxaPct: 6, refeicoes: 4, faixas: [] });
+    localStorage.setItem(CHAVE, JSON.stringify(base));
+    await abrir('tanque-form.html');
+    preencher({ 'campo-nome': 'Viveiro 01', 'campo-especie': 'Camarão', 'campo-volume': '10', 'campo-densidade-maxima': '4', 'campo-intervalo-biometria': '7', 'campo-tabela-arracoamento': planoId });
+    await enviarENavegar('formulario-tanque');
+    const tanqueId = dados().tanques.find((tanque) => tanque.nome === 'Viveiro 01').id;
+    verificar('viveiro com o plano de 6%', dados().tanques.find((tanque) => tanque.id === tanqueId).tabelaArracoamentoId === planoId);
+    await abrir(`ciclo-form.html?tanqueId=${tanqueId}&acao=iniciar`);
+    doc().querySelector('[name="modoPovoamento"][value="pesagem"]').click();
+    preencher({ 'campo-data-inicio': somarDias(HOJE, -28), 'campo-biomassa-inicial': '0,1', 'campo-peso-inicial': '0,01' });
+    await enviarENavegar('formulario-iniciar-ciclo');
+    await abrir(`tanque.html?id=${tanqueId}`);
+    verificar('peso médio "0,01 g" depois do povoamento', indicador('pesoMedio') === '0,01 g', indicador('pesoMedio'));
+
+    etapa = 'Teste de 23/11: unidade da folha do dia';
+    await abrir(`folha.html?tanque=${tanqueId}`);
+    const linhaViveiro = () => doc().querySelector(`[data-tanque="${tanqueId}"]`);
+    const posicao = linhaViveiro().dataset.linha;
+    const unidadeDe = (campo) => doc().querySelector(`[name="linhas.${posicao}.${campo}Unidade"]:checked`)?.value;
+    const racaoAntes = porId(`folha-${posicao}-racaoKg`).value;
+    doc().querySelector(`[name="linhas.${posicao}.racaoSobraKgUnidade"][value="g"]`).click();
+    verificar('trocar a unidade de um campo troca todos', unidadeDe('racaoKg') === 'g' && unidadeDe('racaoSobraKg') === 'g',
+        `${unidadeDe('racaoKg')} ${unidadeDe('racaoSobraKg')}`);
+    verificar('a ração já preenchida continua o mesmo peso em g', porId(`folha-${posicao}-racaoKg`).value !== racaoAntes
+        && Math.abs(Number(porId(`folha-${posicao}-racaoKg`).value.replace(',', '.')) - Number(racaoAntes.replace(',', '.')) * 1000) < 1,
+        `${racaoAntes} → ${porId(`folha-${posicao}-racaoKg`).value}`);
+    doc().querySelector('[name="dia"][value="ontem"]').click();
+    await esperar(60);
+    verificar('ontem usa a mesma unidade de hoje', unidadeDe('racaoKg') === 'g' && unidadeDe('racaoSobraKg') === 'g',
+        `${unidadeDe('racaoKg')} ${unidadeDe('racaoSobraKg')}`);
+    const avisoUnidade = () => linhaViveiro().querySelector('[data-campo="avisoUnidade"]').textContent;
+    preencher({ [`folha-${posicao}-racaoKg`]: '0,5' });
+    // 0,5 g = 0,0005 kg: com o máximo de 3 casas, "0,001 kg", e não mais "= 0 kg".
+    verificar('conversão sem "= 0 kg"', texto(`conversao-folha-${posicao}-racaoKg`) === '= 0,001 kg', texto(`conversao-folha-${posicao}-racaoKg`));
+    doc().querySelector(`[name="linhas.${posicao}.racaoKgUnidade"][value="kg"]`).click();
+    verificar('voltar para kg troca todos', unidadeDe('racaoSobraKg') === 'kg' && texto(`conversao-folha-${posicao}-racaoKg`) === '= 500 g', texto(`conversao-folha-${posicao}-racaoKg`));
+    // Lote de 0,1 kg × 6% = 6 g por dia: 0,5 kg é mais de 10 vezes a sugestão (não bloqueia).
+    verificar('valor improvável pede para conferir a unidade', avisoUnidade() === 'Confira a unidade: a sugestão é 0,006 kg.', avisoUnidade());
+    preencher({ [`folha-${posicao}-racaoSobraKg`]: '0,05', [`folha-${posicao}-mortalidade`]: '400' });
+    // Ontem: só o viveiro é marcado; os outros tanques ficam sem anotar.
+    doc().querySelectorAll('[data-anotado]').forEach((caixa) => { caixa.checked = caixa.closest('[data-tanque]').dataset.tanque === tanqueId; });
+    await enviarSemSair('formulario-folha');
+    const ontem = dados().registros.find((registro) => registro.tanqueId === tanqueId && registro.data === ONTEM);
+    verificar('ontem gravado em kg', ontem?.racaoKg === 0.5 && ontem.racaoSobraKg === 0.05 && ontem.mortalidade === 400, JSON.stringify(ontem));
+
+    etapa = 'Teste de 23/11: biometria e ração do plano';
+    await abrir(`tanque.html?id=${tanqueId}`);
+    porId('botao-fazer-biometria').click();
+    await esperar(60);
+    doc().querySelector('[name="pesoAmostraGUnidade"][value="g"]').click();
+    preencher({ 'biometria-data': HOJE, 'biometria-peixes': '50', 'biometria-peso': '52' });
+    porId('painel-biometria').querySelector('form').requestSubmit();
+    await esperar(150);
+    await abrir(`tanque.html?id=${tanqueId}`);
+    verificar('peso médio "1,04 g"', indicador('pesoMedio') === '1,04 g', indicador('pesoMedio'));
+    // 9.600 animais × 1,04 g × 6% = 599,04 g por dia.
+    verificar('ração do dia com casas, em kg', indicador('racaoSugerida') === '0,6 kg por dia', indicador('racaoSugerida'));
+    await abrir(`folha.html?tanque=${tanqueId}`);
+    porId('botao-conforme-plano').click();
+    verificar('"conforme o plano" mostra a sugestão exata', porId(`folha-${posicao}-racaoKg`).value === '0,599', porId(`folha-${posicao}-racaoKg`).value);
+    doc().querySelector(`[name="linhas.${posicao}.racaoSobraKgUnidade"][value="g"]`).click();
+    preencher({ [`folha-${posicao}-racaoSobraKg`]: '20', [`folha-${posicao}-mortalidade`]: '3' });
+    doc().querySelectorAll('[data-anotado]').forEach((caixa) => { caixa.checked = caixa.closest('[data-tanque]').dataset.tanque === tanqueId; });
+    await enviarSemSair('formulario-folha');
+    const hojeGravado = dados().registros.find((registro) => registro.tanqueId === tanqueId && registro.data === HOJE && registro.racaoKg !== null);
+    verificar('grava o que o campo mostrava', hojeGravado?.racaoKg === 0.599 && hojeGravado.racaoSobraKg === 0.02, JSON.stringify(hojeGravado));
+    doc().querySelector(`[name="linhas.0.racaoKgUnidade"][value="kg"]`)?.click();
+
+    etapa = 'Teste de 23/11: alertas';
+    await abrir(`tanque.html?id=${tanqueId}`);
+    const alertasDoTanque = () => porId('lista-alertas-tanque').textContent;
+    verificar('mortalidade de ontem visível depois de anotar hoje', alertasDoTanque().includes('400 peixes mortos em'), alertasDoTanque());
+    verificar('nenhum alerta de ração com o plano de 6%', !alertasDoTanque().includes('Ração acima'), alertasDoTanque());
+
+    etapa = 'Teste de 23/11: ração em g';
+    const unidades = dados();
+    unidades.config.unidades = { biomassa: 'kg', racao: 'g' };
+    localStorage.setItem(CHAVE, JSON.stringify(unidades));
+    await abrir(`tanque.html?id=${tanqueId}`);
+    // Depois dos 3 mortos de hoje: 9.597 × 1,04 g × 6% = 598,9 g, em 4 refeições de 149,7 g.
+    verificar('ração do dia em g, com a refeição em casas', indicador('racaoSugerida') === '598,9 g por dia'
+        && texto('cartao-racao').includes('4 refeições de 149,7 g'), `${indicador('racaoSugerida')} · ${texto('cartao-racao')}`);
     localStorage.setItem(CHAVE, dadosAntes);
 }
 

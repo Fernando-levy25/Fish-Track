@@ -31,8 +31,43 @@ export function formatarNumero(valor, casasMax = 0, casasMin = 0) {
     return ehNumero(valor) ? obterFormatador(casasMin, casasMax).format(valor) : VAZIO;
 }
 
+// Casas decimais de um peso exibido (seção 8.1). A unidade nunca muda com o
+// tamanho do número; o que se adapta são as casas. A partir de 10, as casas
+// padrão da grandeza. Abaixo de 10, casas até mostrar dois algarismos depois
+// da vírgula que importam (1,04 g; 0,62 kg; 0,023 kg), no máximo 3: para
+// camarão e animais pequenos, a casa decimal é a informação.
+export const CASAS_DECIMAIS_MAXIMAS = 3;
+
+export function calcularCasasDecimais(valor, casasPadrao) {
+    const absoluto = Math.abs(valor);
+    if (!ehNumero(valor) || absoluto === 0 || absoluto >= 10) {
+        return casasPadrao;
+    }
+    // 1 a 10 e 0,1 a 1: 2 casas; 0,01 a 0,1: 3 casas; menor, o máximo.
+    const casasDoisAlgarismos = Math.max(2, 1 - Math.floor(Math.log10(absoluto)));
+    return Math.max(casasPadrao, Math.min(casasDoisAlgarismos, CASAS_DECIMAIS_MAXIMAS));
+}
+
+// Número de um peso, sem a unidade (tabelas que a trazem no cabeçalho), com as
+// casas de calcularCasasDecimais. Um valor maior que 0 que mesmo com 3 casas
+// daria zero vira "< 0,001": nunca "0" para algo que existe.
+export function formatarNumeroPeso(valor, casasPadrao = 1) {
+    if (!ehNumero(valor)) {
+        return VAZIO;
+    }
+    const casas = calcularCasasDecimais(valor, casasPadrao);
+    if (valor > 0 && Number(valor.toFixed(casas)) === 0) {
+        return `< ${formatarNumero(10 ** -casas, casas)}`;
+    }
+    return formatarNumero(valor, casas);
+}
+
 function comUnidade(valor, casasMax, unidade) {
     return ehNumero(valor) ? `${formatarNumero(valor, casasMax)} ${unidade}` : VAZIO;
+}
+
+function pesoComUnidade(valor, casasPadrao, unidade) {
+    return ehNumero(valor) ? `${formatarNumeroPeso(valor, casasPadrao)} ${unidade}` : VAZIO;
 }
 
 export function formatarInteiro(valor) {
@@ -48,11 +83,11 @@ export function formatarFca(valor) {
 }
 
 export function formatarGramas(valor) {
-    return comUnidade(valor, 1, 'g');
+    return pesoComUnidade(valor, 1, 'g');
 }
 
 export function formatarKg(valor) {
-    return comUnidade(valor, 1, 'kg');
+    return pesoComUnidade(valor, 1, 'kg');
 }
 
 // ---------- Unidades de peso (seção 8.1) ----------
@@ -92,10 +127,18 @@ export function converterParaBase(valor, unidade, grandeza) {
     return converterUnidade(valor, unidade, UNIDADE_BASE[grandeza]);
 }
 
+// Casas padrão de cada unidade, para valores a partir de 10 (seção 8.1).
+const CASAS_POR_UNIDADE = Object.freeze({ g: 1, kg: 1, t: 2 });
+
 // "500 g", "1,25 t": o número na unidade pedida, sempre com o símbolo.
 export function formatarMassa(valorBase, grandeza, unidade) {
-    const casas = { g: 0, kg: 1, t: 2 }[unidade];
-    return comUnidade(converterUnidade(valorBase, UNIDADE_BASE[grandeza], unidade), casas, unidade);
+    return pesoComUnidade(converterUnidade(valorBase, UNIDADE_BASE[grandeza], unidade), CASAS_POR_UNIDADE[unidade], unidade);
+}
+
+// Conversão mostrada abaixo de um campo com unidade: "= 624 g", "< 0,001 t".
+export function formatarConversao(valorBase, grandeza, unidade) {
+    const texto = formatarMassa(valorBase, grandeza, unidade);
+    return texto.startsWith('<') ? texto : `= ${texto}`;
 }
 
 // Biomassa e ração seguem a preferência e nunca trocam de unidade sozinhas
@@ -109,7 +152,7 @@ export function formatarRacao(kg) {
 }
 
 export function formatarGramasPorDia(valor) {
-    return comUnidade(valor, 1, 'g/dia');
+    return pesoComUnidade(valor, 1, 'g/dia');
 }
 
 export function formatarDensidade(valor) {

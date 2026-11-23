@@ -7,10 +7,10 @@ import {
     converterParaBase,
     converterUnidade,
     formatarBiomassa,
+    formatarConversao,
     formatarFca,
     formatarGramasPorDia,
     formatarInteiro,
-    formatarMassa,
     formatarNumero,
     formatarPercentual,
     formatarRacao,
@@ -452,9 +452,18 @@ export function iniciarCampoUnidade(entrada, { grandeza, unidades, unidadeInicia
     const atualizar = () => {
         const valor = paraNumero(entrada.value);
         const outras = unidades.filter((opcao) => opcao !== unidade);
+        // Seção 8.1: casas que bastam para o valor nunca aparecer como "= 0 kg".
         conversao.textContent = valor > 0
-            ? outras.map((opcao) => `= ${formatarMassa(converterParaBase(valor, unidade, grandeza), grandeza, opcao)}`).join(' · ')
+            ? outras.map((opcao) => formatarConversao(converterParaBase(valor, unidade, grandeza), grandeza, opcao)).join(' · ')
             : '';
+    };
+    // Mostra um valor guardado (na unidade base) convertido para a unidade escolhida,
+    // com até 3 casas: o que fica no campo é o que será gravado.
+    const definirBase = (valorBase) => {
+        entrada.value = valorBase === null || valorBase === undefined
+            ? ''
+            : formatarNumero(converterUnidade(valorBase, UNIDADE_BASE_DO_CAMPO[grandeza], unidade), 3).replace(/\./g, '');
+        atualizar();
     };
     entrada.addEventListener('input', atualizar);
     grupo.addEventListener('change', (evento) => {
@@ -466,11 +475,20 @@ export function iniciarCampoUnidade(entrada, { grandeza, unidades, unidadeInicia
     return {
         unidade: () => unidade,
         lerBase,
-        // Mostra um valor guardado (na unidade base) convertido para a unidade escolhida.
-        definirBase(valorBase) {
-            entrada.value = valorBase === null || valorBase === undefined
-                ? ''
-                : formatarNumero(converterUnidade(valorBase, UNIDADE_BASE_DO_CAMPO[grandeza], unidade), 3).replace(/\./g, '');
+        definirBase,
+        // Troca a unidade por fora (outro campo trocou a sua). O valor do campo é
+        // convertido e continua o mesmo peso: nada muda de significado sem a
+        // pessoa ver (seção 8.1).
+        definirUnidade(nova) {
+            if (nova === unidade || !unidades.includes(nova)) {
+                return;
+            }
+            const valorBase = lerBase();
+            unidade = nova;
+            grupo.querySelector(`input[value="${nova}"]`).checked = true;
+            if (valorBase !== null && !Number.isNaN(valorBase)) {
+                definirBase(valorBase);
+            }
             atualizar();
         },
         atualizar,

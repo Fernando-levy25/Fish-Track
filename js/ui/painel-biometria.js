@@ -8,6 +8,7 @@ import {
     formatarData,
     formatarDataCurta,
     formatarGramas,
+    formatarGramasPorDia,
     formatarInteiro,
     formatarNumero,
     formatarPercentual,
@@ -197,7 +198,7 @@ export function criarPainelBiometria(dialogo, acoes) {
             if (resultado.dias > 0) {
                 const sinal = resultado.ganhoG >= 0 ? '+' : '−';
                 linha('Desde a anterior', `${sinal}${formatarGramas(Math.abs(resultado.ganhoG))} em ${pluralizar(resultado.dias, 'dia', 'dias')}`
-                    + (resultado.ganhoDiarioG !== null ? ` · ${formatarNumero(resultado.ganhoDiarioG, 1)} g/dia` : ''));
+                    + (resultado.ganhoDiarioG !== null ? ` · ${formatarGramasPorDia(resultado.ganhoDiarioG)}` : ''));
             }
             if (resultado.pesoAlvoG) {
                 linha('Alvo', `${formatarGramas(resultado.pesoAlvoG)} (${formatarPercentual(resultado.percentualAlvo)})`);

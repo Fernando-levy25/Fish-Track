@@ -67,7 +67,8 @@ export function encontrarMortalidadeAcimaDoEstoque(ciclo, registros) {
 
 // Situação do ciclo ao fim de cada dia com registro, começando pelo povoamento.
 // Base dos gráficos e dos alertas que olham o dia (RN15: valores da mesma data
-// são somados).
+// são somados). racaoDiaKg é a consumida e racaoFornecidaDiaKg, a fornecida;
+// houvePesagem diz se já houve biometria até aquele dia.
 export function calcularLinhaDoTempo(ciclo, registros) {
     const dias = [{
         data: ciclo.dataInicio,
@@ -75,7 +76,9 @@ export function calcularLinhaDoTempo(ciclo, registros) {
         quantidade: ciclo.quantidadeInicial,
         pesoMedioG: ciclo.pesoMedioInicialG,
         pesou: false,
+        houvePesagem: false,
         racaoDiaKg: 0,
+        racaoFornecidaDiaKg: 0,
         racaoAcumuladaKg: 0,
         mortalidadeDia: 0,
         mortalidadeAcumulada: 0,
@@ -83,15 +86,17 @@ export function calcularLinhaDoTempo(ciclo, registros) {
     for (const { registro, quantidadeAntes, quantidadeDepois } of calcularEstoquePorRegistro(ciclo, registros)) {
         let dia = dias.at(-1);
         if (registro.data !== dia.data) {
-            dia = { ...dia, data: registro.data, quantidadeInicioDia: quantidadeAntes, pesou: false, racaoDiaKg: 0, mortalidadeDia: 0 };
+            dia = { ...dia, data: registro.data, quantidadeInicioDia: quantidadeAntes, pesou: false, racaoDiaKg: 0, racaoFornecidaDiaKg: 0, mortalidadeDia: 0 };
             dias.push(dia);
         }
         dia.quantidade = quantidadeDepois;
         if (informado(registro.pesoMedioG)) {
             dia.pesoMedioG = registro.pesoMedioG;
             dia.pesou = true;
+            dia.houvePesagem = true;
         }
         dia.racaoDiaKg += calcularRacaoConsumida(registro);
+        dia.racaoFornecidaDiaKg += valorOuZero(registro.racaoKg);
         dia.racaoAcumuladaKg += calcularRacaoConsumida(registro);
         dia.mortalidadeDia += valorOuZero(registro.mortalidade);
         dia.mortalidadeAcumulada += valorOuZero(registro.mortalidade);

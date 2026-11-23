@@ -53,6 +53,8 @@ function montarSituacao(dados, tanque) {
         ciclos,
         cicloAtivo,
         registros: cicloAtivo ? registrosDoTanque.filter((registro) => registro.cicloId === cicloAtivo.id) : [],
+        // O plano de alimentação entra na situação para o alerta de ração (seção 9.5).
+        plano: dados.config.tabelasArracoamento.find((tabela) => tabela.id === tanque.tabelaArracoamentoId) ?? null,
         ultimoRegistro: registrosDoTanque.at(-1) ?? null,
     };
 }

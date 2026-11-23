@@ -190,7 +190,8 @@ function atualizarTanqueEscolhido() {
 
 function mostrarSugestao(situacao) {
     const descricao = descreverRacaoSugerida(situacao);
-    racaoSugeridaKg = descricao.sugestao ? Math.round(descricao.sugestao.racaoDiaKg * 10) / 10 : null;
+    // A sugestão exata: o campo mostra até 3 casas, e o que aparece é o que é gravado.
+    racaoSugeridaKg = descricao.sugestao ? descricao.sugestao.racaoDiaKg : null;
     const texto = porId('texto-sugestao-racao');
     if (descricao.sugestao) {
         texto.textContent = `Sugerida para hoje: ${descricao.textoDia} · ${descricao.textoDetalhe}${descricao.aviso ? `. ${descricao.aviso}` : ''}`;

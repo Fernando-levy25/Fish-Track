@@ -23,6 +23,19 @@ export const CAUSAS_MORTALIDADE = Object.freeze({
 });
 const TAMANHO_MAXIMO_OBSERVACOES = 500;
 
+// Ração do dia longe demais da sugestão: provavelmente a unidade errada (0,5
+// digitado pensando em kg, com o campo em g). Só avisa, nunca bloqueia: há
+// dias de pouca ração. Fatores provisórios (seção 13).
+export const FATOR_RACAO_IMPROVAVEL_MINIMO = 0.01;
+export const FATOR_RACAO_IMPROVAVEL_MAXIMO = 10;
+
+export function avaliarRacaoImprovavel(racaoKg, sugestaoKg) {
+    if (!(racaoKg > 0) || !(sugestaoKg > 0)) {
+        return false;
+    }
+    return racaoKg < sugestaoKg * FATOR_RACAO_IMPROVAVEL_MINIMO || racaoKg > sugestaoKg * FATOR_RACAO_IMPROVAVEL_MAXIMO;
+}
+
 function informado(valor) {
     return valor !== null && valor !== undefined;
 }

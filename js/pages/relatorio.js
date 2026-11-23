@@ -13,6 +13,7 @@ import {
     formatarGramasPorDia,
     formatarInteiro,
     formatarNumero,
+    formatarNumeroPeso,
     formatarPercentual,
     formatarRacao,
     formatarVolume,
@@ -153,14 +154,16 @@ function criarTabelaRegistros(registros) {
         return criarElemento('p', { classe: 'relatorio__nota', texto: 'Nenhum registro neste ciclo.' });
     }
     const numero = (valor, casas = 1) => (valor === null || valor === undefined ? '' : formatarNumero(valor, casas));
+    // Pesos com as casas da seção 8.1: 0,01 g não pode virar "0".
+    const peso = (valor, casas) => (valor === null || valor === undefined ? '' : formatarNumeroPeso(valor, casas));
     const colunas = ['Data', 'Peso médio (g)', 'Ração (kg)', 'Mortos encontrados', 'Natalidade', 'Observações'];
     // No celular a tabela rola para o lado; no papel ela cabe na largura da folha.
     return criarElemento('div', { classe: 'tabela-rolagem' }, [criarElemento('table', { classe: 'tabela relatorio__tabela' }, [
         criarElemento('thead', {}, [criarElemento('tr', {}, colunas.map((coluna) => criarElemento('th', { texto: coluna, atributos: { scope: 'col' } })))]),
         criarElemento('tbody', {}, registros.map((registro) => criarElemento('tr', {}, [
             formatarData(registro.data),
-            numero(registro.pesoMedioG),
-            numero(registro.racaoKg, 2),
+            peso(registro.pesoMedioG, 1),
+            peso(registro.racaoKg, 2),
             numero(registro.mortalidade, 0),
             numero(registro.natalidade, 0),
             registro.observacoes,
