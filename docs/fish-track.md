@@ -622,7 +622,7 @@ Na despesca a biomassa é pesada, e daí saem os números reais do ciclo, que se
 | Mortos encontrados | soma de `mortalidade` dos registros do ciclo |
 | Mortalidade não observada | `max(0, quantidadeInicial − quantidadeFinal − mortosEncontrados)` |
 | Ganho de biomassa (kg) | `biomassaFinalKg − biomassaInicialKg`: o fechamento compara pesado com pesado (biomassa final pesada na despesca e biomassa do povoamento gravada) |
-| Ração total (kg) | soma de `racaoKg` dos registros do ciclo |
+| Ração total (kg) | soma da ração consumida (`racaoKg − racaoSobraKg`) dos registros do ciclo, como na FCA durante o ciclo (seção 9.4) |
 | FCA final | `racaoTotalKg / ganhoBiomassaKg` (vazia se o ganho for ≤ 0 ou sem ração anotada no ciclo: "Sem ração anotada") |
 | Cobertura da ração | dias com ração anotada ÷ dias de cultivo (seção 9.4), mostrada com a FCA final e com o aviso abaixo de 80% |
 | Dias de cultivo | dias entre `dataInicio` e `dataDespesca` |
@@ -658,7 +658,7 @@ Os alertas são calculados sempre que os dados mudam e não são armazenados. Ca
 |---|---|---|---|
 | **Mortalidade elevada no registro** | em algum dia com registro dos últimos 7 dias (contados até hoje), mortos encontrados no dia > X% da quantidade estimada no início do dia (a mensagem diz "do estoque estimado") | 1% | Alta |
 | **Mortalidade acumulada elevada** | taxa de mortalidade do ciclo > X% | 10% | Média |
-| **Ração acima do limite** | com plano de alimentação que cobre o peso do dia: ração fornecida > sugestão do plano para o dia + 20%; sem plano (ou peso fora das faixas): ração fornecida > X% da biomassa | 5% (sem plano) | Média |
+| **Ração acima do limite** | com plano de alimentação que cobre o peso do dia: ração consumida > sugestão do plano para o dia + 20%; sem plano (ou peso fora das faixas): ração consumida > X% da biomassa | 5% (sem plano) | Média |
 | **Tanque próximo da capacidade** | capacidade utilizada (biomassa ÷ carga máxima) ≥ X%; não avaliado sem densidade máxima | 90% | Média |
 | **Tanque sem registro** | nenhum registro há mais de X dias | 7 dias | Baixa |
 | **Biometria atrasada** | passou da próxima biometria (seção 9.11): "Última biometria em dd/mm, há N dias (a cada X dias)"; ação "Fazer biometria" | intervalo do tanque (15 dias) | Baixa |
@@ -668,7 +668,7 @@ Os alertas são calculados sempre que os dados mudam e não são armazenados. Ca
 Os alertas só são avaliados para tanques com ciclo ativo. Os registros da mesma data são somados (RN15).
 
 - **Mortalidade no registro:** avalia cada dia com registro na janela de `JANELA_ALERTA_MORTALIDADE_DIAS` (7, a mesma da "Mortalidade da semana"), contada a partir de hoje e não do último registro; um pico não some quando se anota o dia seguinte, e um dia anotado com atraso dentro da janela também entra. Com mais de um dia acima do limite, o alerta é um só, aponta o pior dia (data do alerta) e diz quantos outros passaram: "400 peixes mortos em 22/11/2026: 4% do estoque estimado (limite de 1%). Mais 1 dia acima do limite nesta semana." (Texto atual da tela, ainda escrito para peixe; ver seção 13.)
-- **Ração:** olha o último dia com registro e compara a ração **fornecida** (o plano diz quanto fornecer). Uma função pura decide o limite, `calcularLimiteRacaoDia({ plano, indicadores, limites })` em `alertas.js`: com plano que cobre o peso do dia, a sugestão do plano para aquele dia (biomassa e peso estimados do dia, seção 9.10) mais `TOLERANCIA_RACAO_PLANO_PCT` (20%): "Ração de 900 g em 23/11/2026, 44% acima do plano (624 g; tolerância de 20%)."; sem plano, ou com o peso fora das faixas (ou plano por faixas antes da primeira biometria), o limite geral em % da biomassa, como antes. O plano vem na situação do tanque (`domain/tanques.js`), e a agenda (seção 9.6) usa as mesmas regras, com o plano atual do tanque.
+- **Ração:** olha o último dia com registro e compara a ração **consumida** (fornecida − sobra), a mesma que entra na FCA. Uma função pura decide o limite, `calcularLimiteRacaoDia({ plano, indicadores, limites })` em `alertas.js`: com plano que cobre o peso do dia, a sugestão do plano para aquele dia (biomassa e peso estimados do dia, seção 9.10) mais `TOLERANCIA_RACAO_PLANO_PCT` (20%): "Ração de 900 g em 23/11/2026, 44% acima do plano (624 g; tolerância de 20%)."; sem plano, ou com o peso fora das faixas (ou plano por faixas antes da primeira biometria), o limite geral em % da biomassa, como antes. O plano vem na situação do tanque (`domain/tanques.js`), e a agenda (seção 9.6) usa as mesmas regras, com o plano atual do tanque.
 
 > ⚠️ Os limites padrão são valores iniciais de referência e devem ser **validados com produtores** antes de serem considerados definitivos.
 

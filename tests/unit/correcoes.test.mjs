@@ -220,7 +220,8 @@ describe('Prompt 05, A5: alerta de ração coerente com o plano', () => {
     });
     it('25% acima do plano: alerta com a sugestão e a tolerância', () => {
         const id = criarViveiro();
-        anotar(id, SUGESTAO_KG * 1.25);
+        // O alerta conta a ração consumida: fornecida − 20 g de sobra = 25% acima.
+        anotar(id, SUGESTAO_KG * 1.25 + 0.02);
         const [alerta] = doTipo(analisar(id).alertas, 'racao');
         assert.match(alerta.descricao, /^Ração de 0,78 kg em 23\/11\/2026, 25(,\d)?% acima do plano \(0,62 kg; tolerância de 20%\)\.$/);
         assert.equal(alertas.TOLERANCIA_RACAO_PLANO_PCT, 20);

@@ -14,7 +14,7 @@ import { calcularIndicadores, calcularLinhaDoTempo, calcularProximaBiometria, ca
 // Janela do alerta de mortalidade, em dias contados até hoje (a mesma da
 // "Mortalidade da semana"). Valor provisório (seção 13).
 export const JANELA_ALERTA_MORTALIDADE_DIAS = 7;
-// Quanto a ração fornecida pode passar da sugestão do plano antes do alerta.
+// Quanto a ração consumida pode passar da sugestão do plano antes do alerta.
 // Valor provisório (seção 13).
 export const TOLERANCIA_RACAO_PLANO_PCT = 20;
 
@@ -196,10 +196,10 @@ export function calcularLimiteRacaoDia({ plano, indicadores, limites }) {
     return { tipo: 'biomassa', limitePct: limites.racaoDiariaPct, limiteKg: (indicadores.biomassaKg * limites.racaoDiariaPct) / 100 };
 }
 
-// Ração fornecida no dia acima do limite: o excesso, ou null. É a fornecida, e
-// não a consumida, porque o plano diz quanto fornecer.
+// Ração do dia acima do limite: o excesso, ou null. Compara a ração consumida
+// (fornecida − sobra), como o alerta sempre fez e como a FCA conta (seção 9.4).
 function avaliarRacaoDoDia({ dia, plano, limites }) {
-    const racaoKg = dia.racaoFornecidaDiaKg;
+    const racaoKg = dia.racaoDiaKg;
     if (!(racaoKg > 0) || !(dia.biomassaKg > 0)) {
         return null;
     }
