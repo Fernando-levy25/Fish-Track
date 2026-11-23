@@ -188,6 +188,24 @@ describe('Prompt 05, B5 e B6: datas de projeção e ciclos encerrados', () => {
     });
 });
 
+describe('Prompt 05, C4 e C6: despesca e biometria', () => {
+    it('a despesca que não bate diz quanto o app esperava', () => {
+        const id = criarViveiro();
+        assert.throws(() => ciclos.registrarDespesca(id, { dataDespesca: HOJE, biomassaFinalKg: 9, pesoMedioFinalG: 1.1, quantidadeDespescada: 10000 }), (erro) => {
+            assert.equal(erro.erros.quantidadeDespescada,
+                'Com 9 kg e peso médio de 1,1 g, seriam ≈ 8.182 peixes; você informou 10.000. Confira a biomassa, o peso médio ou a quantidade.');
+            return true;
+        });
+    });
+    it('sem biometria, a prévia compara com o peso do povoamento', () => {
+        const id = criarViveiro();
+        const situacao = tanques.obterSituacao(id);
+        const previa = biometrias.calcularPreviaBiometria({ situacao, plano: situacao.plano, data: HOJE, pesoMedioG: 1.04, hoje: HOJE });
+        assert.deepEqual([previa.anterior.povoamento, previa.anterior.data, previa.dias], [true, '2026-10-26', 28]);
+        assert.equal(`+${format.formatarGramas(previa.ganhoG)} em ${previa.dias} dias`, '+1,03 g em 28 dias');
+    });
+});
+
 describe('Prompt 05, A5: alerta de ração coerente com o plano', () => {
     const anotar = (id, racaoKg) => {
         biometrias.salvarBiometria({ tanqueId: id, data: '2026-11-23', biometria: { peixesAmostra: 50, pesoAmostraG: 52 } });

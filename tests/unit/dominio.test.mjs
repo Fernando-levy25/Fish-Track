@@ -302,7 +302,9 @@ describe('domain/ciclos (RN05 a RN09)', () => {
         recusa(despescar({ biomassaFinalKg: null }), 'biomassaFinalKg', /biomassa final/);
         recusa(despescar({ biomassaFinalKg: 0 }), 'biomassaFinalKg');
         // RN20: 950 x 400 g = 380 kg, 27% acima dos 300 kg pesados.
-        recusa(despescar({ quantidadeDespescada: 950 }), 'quantidadeDespescada', /não batem/);
+        // Prompt 05, C4: a mensagem mostra a conta (antes: "Os valores não batem: ...").
+        recusa(despescar({ quantidadeDespescada: 950 }), 'quantidadeDespescada',
+            /^Com 300 kg e peso médio de 400 g, seriam ≈ 750 peixes; você informou 950\. Confira a biomassa, o peso médio ou a quantidade\.$/);
         const encerrado = despescar({ dataDespesca: dia(-5), quantidadeDespescada: 780 })();
         assert.equal(encerrado.status, 'encerrado');
         assert.equal(encerrado.biomassaFinalKg, 300);

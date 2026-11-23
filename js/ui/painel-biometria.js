@@ -197,7 +197,7 @@ export function criarPainelBiometria(dialogo, acoes) {
             linha('Peso médio', formatarGramas(pesoMedioG), 'previa__linha--destaque');
             if (resultado.dias > 0) {
                 const sinal = resultado.ganhoG >= 0 ? '+' : '−';
-                linha('Desde a anterior', `${sinal}${formatarGramas(Math.abs(resultado.ganhoG))} em ${pluralizar(resultado.dias, 'dia', 'dias')}`
+                linha(resultado.anterior.povoamento ? 'Desde o povoamento' : 'Desde a anterior', `${sinal}${formatarGramas(Math.abs(resultado.ganhoG))} em ${pluralizar(resultado.dias, 'dia', 'dias')}`
                     + (resultado.ganhoDiarioG !== null ? ` · ${formatarGramasPorDia(resultado.ganhoDiarioG)}` : ''));
             }
             if (resultado.pesoAlvoG) {
@@ -337,6 +337,7 @@ export function criarPainelBiometria(dialogo, acoes) {
     // ---------- Abrir ----------
 
     // contexto: { tanque: { id, nome, especie, cor }, diaCiclo, ultima: { pesoMedioG, data } | null,
+    //             povoamento: { pesoMedioG, data },
     //             proxima: { data, diasAtraso }, hoje, dataMinima, data, peixesSugeridos, registro, temProximo }
     function abrir(novo) {
         const trocouDeTanque = dialogo.open && contexto && contexto.tanque.id !== novo.tanque.id;
@@ -347,7 +348,9 @@ export function criarPainelBiometria(dialogo, acoes) {
         detalheTanque.textContent = [
             novo.tanque.especie,
             `dia ${formatarInteiro(novo.diaCiclo)} do ciclo`,
-            novo.ultima ? `Última biometria: ${formatarGramas(novo.ultima.pesoMedioG)} em ${formatarDataCurta(novo.ultima.data)}` : 'Primeira biometria do ciclo',
+            novo.ultima
+                ? `Última biometria: ${formatarGramas(novo.ultima.pesoMedioG)} em ${formatarDataCurta(novo.ultima.data)}`
+                : `Primeira biometria depois do povoamento (${formatarGramas(novo.povoamento.pesoMedioG)} em ${formatarDataCurta(novo.povoamento.data)})`,
         ].join(' · ');
         // Na rodada de biometria, a troca de tanque fica evidente (seção 7.13).
         troca.textContent = trocouDeTanque ? `Agora: ${novo.tanque.nome}` : '';

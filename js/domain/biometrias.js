@@ -67,9 +67,10 @@ export function calcularPreviaBiometria({ situacao, plano, data, pesoMedioG, idE
     const { tanque, cicloAtivo: ciclo } = situacao;
     const outros = situacao.registros.filter((registro) => registro.id !== idEditado);
     const anteriores = ordenarRegistros(outros).filter((registro) => informado(registro.pesoMedioG) && registro.data <= data);
+    // Sem biometria antes da data, a comparação é com o peso do povoamento (seção 7.13).
     const anterior = anteriores.at(-1)
-        ? { data: anteriores.at(-1).data, pesoMedioG: anteriores.at(-1).pesoMedioG }
-        : { data: ciclo.dataInicio, pesoMedioG: ciclo.pesoMedioInicialG };
+        ? { data: anteriores.at(-1).data, pesoMedioG: anteriores.at(-1).pesoMedioG, povoamento: false }
+        : { data: ciclo.dataInicio, pesoMedioG: ciclo.pesoMedioInicialG, povoamento: true };
     const antes = calcularIndicadores({ tanque, ciclo, registros: outros, hoje });
     const racaoAntes = calcularRacaoSugerida({ indicadores: antes, tabela: plano, houvePesagem: anteriores.length > 0 });
     if (!(pesoMedioG > 0)) {

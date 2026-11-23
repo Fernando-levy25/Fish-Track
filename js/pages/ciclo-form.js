@@ -21,13 +21,14 @@ const tanqueId = lerParametro('tanqueId');
 const acao = lerParametro('acao') === 'despesca' ? 'despesca' : 'iniciar';
 const porId = (id) => document.getElementById(id);
 // Biomassa do lote e biomassa final em kg ou t (seção 8.1); a unidade fica lembrada.
-const opcoesBiomassa = (chave) => ({
+const opcoesBiomassa = (chave, unidades = ['kg', 't']) => ({
     grandeza: 'biomassa',
-    unidades: ['kg', 't'],
+    unidades,
     unidadeInicial: lerPreferencia(chave, 'kg'),
     aoTrocarUnidade: (unidade) => salvarPreferencia(chave, unidade),
 });
-const campoBiomassaInicial = iniciarCampoUnidade(porId('campo-biomassa-inicial'), opcoesBiomassa('unidadeBiomassaLote'));
+// O lote de pós-larvas ou alevinos pode pesar só alguns gramas: o lote também aceita g (seção 8.1).
+const campoBiomassaInicial = iniciarCampoUnidade(porId('campo-biomassa-inicial'), opcoesBiomassa('unidadeBiomassaLote', ['g', 'kg', 't']));
 const campoBiomassaFinal = iniciarCampoUnidade(porId('campo-biomassa-final'), opcoesBiomassa('unidadeBiomassaFinal'));
 
 iniciarPagina();

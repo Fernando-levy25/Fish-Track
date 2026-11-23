@@ -3,7 +3,7 @@
 
 import { lerDados, salvarDados } from '../core/storage.js';
 import { agoraISO, compararTexto, gerarId, hojeISO, somarDias } from '../core/utils.js';
-import { formatarBiomassa, formatarData, formatarGramas, pluralizar } from '../core/format.js';
+import { formatarBiomassa, formatarData, formatarGramas, formatarInteiro, formatarKg, pluralizar } from '../core/format.js';
 import { calcularProximaBiometria, calcularResultadoCiclo, ordenarRegistros } from './indicadores.js';
 import { avaliarAlertasDosDias, resolverLimites } from './alertas.js';
 import { listarOcorrencias } from './lembretes.js';
@@ -199,7 +199,13 @@ export function registrarDespesca(tanqueId, entrada) {
     if (quantidadeDespescada !== null) {
         const biomassaCalculadaKg = (quantidadeDespescada * entrada.pesoMedioFinalG) / 1000;
         if (Math.abs(biomassaCalculadaKg - entrada.biomassaFinalKg) / entrada.biomassaFinalKg > LIMITE_DIFERENCA_DESPESCA) {
-            lancarSeHouverErros({ quantidadeDespescada: 'Os valores não batem: confira a biomassa, o peso médio ou a quantidade.' });
+            // A mensagem mostra a conta, para a pessoa achar qual valor está errado.
+            const esperada = Math.round((entrada.biomassaFinalKg * 1000) / entrada.pesoMedioFinalG);
+            lancarSeHouverErros({
+                quantidadeDespescada: `Com ${formatarKg(entrada.biomassaFinalKg)} e peso médio de ${formatarGramas(entrada.pesoMedioFinalG)}, `
+                    + `seriam ≈ ${formatarInteiro(esperada)} peixes; você informou ${formatarInteiro(quantidadeDespescada)}. `
+                    + 'Confira a biomassa, o peso médio ou a quantidade.',
+            });
         }
     }
 

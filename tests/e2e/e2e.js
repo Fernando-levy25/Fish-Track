@@ -103,6 +103,8 @@ async function roteiro() {
     verificar('só os primeiros passos', !porId('primeiros-passos').hidden && porId('conteudo-hoje').hidden
         && texto('primeiros-passos').startsWith('Vamos começar?'), texto('primeiros-passos'));
     verificar('nenhum "0 kg" nem gráfico vazio à vista', !doc().querySelector('main').innerText.includes('0 kg'));
+    // Prompt 05, C1: replaceChildren escrevia "false" na tela vazia.
+    verificar('app vazio sem o texto "false"', !doc().body.innerText.includes('false'), porId('primeiros-passos').innerText);
     verificar('o primeiro passo em destaque', doc().querySelector('.primeiros-passos__passo--proximo')?.textContent.includes('Cadastre um tanque')
         && doc().querySelector('.primeiros-passos__passo--proximo a')?.getAttribute('href') === 'tanque-form.html');
     verificar('dados de exemplo a um clique', [...porId('primeiros-passos').querySelectorAll('a')].some((link) => link.textContent === 'Carregar dados de exemplo'));
@@ -332,7 +334,9 @@ async function roteiro() {
     // RN20: 950 peixes x 80 g = 76 kg, contra 60 kg pesados (27% acima).
     preencher({ 'campo-biomassa-final': '60', 'campo-quantidade-despescada': '950', 'campo-peso-final': '80' });
     await enviarSemSair('formulario-registrar-despesca');
-    verificar('RN20 valores que não batem', texto('erro-quantidade-despescada') === 'Os valores não batem: confira a biomassa, o peso médio ou a quantidade.', texto('erro-quantidade-despescada'));
+    // Prompt 05, C4: a mensagem mostra quanto o app esperava (60 kg ÷ 80 g = 750).
+    verificar('RN20 valores que não batem, com a conta', texto('erro-quantidade-despescada')
+        === 'Com 60 kg e peso médio de 80 g, seriam ≈ 750 peixes; você informou 950. Confira a biomassa, o peso médio ou a quantidade.', texto('erro-quantidade-despescada'));
     preencher({ 'campo-data-despesca': somarDias(HOJE, -25), 'campo-quantidade-despescada': '' });
     await enviarSemSair('formulario-registrar-despesca');
     verificar('RN09 antes do último registro', texto('erro-data-despesca') === `A despesca não pode ser anterior ao último registro (${emBr(somarDias(HOJE, -1))}).`, texto('erro-data-despesca'));
@@ -423,6 +427,10 @@ async function roteiro() {
     await esperar(40);
     const editor = () => porId('dialogo-plano');
     verificar('editor com explicação e exemplo', editor().open && editor().textContent.includes('se o tanque tem 500 kg de peixe e o plano diz 3%'));
+    // Prompt 05, C5: plano novo abre em "Porcentagem fixa", só com os campos desse tipo.
+    verificar('plano novo abre com "Porcentagem fixa" marcado', editor().querySelector('[name="tipo"]:checked')?.value === 'fixo'
+        && !editor().querySelector('.plano__fixo').hidden && editor().querySelector('.plano__grupo-faixas').hidden);
+    doc().querySelector('#dialogo-plano [name="tipo"][value="faixas"]').click();
     preencher({ 'plano-nome': 'Teste', 'plano-faixa-0-pesoDeG': '100', 'plano-faixa-0-pesoAteG': '50', 'plano-faixa-0-taxaPct': '2', 'plano-faixa-0-refeicoes': '4' });
     await enviarSemSair('formulario-plano');
     verificar('RN24 no campo da faixa, em linguagem simples', texto('erro-plano-faixa-0-pesoAteG') === 'O peso final da faixa precisa ser maior que o inicial.', texto('erro-plano-faixa-0-pesoAteG'));
@@ -907,6 +915,7 @@ async function testarGanhoPesagem() {
 async function testarTesteDeUsuario() {
     const dadosAntes = localStorage.getItem(CHAVE);
     const ONTEM = somarDias(HOJE, -1);
+    const inicioCiclo = somarDias(HOJE, -28);
     etapa = 'Teste de 23/11: povoamento com animais pequenos';
     // O plano entra direto nos dados: o editor de planos tem teste próprio.
     const base = dados();
@@ -920,7 +929,11 @@ async function testarTesteDeUsuario() {
     verificar('viveiro com o plano de 6%', dados().tanques.find((tanque) => tanque.id === tanqueId).tabelaArracoamentoId === planoId);
     await abrir(`ciclo-form.html?tanqueId=${tanqueId}&acao=iniciar`);
     doc().querySelector('[name="modoPovoamento"][value="pesagem"]').click();
-    preencher({ 'campo-data-inicio': somarDias(HOJE, -28), 'campo-biomassa-inicial': '0,1', 'campo-peso-inicial': '0,01' });
+    doc().querySelector('[name="biomassaInicialKgUnidade"][value="kg"]').click();
+    preencher({ 'campo-data-inicio': inicioCiclo, 'campo-biomassa-inicial': '0,1', 'campo-peso-inicial': '0,01' });
+    // Prompt 05, C2: o lote também em g, e a conversão nunca "= 0 t".
+    verificar('biomassa do lote em g · kg · t', [...doc().querySelectorAll('[name="biomassaInicialKgUnidade"]')].map((opcao) => opcao.value).join(' · ') === 'g · kg · t'
+        && texto('conversao-campo-biomassa-inicial') === '= 100 g · < 0,001 t', texto('conversao-campo-biomassa-inicial'));
     await enviarENavegar('formulario-iniciar-ciclo');
     await abrir(`tanque.html?id=${tanqueId}`);
     verificar('peso médio "0,01 g" depois do povoamento', indicador('pesoMedio') === '0,01 g', indicador('pesoMedio'));
@@ -960,8 +973,12 @@ async function testarTesteDeUsuario() {
     await abrir(`tanque.html?id=${tanqueId}`);
     porId('botao-fazer-biometria').click();
     await esperar(60);
+    const painel = () => porId('painel-biometria').textContent;
+    // Prompt 05, C6: sem biometria ainda, o painel compara com o povoamento.
+    verificar('primeira biometria comparada com o povoamento', painel().includes(`Primeira biometria depois do povoamento (0,01 g em ${emBr(inicioCiclo).slice(0, 5)})`), painel().slice(0, 300));
     doc().querySelector('[name="pesoAmostraGUnidade"][value="g"]').click();
     preencher({ 'biometria-data': HOJE, 'biometria-peixes': '50', 'biometria-peso': '52' });
+    verificar('prévia: ganho desde o povoamento com casas', painel().includes('Desde o povoamento') && painel().includes('+1,03 g em 28 dias'), painel().slice(0, 600));
     porId('painel-biometria').querySelector('form').requestSubmit();
     await esperar(150);
     await abrir(`tanque.html?id=${tanqueId}`);
@@ -986,8 +1003,10 @@ async function testarTesteDeUsuario() {
     verificar('nenhum alerta de ração com o plano de 6%', !alertasDoTanque().includes('Ração acima'), alertasDoTanque());
     verificar('nenhum alerta de peso abaixo do esperado', !alertasDoTanque().includes('abaixo do esperado'), alertasDoTanque());
 
+    // Prompt 05, C7: dentro do tanque, nenhum "Ver tanque" (leva para onde a pessoa já está).
+    verificar('alertas dentro do tanque sem "Ver tanque"', !alertasDoTanque().includes('Ver tanque'), alertasDoTanque());
+
     etapa = 'Teste de 23/11: biomassa e FCA';
-    const inicioCiclo = somarDias(HOJE, -28);
     const cartaoDe = (nome) => doc().querySelector(`[data-indicador="${nome}"]`)?.closest('.cartao-indicador')?.textContent ?? '';
     verificar('ganho de biomassa desde a pesagem anterior, com a data', cartaoDe('biomassa').includes(`desde ${emBr(inicioCiclo).slice(0, 5)} (pesagem anterior)`), cartaoDe('biomassa'));
     verificar('FCA com a ração anotada em 2 de 28 dias e o aviso', cartaoDe('fca').includes('Ração anotada em 2 de 28 dias')
@@ -1001,6 +1020,19 @@ async function testarTesteDeUsuario() {
     // Depois dos 3 mortos de hoje: 9.597 × 1,04 g × 6% = 598,9 g, em 4 refeições de 149,7 g.
     verificar('ração do dia em g, com a refeição em casas', indicador('racaoSugerida') === '598,9 g por dia'
         && texto('cartao-racao').includes('4 refeições de 149,7 g'), `${indicador('racaoSugerida')} · ${texto('cartao-racao')}`);
+    // Prompt 05, C3: o simulador do plano na preferência de ração, com as casas da seção 8.1.
+    await abrir('configuracoes.html');
+    porId('botao-nova-tabela').click();
+    await esperar(40);
+    preencher({ 'plano-taxa': '6', 'plano-refeicoes': '4' });
+    porId('dialogo-plano').querySelector('[name="simuladorPeso"]').value = '1';
+    preencher({ 'plano-nome': 'Simulação' });
+    const simulador = porId('dialogo-plano').querySelector('[name="simuladorBiomassa"]');
+    simulador.value = '1,5';
+    simulador.dispatchEvent(new Event('input', { bubbles: true }));
+    const simulado = porId('dialogo-plano').querySelector('.plano__resultado').textContent;
+    verificar('simulador em g: 90 g por dia, 4 refeições de 22,5 g', simulado.includes('90 g por dia') && simulado.includes('4 refeições de 22,5 g'), simulado);
+    porId('dialogo-plano').querySelector('[data-acao-plano="cancelar"]').click();
     unidades.config.unidades = { biomassa: 'kg', racao: 'kg' };
     localStorage.setItem(CHAVE, JSON.stringify(unidades));
 

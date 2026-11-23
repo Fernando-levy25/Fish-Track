@@ -207,7 +207,9 @@ function renderizarPrimeirosPassos(semCultivo) {
     area.hidden = !semCultivo && dispensado;
     area.className = 'primeiros-passos';
     const proximo = passos.findIndex((passo) => !passo.feito);
-    area.replaceChildren(
+    // replaceChildren escreve "false" na tela: os itens condicionais saem antes
+    // (criarElemento já filtra os seus filhos; replaceChildren, não).
+    area.replaceChildren(...[
         criarElemento('h2', { classe: 'primeiros-passos__titulo', texto: 'Vamos começar?', atributos: { id: 'titulo-primeiros-passos' } }),
         criarElemento('p', { texto: 'Em 3 passos o Fish Track já calcula a ração do dia para você.' }),
         criarElemento('ol', { classe: 'primeiros-passos__lista' }, passos.map((passo, indice) => criarElemento('li', {
@@ -226,7 +228,7 @@ function renderizarPrimeirosPassos(semCultivo) {
             criarElemento('a', { classe: 'link', texto: 'Carregar dados de exemplo', atributos: { href: 'configuracoes.html#titulo-dados' } }),
         ]),
         !semCultivo && criarElemento('button', { classe: 'link', texto: 'Dispensar', atributos: { type: 'button', 'data-dispensar-passos': '' } }),
-    );
+    ].filter(Boolean));
 }
 
 // ---------- O que fazer hoje ----------

@@ -286,7 +286,10 @@ function renderizarResumo() {
     desenharGrafico('biomassa', series.biomassa, formatarBiomassa, 'Biomassa');
     desenharGrafico('mortalidade', series.mortalidade, formatarPercentual, 'Mortalidade observada');
 
-    renderizarAlertas(porId('lista-alertas-tanque'), alertas, { obterAcao: obterAcaoDoAlerta, textoVazio: 'Nenhum alerta para este tanque.' });
+    renderizarAlertas(porId('lista-alertas-tanque'), alertas, {
+        obterAcao: (alerta) => obterAcaoDoAlerta(alerta, { dentroDoTanque: true }),
+        textoVazio: 'Nenhum alerta para este tanque.',
+    });
 
     const recentes = registros.slice(-MAXIMO_REGISTROS_RECENTES).reverse();
     porId('lista-registros-recentes').replaceChildren(...(recentes.length > 0
@@ -793,6 +796,8 @@ function abrirBiometria(id, { data = null, registroId = null } = {}) {
         tanque: { id: tanque.id, nome: tanque.nome, especie: tanque.especie, cor: obterCorTanque(tanque, listarTanques({ incluirArquivados: true })) },
         diaCiclo: diasEntre(cicloAtivo.dataInicio, hoje),
         ultima: ultima ? { pesoMedioG: ultima.pesoMedioG, data: ultima.data } : null,
+        // Sem biometria ainda, a comparação é com o peso do povoamento (seção 7.13).
+        povoamento: { pesoMedioG: cicloAtivo.pesoMedioInicialG, data: cicloAtivo.dataInicio },
         hoje,
         dataMinima: cicloAtivo.dataInicio,
         data: data && data <= hoje && data >= cicloAtivo.dataInicio ? data : hoje,

@@ -37,6 +37,8 @@ O sistema deve ser **simples, intuitivo e visual**.
 
 **Escopo:** o app nasceu para peixe e foi validado com fontes de piscicultura. O laboratório parceiro que o testa trabalha mais com camarão (carcinicultura), e o foco do produto (só camarão, ou peixe e camarão) ainda não foi decidido (seção 13). Por isso esta especificação usa termos gerais ("animais") nas regras e nos conceitos; os textos de tela citados entre aspas continuam como estão no app.
 
+**Teste de 23/11/2026** (app publicado, base vazia, técnica de laboratório de camarão usando o app pela primeira vez): o fluxo completo, a estimativa pelo peso do lote, a folha do dia e as contas do fechamento funcionaram; foram corrigidos o alerta de mortalidade que sumia, valores pequenos exibidos como "0", a ração do plano gravada arredondada, a unidade da folha do dia que mudava com a data, o alerta de ração que contradizia o plano, o alerta de peso esperado sem curva, a FCA sem ração anotada ou com poucos dias anotados, os relatórios sem os resultados do ciclo encerrado e acabamentos de tela (seções 7, 8.1, 9.4 e 9.5).
+
 ---
 
 ## 2. Problema e mercado
@@ -180,7 +182,7 @@ Página própria de cada tanque, organizada em abas:
   2. **Destaques:** Peso médio (barra até o peso alvo, "381 g de 800 g · 48%", "Biometria em 17/10 · há 3 dias", em âmbar acima de 30 dias); Biomassa (estimada) ("+10,3 kg desde 26/10 (pesagem anterior)": o ganho desde a pesagem anterior, já que a biomassa só muda com biometria; sem biometria depois do povoamento, "Ganho: aparece depois da primeira biometria"; "≈ 2.434 peixes"); Capacidade (estimada) (barra de capacidade compacta da seção 9.8 e densidade). (Texto atual da tela, ainda escrito para peixe; ver seção 13.)
   3. **Acompanhamento:** Mortalidade observada ("Últimos 7 dias: X%", "Real só na despesca"); FCA (estimada) ("X kg de ração consumida para Y kg de ganho", "Ração anotada em 2 de 28 dias" e, abaixo de 80%, o aviso em âmbar "FCA provavelmente menor que a real: faltam dias de ração anotada.", meta; sem ração anotada, "Sem ração anotada · Anotar o dia" no lugar do número); Crescimento (g/dia entre as duas últimas biometrias, "Peso alvo em ~N dias (dd/mm)" com peso alvo e ganho positivo, com o ano quando for outro: "08/12/2027").
   4. **"Ver todos os indicadores"** (recolhido; lembra se ficou aberto, como preferência de tela): tabela com nome, valor e como é calculado, estimados marcados. Natalidade só aparece com nascimento registrado no ciclo.
-  5. Gráficos, alertas e registros recentes, como antes.
+  5. Gráficos, alertas e registros recentes, como antes. Os alertas dentro da página do tanque não mostram "Ver tanque" (levaria para onde a pessoa já está): só a ação específica ("Fazer biometria", "Anotar", "Planejar despesca"), ou nenhuma.
 - **Tanque sem ciclo ativo:** no lugar dos cartões, o resumo do último ciclo encerrado (seção 9.4.1) e "Povoar tanque".
 - **Histórico:** todos os registros do ciclo atual, com edição e exclusão. Permite consultar ciclos anteriores, que ficam só para leitura (RN10).
 - **Calendário:** a mesma agenda da seção 7.8, filtrada pelo tanque (sem os chips de tanque e sem a abreviação do tanque nas etiquetas), com o quadro do dia. Lembretes gerais também aparecem.
@@ -200,8 +202,8 @@ Cria ou edita um tanque (nome, espécie, volume, capacidade máxima, status, obs
 
 - **Iniciar ciclo:** data de povoamento; "Como você vai informar o lote?" com **"Contei os peixes"** (quantidade + peso médio) ou **"Pesei o lote"** (biomassa do lote em kg + peso médio da amostra), RN21; peso alvo (opcional) e data prevista de despesca (opcional). O valor calculado aparece ao vivo abaixo dos campos: "Biomassa inicial: 10 kg" ou "≈ 2.471 peixes (estimado)". (Texto atual da tela, ainda escrito para peixe; ver seção 13.)
 - **Iniciar ciclo:** com ciclo encerrado anterior, mostra a caixa "Último ciclo: sobrevivência de X%, FCA de Y, Z dias."
-- **Biomassa do lote** e **biomassa final** têm seletor kg · t, com a conversão visível abaixo do campo (seção 8.1).
-- **Registrar despesca:** data, **biomassa final** ("Peso total dos peixes despescados."), peso médio final ("Peso médio da amostra.") e quantidade despescada opcional ("Só se os peixes foram contados."), com RN19 e RN20. Encerra o ciclo e leva à página do tanque com o resumo do ciclo (seção 9.4.1).
+- **Biomassa do lote** tem seletor g · kg · t (um lote de pós-larvas ou alevinos pode pesar só alguns gramas) e **biomassa final**, kg · t, com a conversão visível abaixo do campo seguindo as casas da seção 8.1 ("0,1 kg" → "= 100 g · < 0,001 t").
+- **Registrar despesca:** data, **biomassa final** ("Peso total dos peixes despescados."), peso médio final ("Peso médio da amostra.") e quantidade despescada opcional ("Só se os peixes foram contados."), com RN19 e RN20. Quando os valores não batem (RN20), a mensagem mostra a conta: "Com 9 kg e peso médio de 1,1 g, seriam ≈ 8.182 peixes; você informou 10.000. Confira a biomassa, o peso médio ou a quantidade." (Texto atual da tela, ainda escrito para peixe; ver seção 13.) Encerra o ciclo e leva à página do tanque com o resumo do ciclo (seção 9.4.1).
 
 ### 7.6 Registro de um tanque (`registro.html`)
 
@@ -279,7 +281,7 @@ Barra inferior fixa no celular (Hoje, Tanques, **Anotar**, Alertas, Mais) e menu
 A biometria é feita a cada ~15 dias por amostragem, e não junto da rotina diária. Por isso tem um painel próprio (`<dialog>` em `tanque.html`), aberto **a partir do tanque**: o laboratório pensa "vou pesar o tanque 3". Lógica da interface em `js/ui/painel-biometria.js`; orquestração em `js/pages/tanque.js`; domínio em `js/domain/biometrias.js`. A biometria continua gravada como registro (com `pesoMedioG` e `biometria`), para os indicadores não mudarem de fonte.
 
 - **Como se chega:** botão "Fazer biometria" no cabeçalho e no cartão de peso do tanque, aba "Biometrias", ação do alerta "Biometria atrasada" e o quadro do dia da agenda. Endereço: `tanque.html?id=...&acao=biometria` (com `&data=AAAA-MM-DD` opcional, ou `&registro=ID` para editar). Não há item "Biometria" no menu.
-- **Topo:** faixa na cor do tanque, o **nome em destaque**, a espécie, o dia do ciclo e "Última biometria: 381 g em 09/10". Não há como trocar de tanque dentro do painel.
+- **Topo:** faixa na cor do tanque, o **nome em destaque**, a espécie, o dia do ciclo e "Última biometria: 381 g em 09/10"; sem biometria depois do povoamento, "Primeira biometria depois do povoamento (0,01 g em 26/10)". Não há como trocar de tanque dentro do painel. O peso do povoamento (`pesoMedioInicialG` na data de início) é o primeiro ponto de `listarBiometriasDoCiclo`, e a prévia compara com ele quando ainda não há biometria ("Desde o povoamento: +1,03 g em 28 dias").
 - **Modos:**
   - **Amostra** (padrão): data, peixes na amostra (já preenchido com o tamanho da última amostra do tanque), peso total da amostra (kg · g) e, em "Medir comprimento", o comprimento médio. "Pesei em partes" troca o peso total por uma lista de pesagens parciais (peixes e peso de cada uma), que o app soma. (Texto atual da tela, ainda escrito para peixe; ver seção 13.)
   - **Pesos individuais:** um peso por linha, em g (aceita colar de planilha). O app calcula peixes, total, média, menor e maior peso e o coeficiente de variação (seção 9.11), e guarda a lista em `biometria.pesosIndividuaisG` (RN26).
@@ -296,10 +298,10 @@ A biometria é feita a cada ~15 dias por amostragem, e não junto da rotina diá
 Na interface, "tabela de alimentação" / "arraçoamento" passou a se chamar **Plano de alimentação**; o termo técnico só aparece no texto de ajuda. Os nomes internos (`tabelasArracoamento`, `tabelaArracoamentoId`, `arracoamento.js`) ficaram. O editor (`js/ui/editor-plano.js`, num `<dialog>`) é o mesmo em Configurações e no formulário do tanque:
 
 - **Explicação no topo:** "O plano diz quanto de ração dar por dia, como uma porcentagem do peso total dos peixes no tanque. Exemplo: se o tanque tem 500 kg de peixe e o plano diz 3%, você dá 15 kg de ração por dia. Com 4 refeições, são 3,75 kg em cada." (Texto atual da tela, ainda escrito para peixe; ver seção 13.)
-- **Dois tipos:** "Porcentagem fixa" (`tipo: "fixo"`: uma taxa e as refeições) e "Muda com o tamanho do peixe" (`tipo: "faixas"`).
+- **Dois tipos:** "Porcentagem fixa" (`tipo: "fixo"`: uma taxa e as refeições) e "Muda com o tamanho do peixe" (`tipo: "faixas"`). Um plano novo abre com "Porcentagem fixa" marcado e só os campos desse tipo; ao editar, abre no tipo do plano. O tipo marcado e os campos visíveis nunca discordam.
 - **Faixas como frases:** "Peixes de 190 g a 225 g → 3,4% do peso total por dia, em 4 refeições", editadas com rótulos completos ("Peso dos peixes: de ___ g até ___ g", "Quanto dar por dia: ___ % do peso total do tanque", "Dividir em ___ refeições"). "Adicionar faixa" começa no "até" da faixa anterior.
 - **Régua** com as faixas lado a lado e o marcador "seus peixes estão aqui" no peso médio do simulador.
-- **Simulador**, atualizado na hora (no tanque, já com o peso médio e a biomassa dele): "Faixa usada: 520 a 565 g → 1,9% → 19,4 kg por dia, 4 refeições de 4,85 kg". Fora das faixas: "Nenhuma faixa cobre 112 g. Adicione uma faixa para peixes menores."
+- **Simulador**, atualizado na hora (no tanque, já com o peso médio e a biomassa dele, com até 3 casas): "Faixa usada: 520 a 565 g → 1,9% → 19,4 kg por dia, 4 refeições de 4,85 kg". Usa a preferência de exibição da ração (`config.unidades.racao`) e as casas da seção 8.1: com ração em g, "90 g por dia, 4 refeições de 22,5 g". Fora das faixas: "Nenhuma faixa cobre 112 g. Adicione uma faixa para peixes menores."
 - **"Usar um modelo":** o modelo Embrapa, com a fonte no nome e o aviso: "Este modelo vale para tilápia de 190 g a 1 kg com ração de 32% de proteína. A porcentagem certa depende da espécie, da ração e da temperatura da água: confira com o fabricante da ração ou com o seu técnico."
 - Mensagens de validação em linguagem simples ("Esta faixa se sobrepõe à de 190 a 225 g.", "O peso final da faixa precisa ser maior que o inicial.").
 - Na página do tanque, o cartão "Ração de hoje" mostra "Plano: <nome> · Ver plano".
@@ -330,7 +332,7 @@ Os valores são sempre armazenados nestas unidades e convertidos apenas na exibi
 |---|---|---|
 | Peso total da amostra (biometria) | kg · g | kg |
 | Ração fornecida e sobra (registro) | kg · g | kg |
-| Biomassa do lote (povoamento por pesagem) | kg · t | kg |
+| Biomassa do lote (povoamento por pesagem) | g · kg · t | kg |
 | Biomassa final (despesca) | kg · t | kg |
 | Peso médio (povoamento, despesca, "já tenho o peso médio") | g | g (sem seletor) |
 

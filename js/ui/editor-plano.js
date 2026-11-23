@@ -15,7 +15,7 @@ const EXPLICACAO = [
 // acoes: { salvar(entrada) → plano, calcularSugestao(plano, { pesoMedioG, biomassaKg }) → { sugestao, motivo }, modelo: { nome, aviso, faixas } }
 export function criarEditorPlano(dialogo, acoes) {
     let aoSalvar = () => {};
-    let tipo = 'faixas';
+    let tipo = 'fixo';
 
     const numero = (valor, casas = 2) => (valor === null || valor === undefined ? '' : formatarNumero(valor, casas).replace(/\./g, ''));
     const entrada = (nome, rotulo, modo, { valor = '', classe = 'campo__input campo__input--curto' } = {}) => criarElemento('input', {
@@ -222,7 +222,9 @@ export function criarEditorPlano(dialogo, acoes) {
         tipo = novo;
         grupoFixo.hidden = tipo !== 'fixo';
         grupoFaixas.hidden = tipo !== 'faixas';
-        for (const opcao of formulario.elements.tipo) {
+        // Os radios do próprio seletor, e não por nome no formulário: o tipo
+        // marcado e os campos visíveis nunca podem discordar (seção 7.14).
+        for (const opcao of seletorTipo.querySelectorAll('input[type="radio"]')) {
             opcao.checked = opcao.value === tipo;
         }
         atualizar();
@@ -292,9 +294,11 @@ export function criarEditorPlano(dialogo, acoes) {
         preencherFaixas(plano?.tipo === 'faixas' ? plano.faixas : [{}]);
         avisoModelo.hidden = !(plano && plano.nome === acoes.modelo.nome);
         avisoModelo.textContent = acoes.modelo.aviso;
-        simPeso.value = simulacao?.pesoMedioG ? numero(simulacao.pesoMedioG, 1) : '';
-        simBiomassa.value = simulacao?.biomassaKg ? numero(simulacao.biomassaKg, 1) : '';
-        definirTipo(plano?.tipo ?? 'faixas');
+        // Até 3 casas: animais de 0,01 g não podem virar "0" no simulador (seção 8.1).
+        simPeso.value = simulacao?.pesoMedioG ? numero(simulacao.pesoMedioG, 3) : '';
+        simBiomassa.value = simulacao?.biomassaKg ? numero(simulacao.biomassaKg, 3) : '';
+        // Plano novo abre em "Porcentagem fixa", o mais simples; ao editar, no tipo do plano.
+        definirTipo(plano?.tipo === 'faixas' ? 'faixas' : 'fixo');
         dialogo.showModal();
         nome.focus();
     }

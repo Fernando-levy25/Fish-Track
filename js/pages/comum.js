@@ -79,14 +79,15 @@ export function descreverRacaoSugerida(situacao, hoje = hojeISO()) {
 }
 
 // Ação de cada alerta (seção 3.5), com os nomes padronizados da seção 11.6:
-// o próximo passo mais provável.
-export function obterAcaoDoAlerta(alerta) {
+// o próximo passo mais provável. dentroDoTanque: na página do próprio tanque,
+// "Ver tanque" levaria para onde a pessoa já está, então fica sem ação.
+export function obterAcaoDoAlerta(alerta, { dentroDoTanque = false } = {}) {
     const tanque = (ancora) => montarUrl('tanque.html', { id: alerta.tanqueId }, ancora);
     switch (alerta.tipo) {
         case 'mortalidade-registro':
         case 'racao':
         case 'mortalidade-acumulada':
-            return { texto: 'Ver tanque', icone: 'seta', href: tanque() };
+            return dentroDoTanque ? null : { texto: 'Ver tanque', icone: 'seta', href: tanque() };
         case 'capacidade':
             return { texto: 'Planejar despesca', icone: 'rede', href: montarUrl('ciclo-form.html', { tanqueId: alerta.tanqueId, acao: 'despesca' }) };
         case 'biometria-atrasada':
